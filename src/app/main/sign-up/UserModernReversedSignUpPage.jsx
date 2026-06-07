@@ -1,12 +1,11 @@
 import { Controller, useForm } from "react-hook-form";
-import { lighten, styled } from "@mui/material/styles";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import _ from "@lodash";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
@@ -27,11 +26,10 @@ import {
 import StateSelect from "src/app/apselects/stateselect";
 import LgaSelect from "src/app/apselects/lgaselect";
 import MarketSelect from "src/app/apselects/marketselect";
-import TradehubSelect from "src/app/apselects/tradehubselect";
-import { InputAdornment } from "@mui/material";
+// import TradehubSelect from "src/app/apselects/tradehubselect";
+// import { InputAdornment } from "@mui/material";
 
-import { orange } from "@mui/material/colors";
-import clsx from "clsx";
+// import clsx from "clsx";
 import { useShopSignUpWithOtp } from "app/configs/data/server-calls/useUsers/useUsersQuery";
 import {
   getMerchantSignUpToken,
@@ -46,13 +44,13 @@ import MerchantModernReversedActivatePage from "./UserModernReversedActivatePage
  */
 const schema = z
   .object({
-    name: z.string().nonempty("You must enter your business/shop name"),
-    email: z.string().email("You must enter a valid email").nonempty("You must enter an email"),
+    name: z.string().min(1, "You must enter your business/shop name"),
+    email: z.string().email("You must enter a valid email").min(1, "You must enter an email"),
     password: z
       .string()
-      .nonempty("Please enter your password.")
+      .min(1, "Please enter your password.")
       .min(8, "Password is too short - should be 8 chars minimum."),
-    passwordConfirm: z.string().nonempty("Password confirmation is required"),
+    passwordConfirm: z.string().min(1, "Password confirmation is required"),
     acceptTermsConditions: z
       .boolean()
       .refine((val) => val === true, "The terms and conditions must be accepted."),
@@ -90,41 +88,6 @@ const STEPS = {
   DESCRIPTION: 2,
 };
 
-/***Styled */
-const Root = styled("div")(({ theme }) => ({
-  "& .productImageFeaturedStar": {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    color: orange[400],
-    opacity: 0,
-  },
-  "& .productImageUpload": {
-    transitionProperty: "box-shadow",
-    transitionDuration: theme.transitions.duration.short,
-    transitionTimingFunction: theme.transitions.easing.easeInOut,
-  },
-  "& .productImageItem": {
-    transitionProperty: "box-shadow",
-    transitionDuration: theme.transitions.duration.short,
-    transitionTimingFunction: theme.transitions.easing.easeInOut,
-    "&:hover": {
-      "& .productImageFeaturedStar": {
-        opacity: 0.8,
-      },
-    },
-    "&.featured": {
-      pointerEvents: "none",
-      boxShadow: theme.shadows[3],
-      "& .productImageFeaturedStar": {
-        opacity: 1,
-      },
-      "&:hover .productImageFeaturedStar": {
-        opacity: 1,
-      },
-    },
-  },
-}));
 
 /* ─────────────────────────────────────────────────────────
    Shown when usersRegistrationEnabled === false in app settings
@@ -179,8 +142,8 @@ function RegistrationDisabledNotice({ onRetry }) {
         <p className="text-sm font-bold text-orange-700 mb-1.5">What's happening?</p>
         <p className="text-sm text-gray-600 leading-relaxed">
           Our team is reviewing and improving the onboarding process. Existing accounts are
-          completely unaffected. New registrations will be re-enabled shortly — usually within
-          a short time.
+          completely unaffected. New registrations will be re-enabled shortly — usually within a
+          short time.
         </p>
       </motion.div>
 
@@ -232,7 +195,6 @@ function RegistrationDisabledNotice({ onRetry }) {
 function UserModernReversedSignUpPage() {
   const clientSignUpData = getResendMerchantSignUpOtp();
   const remoteResponseToken = getMerchantSignUpToken();
-  const routeParams = useParams();
   const sigupClientUsers = useShopSignUpWithOtp();
 
   // App-settings gate — same pattern as JwtSignInForm
@@ -242,7 +204,7 @@ function UserModernReversedSignUpPage() {
     refetch: refetchSettings,
   } = useGetUserAppSetting();
   const usersRegistrationEnabled = appSettings?.data?.payload?.usersRegistrationEnabled;
-  const { control, formState, handleSubmit, reset, setValue, watch, getValues } = useForm({
+  const { control, formState, handleSubmit, setValue, watch, getValues } = useForm({
     mode: "onChange",
     defaultValues,
     resolver: zodResolver(schema),
@@ -253,7 +215,6 @@ function UserModernReversedSignUpPage() {
   const businezState = watch("businezState");
   const businezLga = watch("businezLga");
   const market = watch("market");
-  const tradehub = watch("tradehub");
 
   const shopregistry = {
     ...getValues(),
@@ -268,13 +229,12 @@ function UserModernReversedSignUpPage() {
     sigupClientUsers.mutate(shopregistry);
   }
 
-  /****Resend OTP on expiration of OTP */
+  // Resend OTP on expiration of OTP
   const resendOTP = () => {
     if (!clientSignUpData?.email) {
-      if (window.confirm("Some hitch occured, restart the unboarding process?")) {
-        removeUserSignUpToken();
-        removeResendMerchantSignUpOtp();
-      }
+      removeUserSignUpToken();
+      removeResendMerchantSignUpOtp();
+      return;
     }
     sigupClientUsers.mutate(clientSignUpData);
   };
@@ -287,21 +247,8 @@ function UserModernReversedSignUpPage() {
   const onNext = () => {
     setStep((value) => value + 1);
   };
-  const actionLable = useMemo(() => {
-    if (step == STEPS.PRICE) {
-      return "Create";
-    }
-    return "Next";
-  }, [step]);
-  const secondaryActionLable = useMemo(() => {
-    if (step == STEPS.CATEGORY) {
-      return undefined;
-    }
-    return "Back";
-  }, [step]);
-
   const secondaryAction = useMemo(() => {
-    if (step == STEPS.CATEGORY) {
+    if (step === STEPS.CATEGORY) {
       return undefined;
     }
     return onBack;
@@ -315,7 +262,7 @@ function UserModernReversedSignUpPage() {
     });
   };
 
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [blgas, setBlgas] = useState([]);
   const [markets, setBMarkets] = useState([]);
   const [stateData, setStateData] = useState([]);
@@ -345,49 +292,32 @@ function UserModernReversedSignUpPage() {
   async function findStatesByCountry(countryId) {
     setLoading(true);
     const stateResponseData = await getStateByCountryId(countryId);
-    console.log("States", stateResponseData?.data);
 
     if (stateResponseData) {
       setStateData(stateResponseData?.data?.states);
-
-      setTimeout(
-        function () {
-          setLoading(false);
-        }.bind(this),
-        250,
-      );
+      setTimeout(() => setLoading(false), 250);
     }
   }
 
-  //**Get L.G.As from state_ID data */
+  // Get L.G.As from state_ID data
   async function getLgasFromState(sid) {
     setLoading(true);
     const responseData = await getLgaByStateId(sid);
 
     if (responseData) {
       setBlgas(responseData?.data?.lgas);
-      setTimeout(
-        function () {
-          setLoading(false);
-        }.bind(this),
-        250,
-      );
+      setTimeout(() => setLoading(false), 250);
     }
   }
 
-  //**Get Marketss from lga_ID data */ getShopById
+  // Get Markets from lga_ID data
   async function getMarketsFromLgaId(lid) {
     if (lid) {
       setLoading(true);
       const responseData = await getMarketsByLgaId(lid);
       if (responseData) {
         setBMarkets(responseData?.data?.markets);
-        setTimeout(
-          function () {
-            setLoading(false);
-          }.bind(this),
-          250,
-        );
+        setTimeout(() => setLoading(false), 250);
       }
     }
   }
@@ -400,138 +330,107 @@ function UserModernReversedSignUpPage() {
           What e-mail are you looking to use as your primary contact email
         </span>
       </Typography>
-      <>
-        <>
-          <Controller
-            name="name"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                className="mb-24"
-                label="Name"
-                autoFocus
-                type="text"
-                error={!!errors.name}
-                helperText={errors?.name?.message}
-                variant="outlined"
-                required
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "&:hover fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#ea580c",
-                  },
-                }}
-              />
-            )}
+      <Controller
+        name="name"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            className="mb-24"
+            label="Name"
+            autoFocus
+            type="text"
+            error={!!errors.name}
+            helperText={errors?.name?.message}
+            variant="outlined"
+            required
+            fullWidth
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "&:hover fieldset": { borderColor: "#ea580c" },
+                "&.Mui-focused fieldset": { borderColor: "#ea580c" },
+              },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#ea580c" },
+            }}
           />
-
-          <Controller
-            name="email"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                className="mb-24"
-                label="Email Address"
-                type="email"
-                error={!!errors.email}
-                helperText={errors?.email?.message}
-                variant="outlined"
-                required
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "&:hover fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#ea580c",
-                  },
-                }}
-              />
-            )}
+        )}
+      />
+      <Controller
+        name="email"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            className="mb-24"
+            label="Email Address"
+            type="email"
+            error={!!errors.email}
+            helperText={errors?.email?.message}
+            variant="outlined"
+            required
+            fullWidth
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "&:hover fieldset": { borderColor: "#ea580c" },
+                "&.Mui-focused fieldset": { borderColor: "#ea580c" },
+              },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#ea580c" },
+            }}
           />
-
-          <Controller
-            name="password"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                className="mb-24"
-                label="Password"
-                type="password"
-                error={!!errors.password}
-                helperText={errors?.password?.message}
-                variant="outlined"
-                required
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "&:hover fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#ea580c",
-                  },
-                }}
-              />
-            )}
+        )}
+      />
+      <Controller
+        name="password"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            className="mb-24"
+            label="Password"
+            type="password"
+            error={!!errors.password}
+            helperText={errors?.password?.message}
+            variant="outlined"
+            required
+            fullWidth
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "&:hover fieldset": { borderColor: "#ea580c" },
+                "&.Mui-focused fieldset": { borderColor: "#ea580c" },
+              },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#ea580c" },
+            }}
           />
-
-          <Controller
-            name="passwordConfirm"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                className="mb-24"
-                label="Confirm Password"
-                type="password"
-                error={!!errors.passwordConfirm}
-                helperText={errors?.passwordConfirm?.message}
-                variant="outlined"
-                required
-                fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "&:hover fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#ea580c",
-                    },
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#ea580c",
-                  },
-                }}
-              />
-            )}
+        )}
+      />
+      <Controller
+        name="passwordConfirm"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            className="mb-24"
+            label="Confirm Password"
+            type="password"
+            error={!!errors.passwordConfirm}
+            helperText={errors?.passwordConfirm?.message}
+            variant="outlined"
+            required
+            fullWidth
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "&:hover fieldset": { borderColor: "#ea580c" },
+                "&.Mui-focused fieldset": { borderColor: "#ea580c" },
+              },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#ea580c" },
+            }}
           />
-        </>
-      </>
+        )}
+      />
     </div>
   );
 
-  if (step == STEPS.LOCATION) {
+  if (step === STEPS.LOCATION) {
     bodyContent = (
       <div className="flex flex-col gap-8">
         <Typography className="text-lg font-semibold text-gray-900 mb-4">
@@ -540,33 +439,31 @@ function UserModernReversedSignUpPage() {
             Note: This location will be used as your closest pick-up location
           </span>
         </Typography>
-        <>
-          <CountrySelect value={location} onChange={(value) => setCustomValue("location", value)} />
+        <CountrySelect value={location} onChange={(value) => setCustomValue("location", value)} />
 
-          {location?.id && (
-            <StateSelect
-              states={stateData}
-              value={businezState}
-              onChange={(value) => setCustomValue("businezState", value)}
-            />
-          )}
+        {location?.id && (
+          <StateSelect
+            states={stateData}
+            value={businezState}
+            onChange={(value) => setCustomValue("businezState", value)}
+          />
+        )}
 
-          {businezState?.id && (
-            <LgaSelect
-              blgas={blgas}
-              value={businezLga}
-              onChange={(value) => setCustomValue("businezLga", value)}
-            />
-          )}
+        {businezState?.id && (
+          <LgaSelect
+            blgas={blgas}
+            value={businezLga}
+            onChange={(value) => setCustomValue("businezLga", value)}
+          />
+        )}
 
-          {businezState?.id && businezLga?.id && (
-            <MarketSelect
-              markets={markets}
-              value={market}
-              onChange={(value) => setCustomValue("market", value)}
-            />
-          )}
-        </>
+        {businezState?.id && businezLga?.id && (
+          <MarketSelect
+            markets={markets}
+            value={market}
+            onChange={(value) => setCustomValue("market", value)}
+          />
+        )}
       </div>
     );
   }
@@ -648,37 +545,35 @@ function UserModernReversedSignUpPage() {
   //     </div>
   //   );
   // }
-  if (step == STEPS.DESCRIPTION) {
+  if (step === STEPS.DESCRIPTION) {
     bodyContent = (
       <div className="flex flex-col gap-8">
         <Typography className="text-lg font-semibold text-gray-900 mb-4">
           Terms & Conditions : Accept our terms and conditions and proceed
         </Typography>
-        <>
-          <Controller
-            name="acceptTermsConditions"
-            control={control}
-            render={({ field }) => (
-              <FormControl className="items-center" error={!!errors.acceptTermsConditions}>
-                <FormControlLabel
-                  label="I agree to the Terms of Service and Privacy Policy"
-                  control={
-                    <Checkbox
-                      size="small"
-                      {...field}
-                      sx={{
-                        "&.Mui-checked": {
-                          color: "#ea580c",
-                        },
-                      }}
-                    />
-                  }
-                />
-                <FormHelperText>{errors?.acceptTermsConditions?.message}</FormHelperText>
-              </FormControl>
-            )}
-          />
-        </>
+        <Controller
+          name="acceptTermsConditions"
+          control={control}
+          render={({ field }) => (
+            <FormControl className="items-center" error={!!errors.acceptTermsConditions}>
+              <FormControlLabel
+                label="I agree to the Terms of Service and Privacy Policy"
+                control={
+                  <Checkbox
+                    size="small"
+                    {...field}
+                    sx={{
+                      "&.Mui-checked": {
+                        color: "#ea580c",
+                      },
+                    }}
+                  />
+                }
+              />
+              <FormHelperText>{errors?.acceptTermsConditions?.message}</FormHelperText>
+            </FormControl>
+          )}
+        />
       </div>
     );
   }

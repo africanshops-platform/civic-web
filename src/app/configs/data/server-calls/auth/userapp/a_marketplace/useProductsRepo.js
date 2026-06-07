@@ -14,75 +14,7 @@ import { getAllProducts, getProductByCategory, getProductById } from 'app/config
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
-
-/**
- * Comprehensive error handler for NestJS responses
- * Handles various NestJS error formats including:
- * - Validation errors (array of messages)
- * - Single error messages
- * - HTTP exceptions
- * - Network errors
- */
-const handleNestJSError = (error, rollback) => {
-	console.error('API Error:', error);
-
-	// Handle network errors (no response from server)
-	if (!error?.response) {
-		toast.error('Network error. Please check your connection and try again.');
-
-		if (rollback) rollback();
-
-		return;
-	}
-
-	const { data, status } = error.response;
-
-	// Handle different NestJS error response formats
-	if (data) {
-		// Case 1: NestJS validation errors (array of messages)
-		if (Array.isArray(data?.message)) {
-			data.message.forEach((msg) => {
-				toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
-			});
-		}
-		// Case 2: Single message string
-		else if (typeof data?.message === 'string') {
-			toast.error(data.message);
-		}
-		// Case 3: Error object with message
-		else if (data?.error?.message) {
-			toast.error(data.error.message);
-		}
-		// Case 4: Direct error message
-		else if (data?.error && typeof data.error === 'string') {
-			toast.error(data.error);
-		}
-		// Case 5: HTTP status text
-		else if (data?.statusCode && data?.error) {
-			toast.error(`${data.error}: ${data.message || 'An error occurred'}`);
-		}
-		// Case 6: Generic message based on status code
-		else {
-			const statusMessages = {
-				400: 'Bad Request. Please check your input.',
-				401: 'Unauthorized. Please log in again.',
-				403: 'Forbidden. You do not have permission.',
-				404: 'Resource not found.',
-				409: 'Conflict. The resource already exists.',
-				422: 'Unprocessable Entity. Invalid data provided.',
-				500: 'Server error. Please try again later.',
-				503: 'Service unavailable. Please try again later.'
-			};
-			toast.error(statusMessages[status] || `Error ${status}: Something went wrong`);
-		}
-	} else {
-		// Fallback for unexpected error formats
-		toast.error(error?.message || 'An unexpected error occurred');
-	}
-
-	// Execute rollback if provided
-	if (rollback) rollback();
-};
+import { handleApiError as handleNestJSError } from 'app/configs/data/utils/handleApiError';
 
 /** *
  * #################################################################

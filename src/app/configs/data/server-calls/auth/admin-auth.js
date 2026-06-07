@@ -3,22 +3,17 @@ import axios from 'axios';
 import jwtDecode from 'jwt-decode';
 import Cookie from 'js-cookie';
 import { getSessionRedirectUrl, resetSessionRedirectUrl } from '@fuse/core/FuseAuthorization/sessionRedirectUrl';
-
 import { toast } from 'react-toastify';
-
 import { clientSigin } from '../../client/RepositoryClient';
 import config from '../../../../auth/services/jwt/jwtAuthConfig';
-// import { adminSigin } from "../apiRoutes";
+import { handleApiError } from 'app/configs/data/utils/handleApiError';
 
 export function useShopAdminLogin() {
-	// const navigate = useNavigate();
 	return useMutation(clientSigin, {
 		onSuccess: (data) => {
 			console.log('LoginData', data);
 
 			if (data?.data?.user && data?.data?.userAccessToken) {
-				/** ============================================================================== */
-
 				const transFormedUser = {
 					id: data?.data?.user?.id,
 					name: data?.data?.user?.name,
@@ -43,7 +38,6 @@ export function useShopAdminLogin() {
 				}
 			} else if (data) {
 				console.log('LoginError22_', data.data);
-
 				Array.isArray(data?.data?.message)
 					? data?.data?.message?.map((m) => toast.error(m.message))
 					: toast.error(data?.data?.message);
@@ -53,11 +47,7 @@ export function useShopAdminLogin() {
 		},
 		onError: (error) => {
 			console.log('LoginError22Block', error);
-
-			const {
-				response: { data }
-			} = error ?? {};
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
+			handleApiError(error);
 		}
 	});
 }
@@ -66,7 +56,6 @@ const isTokenValid = (accessToken) => {
 	if (accessToken) {
 		try {
 			const decoded = jwtDecode(accessToken);
-			// console.log("DECODED Token-DATA", decoded)
 			const currentTime = Date.now() / 1000;
 			return decoded.exp > currentTime;
 		} catch (error) {
@@ -81,16 +70,12 @@ const setUserCredentialsStorage = (userCredentials) => {
 	const setUserCookie = Cookie.set(config.adminCredentials, JSON.stringify({ userCredentials }));
 
 	if (setUserCookie) {
-		// Get the redirect URL from session storage
 		const redirectUrl = getSessionRedirectUrl();
 
 		if (redirectUrl) {
-			// Clear the redirect URL from session storage
 			resetSessionRedirectUrl();
-			// Redirect to the stored URL
 			window.location.href = redirectUrl;
 		} else {
-			// Default behavior: reload to home page
 			window.location.reload();
 		}
 	}

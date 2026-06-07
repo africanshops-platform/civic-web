@@ -5,8 +5,6 @@ import {
 	adminSignIn,
 	resetshopPasswordWithcode,
 	shopForgotPasswordInit
-	// adminClientLogin, adminSignIn,
-	//  logOutAdmin,
 } from '../client/clientToApiRoutes';
 import {
 	remove_SHOP_FORGOTPASS_TOKEN,
@@ -14,31 +12,20 @@ import {
 	setAuthTokens,
 	setShopForgotPasswordPAYLOAD
 } from '../../utils/authUtils';
-// import { useNavigate } from 'react-router-dom';
+import { handleApiError } from 'app/configs/data/utils/handleApiError';
 
 export function useAdminLogin() {
-	// const history = useNavigate();
 	return useMutation(adminSignIn, {
 		onSuccess: (data) => {
-			// console.log('LoginError11', data);
 			console.log('LoginError22', data?.data);
 
-			// console.log('LoginError33', data?.data?.data);
-			// console.log('LoginError33', data?.data?._nnip_shop_ASHP_ALOG);
 			if (data?.data?.data && data?.data?._nnip_shop_ASHP_ALOG) {
-				// console.log("userFromAuthentication", data?.data?.user)
-				// console.log("tokenFromAuthentication", data?.data?.accessToken)
 				setAuthCredentials(data?.data?.data);
 				setAuthTokens(data?.data?._nnip_shop_ASHP_ALOG);
 				toast.success('logged in successfully');
-
-				// history('/admin');
 				window.location.replace('/admin');
 			} else if (data) {
 				console.log('LoginError22_', data.data);
-
-				// toast.error(data?.data?.message);
-				// console.log(Array.isArray(data?.data?.message) ? data?.data?.message?.map((m) =>toast.error(m.message)) :toast.error(data?.data?.message))
 				Array.isArray(data?.data?.message)
 					? data?.data?.message?.map((m) => toast.error(m.message))
 					: toast.error(data?.data?.message);
@@ -48,19 +35,7 @@ export function useAdminLogin() {
 		},
 		onError: (error) => {
 			console.log('LoginError22Block', error);
-			//   console.log("LoginError2211", JSON.stringify(error?.response) )
-			//   console.log("LoginError2212", error)
-			//  toast.error(error)
-			// const {
-			//     response: { data  },
-			//   }: any = error ?? {};
-
-			//   data?.message?.map((m : []) =>toast.error(m))
-			const {
-				response: { data }
-			} = error ?? {};
-			// data?.message?.map((m: []) =>toast.error(m))
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
+			handleApiError(error);
 		}
 	});
 }
@@ -70,18 +45,11 @@ export function useShopForgotPass() {
 	return useMutation(shopForgotPasswordInit, {
 		onSuccess: (data) => {
 			if (data?.data?.forgotpass_activation_token && data?.data?.message) {
-				// ?.data
-				// setShopForgotPasswordPAYLOAD
 				setShopForgotPasswordPAYLOAD(data?.data?.forgotpass_activation_token);
-				// toast.success('logged in successfully')
 				toast.success(data?.data?.message);
-
-				// history('/resetShopPassword');
 				navigate('/reset-password');
-				// window.location.replace('/rese')infomessage
 			} else if (data?.data?.infomessage) {
 				console.log('LoginError22', data);
-
 				toast.error(data?.data?.infomessage);
 			} else {
 				toast.info('something unexpected happened');
@@ -89,11 +57,7 @@ export function useShopForgotPass() {
 		},
 		onError: (error) => {
 			console.log('LoginError22', error);
-			const {
-				response: { data }
-			} = error ?? {};
-			// data?.message?.map((m: []) =>toast.error(m))
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
+			handleApiError(error);
 		}
 	});
 }
@@ -104,26 +68,12 @@ export function useResetShopPass() {
 		onSuccess: (data) => {
 			console.log('RESET', data);
 
-			//   console.log('LoginError22', data?.data?.infomessage);
-			//   console.log('LoginError33', data?.data?.data);
 			if (data?.data?.message & data?.data?.user) {
 				console.log('SuccessDATaA_____', data);
 				remove_SHOP_FORGOTPASS_TOKEN();
 				toast.success(data?.data?.message);
-
-				// history('/resetShopPassword');
-				// window.location.replace('/rese')infomessage
-			}
-			// else if (data?.data?.message) {
-			//   Array.isArray(data?.data?.message) ? data?.data?.message?.map((m) =>toast.error(m.message)) :toast.error(data?.data?.message);
-
-			//   //
-			//   //toast.error(data?.data?.infomessage);
-			//   return;
-			// }
-			else if (data?.data?.infomessage) {
+			} else if (data?.data?.infomessage) {
 				console.log('LoginError22', data?.data?.message);
-
 				toast.error(data?.data?.infomessage);
 			} else {
 				toast.info('something unexpected happened');
@@ -131,11 +81,7 @@ export function useResetShopPass() {
 		},
 		onError: (error) => {
 			console.log('LoginError22__', error);
-			const {
-				response: { data }
-			} = error ?? {};
-			// data?.message?.map((m: []) =>toast.error(m))
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
+			handleApiError(error);
 		}
 	});
 }

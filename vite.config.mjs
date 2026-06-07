@@ -49,6 +49,7 @@ export default defineConfig({
       "app/theme-layouts": "/src/app/theme-layouts",
       "app/utils": "/src/app/utils",
       "app/AppContext": "/src/app/AppContext",
+      "app/main": "/src/app/main",
     },
   },
   optimizeDeps: {

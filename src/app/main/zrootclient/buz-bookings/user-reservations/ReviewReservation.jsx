@@ -2,12 +2,9 @@ import _ from "@lodash";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
-import Box from "@mui/material/Box";
-import Switch from "@mui/material/Switch";
+import { useState } from "react";
 import {
   Button,
-  FormControlLabel,
   Backdrop,
   Dialog,
   DialogTitle,
@@ -18,53 +15,23 @@ import {
 import FusePageSimple from "@fuse/core/FusePageSimple";
 import useThemeMediaQuery from "@fuse/hooks/useThemeMediaQuery";
 import FuseLoading from "@fuse/core/FuseLoading";
-import NavLinkAdapter from "@fuse/core/NavLinkAdapter";
 import {
   useGetUserSingleTrip,
-  useReservationPaidUpdateMutation,
   useCancelUserReservation,
 } from "app/configs/data/server-calls/auth/userapp/a_bookings/use-reservations";
 import { useParams } from "react-router";
-import {
-  formatCurrency,
-  formatDateUtil,
-  generateClientUID,
-} from "src/app/main/vendors-shop/PosUtils";
-import { format } from "date-fns";
-import ClienttErrorPage from "../../components/ClienttErrorPage";
-import { useForm } from "react-hook-form";
+import { formatCurrency, formatDateUtil } from "src/app/main/vendors-shop/PosUtils";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Controller,
-  // useFormContext
-} from "react-hook-form";
 import { toast } from "react-toastify";
 import { PaystackButton } from "react-paystack";
 import { selectUser } from "src/app/auth/user/store/userSlice";
 import { useAppSelector } from "app/store/hooks";
-import { selectFuseCurrentLayoutConfig } from "@fuse/core/FuseSettings/fuseSettingsSlice";
 import { useVerifyPaystackPaymentMutation } from "app/configs/data/server-calls/auth/paystack-payments/usePaystackPaymentsRepo";
+import ClienttErrorPage from "../../components/ClienttErrorPage";
 import PlacedReservation from "./PlacedReservation";
 import MyAddresses from "./MyAddresses";
-
-const container = {
-  show: {
-    transition: {
-      staggerChildren: 0.04,
-    },
-  },
-};
-const item = {
-  hidden: {
-    opacity: 0,
-    y: 10,
-  },
-  show: {
-    opacity: 1,
-    y: 0,
-  },
-};
 
 /**
  * Form Validation Schema
@@ -72,25 +39,23 @@ const item = {
 const schema = z.object({
   name: z
     .string()
-    .nonempty("You must enter name as is in your ID")
+    .min(1, "You must enter name as is in your ID")
     .min(5, "The name must be at least 5 characters"),
   phone: z
     .string()
-    .nonempty("You must enter a phone for reaching you")
+    .min(1, "You must enter a phone for reaching you")
     .min(5, "The phone number must be at least 5 characters"),
   address: z
     .string()
-    .nonempty("You must enter an address as regulated by the government")
-    .min(5, "The adress must be at least 5 characters"),
+    .min(1, "You must enter an address as regulated by the government")
+    .min(5, "The address must be at least 5 characters"),
 });
 
 /**
  * The Courses page.
  */
 function ReviewReservation() {
-  const config = useAppSelector(selectFuseCurrentLayoutConfig);
   const user = useAppSelector(selectUser);
-  const paymentMethods = ["Paystack", "Flutterwave"];
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down("lg"));
 
   // State for MyAddresses modal
@@ -116,25 +81,14 @@ function ReviewReservation() {
   const { errors, isValid, dirtyFields } = formState;
   const { name, phone, address } = watch();
 
-  useEffect(() => {}, [singlereservation?.data?.reservation?.id]);
-
-  // const {
-  //   data: updatedPaymentData,
-  //   mutate: updatePayment,
-  //   isLoading: paymentLoading,
-  // } = useReservationPaidUpdateMutation();
-  // const { mutate: verifyPayment, data: verifyPaymentData } =
   const verifyPayment = useVerifyPaystackPaymentMutation();
-
-  // Cancel reservation mutation
   const cancelReservation = useCancelUserReservation();
 
-  const VITE_PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
-  const amount = parseInt(singlereservation?.data?.reservation?.totalPrice * 100);
+  const { VITE_PAYSTACK_PUBLIC_KEY } = import.meta.env;
+  const totalPrice = singlereservation?.data?.reservation?.totalPrice ?? 0;
+  const amount = Math.round(totalPrice * 100);
   const email = user?.email;
-  const vatRate =  parseInt(singlereservation?.data?.reservation?.totalPrice * 0.075)
-
-  console.log("VVAT RATE...>>", vatRate)
+  const vatRate = Math.round(totalPrice * 0.075);
 
   const onSuccess = async (paystackResponse) => {
     //1. Verify payment from backend
@@ -147,10 +101,10 @@ function ReviewReservation() {
     }
 
     const paymentMetaData = {
-      name: name,
-      phone: phone,
-      address: address,
-      amount: amount,
+      name,
+      phone,
+      address,
+      amount,
       vat: vatRate,
       reservationToPay: singlereservation?.data?.reservation?.id,
       paymentResult: paystackResponse,
@@ -230,7 +184,7 @@ function ReviewReservation() {
         className="flex flex-col flex-1 items-center justify-center h-full"
       >
         <ClienttErrorPage
-          message={" Error occurred while retriving your reservation for onward processing"}
+          message="Error occurred while retrieving your reservation for onward processing"
         />
       </motion.div>
     );
@@ -263,24 +217,17 @@ function ReviewReservation() {
               <div className="flex-1 w-full lg:w-2/3">
                 <div className="max-w-5xl mx-auto">
                   {singlereservation?.data?.reservation?.isPaid && (
-                    <>
-                      <span
-                        onClick={() => {}}
-                        className="cursor-pointer inline-flex  items-center gap-x-1.5 bg-green-500 dark:bg-white/10 text-success h-[45px] px-[14px] text-xs font-medium border border-normal dark:border-white/10 rounded-md sm:justify-center sm:px-0 "
-                      >
-                        {`Payment of ${formatCurrency(singlereservation?.data?.reservation?.totalPrice)} has been received for this reservation.`}
-                        <br />
-
-                        <Typography className="text-sm">
-                          Head on to see reservation detals {"==>"}
-                        </Typography>
-                      </span>
-                    </>
+                    <span className="inline-flex items-center gap-x-1.5 bg-green-500 dark:bg-white/10 text-success h-[45px] px-[14px] text-xs font-medium border border-normal dark:border-white/10 rounded-md sm:justify-center sm:px-0">
+                      {`Payment of ${formatCurrency(totalPrice)} has been received for this reservation.`}
+                      <br />
+                      <Typography className="text-sm">
+                        Head on to see reservation details {"==>"}
+                      </Typography>
+                    </span>
                   )}
 
                   {!singlereservation?.data?.reservation?.isPaid && (
-                    <>
-                      <motion.div
+                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
@@ -329,6 +276,7 @@ function ReviewReservation() {
                               </div>
                             </div>
                             <button
+                              type="button"
                               onClick={() => setAddressModalOpen(true)}
                               className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:shadow-md text-xs sm:text-sm font-semibold w-full sm:w-auto"
                               style={{
@@ -574,8 +522,7 @@ function ReviewReservation() {
                             </p>
                           </div>
                         </div>
-                      </motion.div>
-                    </>
+                    </motion.div>
                   )}
 
                   {/* Placed Reservation Component */}
@@ -599,7 +546,7 @@ function ReviewReservation() {
                       className="mb-4 max-h-[480px] overflow-y-auto border border-gray-200 rounded p-3"
                       style={{ lineHeight: "1.6" }}
                     >
-                      <div className="flex items-center mb-2"></div>
+                      <div className="flex items-center mb-2" />
                       <div className="bg-gray-100 p-2 rounded-lg pb-4">
                         <p className="text-blue-500 font-semibold">
                           Terms and condition on booking a reservation on Africanshops.
@@ -814,7 +761,7 @@ function ReviewReservation() {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Subtotal</span>
                         <span className="font-semibold text-gray-800">
-                          ₦ {formatCurrency(singlereservation?.data?.reservation?.totalPrice)}
+                          ₦ {formatCurrency(totalPrice)}
                         </span>
                       </div>
 
@@ -842,8 +789,7 @@ function ReviewReservation() {
                           </div>
                         </div>
                         <span className="font-semibold text-gray-800">
-                          ₦{" "}
-                          {formatCurrency(singlereservation?.data?.reservation?.totalPrice * 0.075)}
+                          ₦ {formatCurrency(totalPrice * 0.075)}
                         </span>
                       </div>
 
@@ -862,10 +808,7 @@ function ReviewReservation() {
                               backgroundClip: "text",
                             }}
                           >
-                            ₦{" "}
-                            {formatCurrency(
-                              singlereservation?.data?.reservation?.totalPrice * 1.075,
-                            )}
+                            ₦ {formatCurrency(totalPrice * 1.075)}
                           </span>
                           <p className="text-xs text-gray-500 mt-1">(incl. VAT)</p>
                         </div>
@@ -880,6 +823,7 @@ function ReviewReservation() {
                         className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors text-sm"
                       />
                       <button
+                        type="button"
                         className="px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:shadow-md"
                         style={{
                           background:
@@ -907,7 +851,7 @@ function ReviewReservation() {
                           `}
                         </style>
                         <PaystackButton
-                          text={`🔒 Pay ₦${formatCurrency(singlereservation?.data?.reservation?.totalPrice * 1.075)}`}
+                          text={`🔒 Pay ₦${formatCurrency(totalPrice * 1.075)}`}
                           className={`w-full py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all duration-300 ${
                             !isValid || _.isEmpty(dirtyFields) || !name || !phone || !address
                               ? ""
@@ -939,10 +883,9 @@ function ReviewReservation() {
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                           }}
-                          // reference={"BK" + generateClientUID() + "REF"}
-                          reference={"BK" + `${reservationId}`}
+                          reference={`BK${reservationId}`}
                           email={email}
-                          amount={singlereservation?.data?.reservation?.totalPrice * 1.075 * 100}
+                          amount={totalPrice * 1.075 * 100}
                           vat={vatRate}
                           publicKey={VITE_PAYSTACK_PUBLIC_KEY}
                           onSuccess={(reference) => onSuccess(reference)}
@@ -1016,12 +959,7 @@ function ReviewReservation() {
                         <div>
                           <p className="font-bold text-green-800 text-sm">Payment Successful!</p>
                           <p className="text-xs text-green-700 mt-1">
-                            ₦
-                            {formatCurrency(
-                              // singlereservation?.data?.reservation?.totalPrice * 1.075,
-                              vatRate
-                            )}{" "}
-                            paid. Track your trip below.
+                            ₦{formatCurrency(vatRate)} paid. Track your trip below.
                           </p>
                         </div>
                       </motion.div>
@@ -1639,7 +1577,7 @@ function ReviewReservation() {
                     <div className="flex justify-between pt-2 border-t border-red-200">
                       <span>Total Amount:</span>
                       <span className="font-bold text-red-700">
-                        ₦ {formatCurrency(singlereservation?.data?.reservation?.totalPrice * 1.075)}
+                        ₦ {formatCurrency(totalPrice * 1.075)}
                       </span>
                     </div>
                   </div>

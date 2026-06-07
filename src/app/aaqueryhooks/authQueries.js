@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
 import { userForgotPassword, userResetPasswordWithCode } from './routestoserver';
 import { resetForgotPassToken, setUserForgotPassCreedStorage } from './utils/opsUtils';
+import { handleApiError } from 'app/configs/data/utils/handleApiError';
 
 export function useStudentForgotPass() {
 	const navigate = useNavigate();
@@ -29,14 +30,7 @@ export function useStudentForgotPass() {
 			}
 		},
 		onError: (error) => {
-			const {
-				response: { data }
-			} = error ?? {};
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
-
-			// Array.isArray(data?.message)
-			// ? data?.message?.map((m) => window.alert('error-message', m))
-			// : window.alert(data?.message)
+			handleApiError(error);
 		}
 	});
 }
@@ -64,14 +58,7 @@ export function useStudentResetPass() {
 			}
 		},
 		onError: (error) => {
-			const {
-				response: { data }
-			} = error ?? {};
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
-
-			// Array.isArray(data?.message)
-			// ? data?.message?.map((m) => window.alert('error-message', m))
-			// : window.alert(data?.message)
+			handleApiError(error);
 		}
 	});
 }

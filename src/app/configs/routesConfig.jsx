@@ -4,16 +4,8 @@ import { Navigate } from "react-router-dom";
 import settingsConfig from "app/configs/settingsConfig";
 import SignInConfig from "../main/sign-in/SignInConfig";
 import SignUpConfig from "../main/sign-up/SignUpConfig";
-import SignOutConfig from "../main/sign-out/SignOutConfig";
 import Error404Page from "../main/404/Error404Page";
-import PagesConfigs from "../main/pages/pagesConfigs";
-import DashboardsConfigs from "../main/dashboards/dashboardsConfigs";
-import AppsConfigs from "../main/apps/appsConfigs";
-import UserInterfaceConfigs from "../main/user-interface/UserInterfaceConfigs";
-import DocumentationConfig from "../main/documentation/DocumentationConfig";
 import authRoleExamplesConfigs from "../main/auth/authRoleExamplesConfigs";
-import UsersAppConfig from "../main/users/user/UsersAppConfig";
-import StaffAppConfig from "../main/users/admin/StaffAppConfig";
 
 /***Authentication-based-config starts*/
 import SignAcceptInviteConfig from "../main/sign-accept-invite/SignAcceptInviteConfig";
@@ -28,25 +20,10 @@ import AfricanshopsFinanceDashboardAppConfig from "../main/africanshops-finance/
 import AfricanshopsMessengerAppConfig from "../main/africanshops-messenger/AfricanshopsMessengerAppConfig";
 
 import blogAppConfig from "../main/newsblog/blogAppConfig";
-import HelpCenterHome from "../main/apps/help-center/home/HelpCenterHome";
-import LandingCenterHome from "../main/vendors-shop/home/home/LandingCenterHome";
-import SingleProduct from "../main/zrootclient/buz-marketplace/shops/SingleProduct";
-import Cart from "../main/zrootclient/buz-marketplace/shops/Cart";
-import RealEstatesPage from "../main/zrootclient/buz-realestates/RealEstatesPage";
-import MerchantShopPage from "../main/zrootclient/buz-marketplace/shops/merchanyShopPage/MerchantShopPage";
-import RealEstateSinglePage from "../main/zrootclient/buz-realestates/RealEstateSinglePage";
-import FoodMartsPage from "../main/zrootclient/buz-foodmart/foodMartPage/FoodMartsPage";
-import VisitFoodMartPage from "../main/zrootclient/buz-foodmart/visitFoodMartPage/VisitFoodMartPage";
-import FoodMartsPageSecond from "../main/zrootclient/buz-foodmart/FoodMartsPageSecond";
-import FoodMartsPageSecondResponsive from "../main/zrootclient/buz-foodmart/FoodMartsPageSecondResponsive";
-
-import FoodMartSingleMenu from "../main/zrootclient/buz-foodmart/FoodMartSingleMenu";
 import userMarketPlacePagesConfig from "../main/zrootclient/buz-marketplace/userMarketPlacePagesConfig";
 import userFoodMartPagesConfig from "../main/zrootclient/buz-foodmart/userFoodMartPagesConfig";
 import UserSettingsAppConfig from "../main/zrootclient/settings/UserSettingsAppConfig";
 import userProfileAppConfig from "../main/zrootclient/profile/userProfileAppConfig";
-import MarketplaceProductsByCat from "../main/zrootclient/buz-marketplace/shops/marketplaceProductsByCat/MarketplaceProductsByCat";
-import SimpleWithSidebarsContentScrollComponent from "../main/zrootclient/afsh-page-layouts/simple/with-sidebars/SimpleWithSidebarsContentScrollComponent";
 import MarketplaceWithSidebarsContentScrollComponent from "../main/zrootclient/buz-marketplace/shops/marketplace/MarketplaceWithSidebarsContentScrollComponent";
 import BookingsPageWithSidebarsContentScrollComponent from "../main/zrootclient/buz-bookings/bookingsPage/BookingsPageWithSidebarsContentScrollComponent";
 import FoodMartWithSidebarsContentScrollPage from "../main/zrootclient/buz-foodmart/foodMartPage/FoodMartWithSidebarsContentScrollPage";
@@ -59,18 +36,27 @@ import MerchantShopPafeWithContentScrollPage from "../main/zrootclient/buz-marke
 import RealestatePageWithSidebarsContentScrollComponent from "../main/zrootclient/buz-realestates/realestatePage/RealestatePageWithSidebarsContentScrollComponent";
 import RealestateSinglePageWithSidebarsContentScroll from "../main/zrootclient/buz-realestates/realestateSinglePage/RealestateSinglePageWithSidebarsContentScroll";
 import userRealEstatePagesConfig from "../main/zrootclient/buz-realestates/realEstatePagesConfig";
-import LandingCenterHomeNew from "../main/vendors-shop/home/home/LandingCenterHomeNEW";
 import ModernLandingPage from "../main/vendors-shop/home/home/ModernLandingPage";
 import AboutUs from "../main/vendors-shop/home/home/AboutUs";
 import ContactUs from "../main/vendors-shop/home/home/ContactUs";
-import MerchantSubdomainConfig from "../main/merchant-subdomain/MerchantSubdomainConfig";
-import { isSubdomainRoute } from "app/utils/subdomainUtils";
 import MarketplaceDealsWithSidebarsContentScrollComponent from "../main/zrootclient/buz-marketplace/shops/marketplace/MarketplaceDealsWithSidebarsContentScrollComponent";
 
-// Check if we're on a merchant subdomain
-// DISABLED FOR VERCEL STAGING DEPLOYMENT
+/***Civic Platform Module Configs */
+import civicTaxPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPagesConfig";
+import civicTaxPublicPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPublicPagesConfig";
+import securityPagesConfig from "../main/zrootclient/buz-security/securityPagesConfig";
+import securityPublicPagesConfig from "../main/zrootclient/buz-security/securityPublicPagesConfig";
+import governancePagesConfig from "../main/zrootclient/buz-governance/governancePagesConfig";
+import governancePublicPagesConfig from "../main/zrootclient/buz-governance/governancePublicPagesConfig";
+import socialPagesConfig from "../main/zrootclient/buz-social/socialPagesConfig";
+import socialPublicPagesConfig from "../main/zrootclient/buz-social/socialPublicPagesConfig";
+import healthcarePagesConfig from "../main/zrootclient/buz-healthcare/healthcarePagesConfig";
+import healthcarePublicPagesConfig from "../main/zrootclient/buz-healthcare/healthcarePublicPagesConfig";
+import youthsportsPagesConfig from "../main/zrootclient/buz-youthsports/youthsportsPagesConfig";
+import youthsportsPublicPagesConfig from "../main/zrootclient/buz-youthsports/youthsportsPublicPagesConfig";
+
+// Subdomain routing is DISABLED for Vercel staging deployment
 // const onMerchantSubdomain = isSubdomainRoute();
-const onMerchantSubdomain = false; // DISABLED - Set to false to disable subdomain routing
 
 const routeConfigs = [
   /***
@@ -127,6 +113,7 @@ const routeConfigs = [
   UserSettingsAppConfig,
   userProfileAppConfig,
 
+  
   /****
    * ############################################################################################
    * Africanshops Dashboard Configs Ends Here
@@ -188,6 +175,23 @@ const routeConfigs = [
    * */
 
   /****
+   * #########################################################################################
+   * Africanshops CIVIC-PLATFORM Authenticated Routes start Here
+   * #########################################################################################
+   * */
+  civicTaxPagesConfig,
+  securityPagesConfig,
+  governancePagesConfig,
+  socialPagesConfig,
+  healthcarePagesConfig,
+  youthsportsPagesConfig,
+  /****
+   * #########################################################################################
+   * Africanshops CIVIC-PLATFORM Authenticated Routes end Here
+   * #########################################################################################
+   * */
+
+  /****
    *#################################################################################################
    * Start of Un-Authenticated pages are listed below here
    * #######################################################################
@@ -230,6 +234,23 @@ const routes = [
   //   : []),
 
   ...FuseUtils.generateRoutesFromConfigs(routeConfigs, settingsConfig.defaultAuth),
+
+  /****
+   * ##############################################################
+   * CIVIC PLATFORM — Public (unauthenticated) routes
+   * ##############################################################
+   */
+  ...civicTaxPublicPagesConfig,
+  ...securityPublicPagesConfig,
+  ...governancePublicPagesConfig,
+  ...socialPublicPagesConfig,
+  ...healthcarePublicPagesConfig,
+  ...youthsportsPublicPagesConfig,
+  /****
+   * ##############################################################
+   * CIVIC PLATFORM — Public routes end
+   * ##############################################################
+   */
 
   // Main domain homepage (ALWAYS ACTIVE - subdomain routing disabled)
   // ...(!onMerchantSubdomain
@@ -290,31 +311,7 @@ const routes = [
     },
     element: <ContactUs />,
   },
-  {
-    path: "/deals",
-    settings: {
-      layout: {
-        config: {
-          navbar: {
-            display: false,
-          },
-          toolbar: {
-            display: true,
-          },
-          footer: {
-            display: false,
-          },
-          leftSidePanel: {
-            display: false,
-          },
-          rightSidePanel: {
-            display: false,
-          },
-        },
-      },
-    },
-    element: <MarketplaceDealsWithSidebarsContentScrollComponent />,
-  },
+  
   {
     path: "loading",
     element: <FuseLoading />,
@@ -363,7 +360,7 @@ const routes = [
       },
     },
     element: <BookingsPageWithSidebarsContentScrollComponent />,
-  }, //(Msvs => Done)
+  }, // (Msvs => Done)
 
   {
     path: "/bookings/listings/:bookingId/view",
@@ -389,7 +386,7 @@ const routes = [
       },
     },
     element: <BookingsSinglePageWithSidebarsContentScroll />,
-  }, //(Msvs => Done)
+  }, // (Msvs => Done)
 
   /****
    * ##############################################################
@@ -519,7 +516,7 @@ const routes = [
       },
     },
     element: <MarketplaceWithSidebarsContentScrollComponent />,
-  }, //(Msvs => Done)
+  }, // (Msvs => Done)
 
   {
     path: "/marketplace/product/:productSlug/view",
@@ -546,7 +543,7 @@ const routes = [
     },
     // element: <SingleProduct />,
     element: <SingleProductWithContentScrollPage />,
-  }, //(Msvs => Done)
+  }, // (Msvs => Done)
 
   {
     path: "/marketplace/products/:id/by-category",
@@ -574,6 +571,32 @@ const routes = [
     // element: <MarketplaceProductsByCat />,
 
     element: <MarketplaceProductsByCatWithContentScrollPage />,
+  },
+
+  {
+    path: "/deals",
+    settings: {
+      layout: {
+        config: {
+          navbar: {
+            display: false,
+          },
+          toolbar: {
+            display: true,
+          },
+          footer: {
+            display: false,
+          },
+          leftSidePanel: {
+            display: false,
+          },
+          rightSidePanel: {
+            display: false,
+          },
+        },
+      },
+    },
+    element: <MarketplaceDealsWithSidebarsContentScrollComponent />,
   },
 
   {
@@ -641,7 +664,7 @@ const routes = [
       },
     },
     // element: <FoodMartsPage />,
-    element: <FoodMartWithSidebarsContentScrollPage />, //(Msvs => Done)
+    element: <FoodMartWithSidebarsContentScrollPage />, // (Msvs => Done)
   },
 
   {
@@ -669,7 +692,7 @@ const routes = [
     },
     // element: <VisitFoodMartPage />,
     element: <VisitFoodMartWithContentScrollPage />,
-  }, //(Mcsvs => Done)
+  }, // (Mcsvs => Done)
 
   {
     path: "/foodmarts/:rcsId/menu/:menuSlug/view",
@@ -696,7 +719,7 @@ const routes = [
     },
     // element: <FoodMartSingleMenu />,
     element: <FoodMartSingleMenuWithContentScrollPage />,
-  }, //(Mcsvs => Done)
+  }, // (Mcsvs => Done)
 
   /****
    * ##############################################################

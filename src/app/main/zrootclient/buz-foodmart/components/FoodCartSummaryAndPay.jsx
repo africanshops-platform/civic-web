@@ -1,17 +1,17 @@
 import _ from "@lodash";
 import { motion } from "framer-motion";
-import { usePayAndPlaceFoodOrder } from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
-import { useAppSelector } from "app/store/hooks";
+import { useState, useEffect } from "react";
 import { PaystackButton } from "react-paystack";
 import { toast } from "react-toastify";
-import { selectUser } from "src/app/auth/user/store/userSlice";
+import { usePayAndPlaceFoodOrder } from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
+import { useAppSelector } from "app/store/hooks";
+import { selectUser } from "../../../../auth/user/store/userSlice";
 import {
   calculateCartTotalAmount,
   formatCurrency,
   generateClientUID,
   getFoodVendorSession,
-} from "src/app/main/vendors-shop/PosUtils";
-import { useState, useEffect } from "react";
+} from "../../../vendors-shop/PosUtils";
 
 // Haversine distance in kilometres
 const haversineKm = (lat1, lng1, lat2, lng2) => {
@@ -52,7 +52,7 @@ const VAT_RATES = {
   4: { rate: 0.18,  name: "South Africa", label: "VAT (18%)" },
 };
 
-const FoodCartSummaryAndPay = ({
+function FoodCartSummaryAndPay({
   cartSession,
   intemsInCart,
   methodOfPay,
@@ -68,7 +68,7 @@ const FoodCartSummaryAndPay = ({
   dirtyFields,
   isValid,
   setIsProcessingPayment,
-}) => {
+}) {
   const user = useAppSelector(selectUser);
 
   const [deliveryFee, setDeliveryFee] = useState(1000);
@@ -112,7 +112,7 @@ const FoodCartSummaryAndPay = ({
     VAT_RATES[orderCountryDestination] || VAT_RATES[1];
   const vatAmount = Math.round(subtotal * taxInfo.rate);
 
-  const grandTotal = parseInt(subtotal || 0) + parseInt(deliveryFee) + parseInt(vatAmount);
+  const grandTotal = parseInt(subtotal || 0, 10) + parseInt(deliveryFee, 10) + parseInt(vatAmount, 10);
 
   const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
   const { mutate: verifyPaymentAndCreateOrder, isLoading: payFoodLoading } =
@@ -126,9 +126,10 @@ const FoodCartSummaryAndPay = ({
     try {
       const payloadData = getFoodVendorSession();
       const orderData = {
-        refOrderId: "AFSHFMKT" + (cartSession?.id || generateClientUID()),
+        //|| generateClientUID()
+        refOrderId: `AFSHFMKT${cartSession?.id}`,
         foodCartItems: intemsInCart,
-        itemsPrice: parseInt(subtotal),
+        itemsPrice: parseInt(subtotal, 10),
         shippingPrice: deliveryFee,
         taxPrice: vatAmount,
         totalPrice: grandTotal,
@@ -284,6 +285,7 @@ const FoodCartSummaryAndPay = ({
             className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors text-sm"
           />
           <button
+            type="button"
             className="px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:shadow-md"
             style={{
               background: "linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.1) 100%)",
@@ -323,7 +325,7 @@ const FoodCartSummaryAndPay = ({
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 }}
-                reference={"AFSHFMKT" + (cartSession?.id || generateClientUID())}
+                reference={`AFSHFMKT${cartSession?.id || generateClientUID()}`}
                 email={user?.email}
                 amount={grandTotal * 100}
                 publicKey={publicKey}
@@ -355,6 +357,7 @@ const FoodCartSummaryAndPay = ({
           {/* Flutterwave */}
           {methodOfPay === "FLUTTERWAVE" && (
             <button
+              type="button"
               className="w-full py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base transition-all duration-300"
               style={{
                 background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
@@ -369,6 +372,7 @@ const FoodCartSummaryAndPay = ({
           {/* Pay on Delivery */}
           {methodOfPay === "PAYONDELIVERY" && (
             <button
+              type="button"
               className="w-full py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base transition-all duration-300"
               style={{
                 background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
@@ -412,6 +416,6 @@ const FoodCartSummaryAndPay = ({
       </div>
     </motion.div>
   );
-};
+}
 
 export default FoodCartSummaryAndPay;

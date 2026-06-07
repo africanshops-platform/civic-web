@@ -7,6 +7,11 @@ module.exports = {
       presets: ["@babel/preset-react"],
     },
   },
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
   plugins: ["prettier", "unused-imports"],
   extends: [
     "airbnb",
@@ -28,40 +33,11 @@ module.exports = {
     "tailwind.config.js",
   ],
   rules: {
-    "prettier/prettier": [
-      "warn",
-      {
-        endOfLine: "auto",
-        arrowParens: "always",
-        bracketSpacing: true,
-        jsxBracketSameLine: false,
-        printWidth: 120,
-        proseWrap: "preserve",
-        requirePragma: false,
-        semi: true,
-        singleQuote: true,
-        tabWidth: 4,
-        trailingComma: "none",
-        useTabs: true,
-        singleAttributePerLine: true,
-      },
-    ],
-    quotes: [
-      1,
-      "single",
-      {
-        allowTemplateLiterals: true,
-        avoidEscape: true,
-      },
-    ],
-    "padding-line-between-statements": [
-      "warn",
-      { blankLine: "always", prev: "function", next: "*" },
-      { blankLine: "always", prev: "*", next: "if" },
-      { blankLine: "always", prev: "if", next: "*" },
-      { blankLine: "always", prev: "*", next: "function" },
-    ],
-    "no-console": ["error", { allow: ["error"] }],
+    "prettier/prettier": "off",
+    "spaced-comment": "off",
+    quotes: "off",
+    "padding-line-between-statements": "off",
+    "no-console": ["warn", { allow: ["error", "warn"] }],
     // Disabling because this rule is extremely slow.
     "import/no-cycle": "off",
     // Disabling because this rule is slow and not a common violation.

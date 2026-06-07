@@ -8,7 +8,7 @@ import {
 	getSingleServiceType,
 	updateServiceTypesRoute
 } from './routestoserver';
-// import { resetForgotPassToken, setUserForgotPassCreedStorage } from './utils/opsUtils';
+import { handleApiError } from 'app/configs/data/utils/handleApiError';
 
 export default function useGetAllServicetypes() {
 	return useQuery(['__getAllServiceTypes'], getAllServiceTypes);
@@ -16,10 +16,8 @@ export default function useGetAllServicetypes() {
 
 /** *Get Listing By Its ID */
 export function useGetSingleServiveType(params) {
-	// console.log('GETING SERVICETYPE-PARAMS', params)
 	return useQuery(['__getAllServiceTypesById', params], () => getSingleServiceType(params), {
 		enabled: Boolean(params)
-		// staleTime: 5000,
 	});
 }
 
@@ -30,28 +28,15 @@ export function useCreateServiceType() {
 		onSuccess: (data) => {
 			if (data?.data?.success && data?.data?.servicetype) {
 				toast.success('service type created successfully');
-				// window.alert(data?.data?.message )
 				navigate(`/packages/servicetypes`);
 			} else if (data?.data?.error) {
-				toast.error(
-					data?.data?.error?.response && error?.response?.data?.message
-						? error?.response?.data?.message
-						: error?.message
-				);
-				// window.alert(data?.data?.error?.message)
+				toast.error(data?.data?.error?.message || 'An error occurred');
 			} else {
 				toast.info('something unexpected happened');
 			}
 		},
 		onError: (error) => {
-			const {
-				response: { data }
-			} = error ?? {};
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
-
-			// Array.isArray(data?.message)
-			// ? data?.message?.map((m) => window.alert('error-message', m))
-			// : window.alert(data?.message)
+			handleApiError(error);
 		}
 	});
 }
@@ -63,28 +48,15 @@ export function useUpdateServiceType() {
 		onSuccess: (data) => {
 			if (data?.data?.success && data?.data?.servicetype) {
 				toast.success('service type updated successfully');
-				// window.alert(data?.data?.message )
 				navigate(`/packages/servicetypes`);
 			} else if (data?.data?.error) {
-				toast.error(
-					data?.data?.error?.response && error?.response?.data?.message
-						? error?.response?.data?.message
-						: error?.message
-				);
-				// window.alert(data?.data?.error?.message)
+				toast.error(data?.data?.error?.message || 'An error occurred');
 			} else {
 				toast.info('something unexpected happened');
 			}
 		},
 		onError: (error) => {
-			const {
-				response: { data }
-			} = error ?? {};
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
-
-			// Array.isArray(data?.message)
-			// ? data?.message?.map((m) => window.alert('error-message', m))
-			// : window.alert(data?.message)
+			handleApiError(error);
 		}
 	});
 }
@@ -96,28 +68,15 @@ export function useDeleteServiceType() {
 		onSuccess: (data) => {
 			if (data?.data?.success && data?.data?.servicetype) {
 				toast.success('service type deleted successfully');
-				// window.alert(data?.data?.message )
 				navigate(`/packages/servicetypes`);
 			} else if (data?.data?.error) {
-				toast.error(
-					data?.data?.error?.response && error?.response?.data?.message
-						? error?.response?.data?.message
-						: error?.message
-				);
-				// window.alert(data?.data?.error?.message)
+				toast.error(data?.data?.error?.message || 'An error occurred');
 			} else {
 				toast.info('something unexpected happened');
 			}
 		},
 		onError: (error) => {
-			const {
-				response: { data }
-			} = error ?? {};
-			Array.isArray(data?.message) ? data?.message?.map((m) => toast.error(m)) : toast.error(data?.message);
-
-			// Array.isArray(data?.message)
-			// ? data?.message?.map((m) => window.alert('error-message', m))
-			// : window.alert(data?.message)
+			handleApiError(error);
 		}
 	});
 }

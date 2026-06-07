@@ -1,17 +1,17 @@
 import { styled } from "@mui/material/styles";
-import FusePageSimple from "@fuse/core/FusePageSimple";
+// import FusePageSimple from "@fuse/core/FusePageSimple";
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import useThemeMediaQuery from "@fuse/hooks/useThemeMediaQuery";
+import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
+import useGetAllProducts from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
+// import { useForm } from "react-hook-form";
+// import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
+// import { getLgasByStateId, getStateByCountryId } from "app/configs/data/client/RepositoryClient";
+import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import DemoHeader from "./shared-components/DemoHeaderProduct";
 import DemoContentProduct from "./shared-components/DemoContentProduct";
 import DemoSidebar from "./shared-components/DemoSidebarProduct";
 import DemoSidebarRight from "./shared-components/MarketplaceDemoSidebarRight";
-import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
-import useGetAllProducts from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
-import { useForm } from "react-hook-form";
-import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
-import { getLgasByStateId, getStateByCountryId } from "app/configs/data/client/RepositoryClient";
-import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import ServiceStatusLandingPage from "../../../aapp-settings-from-admin/ServiceStatusLandingPage";
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({

@@ -21,6 +21,7 @@ const CONFETTI_COLORS = [
   "bg-red-400",
 ];
 
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -52,7 +53,8 @@ function FoodOrderSuccess({ userName, orderId, orderDate, totalAmount, itemCount
           {[...Array(50)].map((_, i) => {
             const shapes = ["rounded-full", "rounded-sm", "rounded"];
             const shape = shapes[i % shapes.length];
-            const size = Math.random() > 0.5 ? "w-4 h-4" : Math.random() > 0.3 ? "w-5 h-5" : "w-6 h-6";
+            const sizes = ["w-4 h-4", "w-5 h-5", "w-6 h-6"];
+            const size = sizes[Math.floor(Math.random() * sizes.length)];
             return (
               <motion.div
                 key={i}

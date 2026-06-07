@@ -1,6 +1,6 @@
 import { lazy } from "react";
-import { Navigate } from "react-router-dom";
-import { authRoles } from "src/app/auth";
+// import { Navigate } from "react-router-dom";
+// import { authRoles } from "src/app/auth";
 // import UserReservationDetailWithSidebarsContentScrollPage from "./userReservationDetailPage/UserReservationDetailWithSidebarsContentScrollPage";
 
 const ModernReversedResetPasswordPage = lazy(() => import("./ModernReversedResetPasswordPage"));

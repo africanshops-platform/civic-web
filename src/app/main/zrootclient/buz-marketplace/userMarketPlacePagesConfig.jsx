@@ -1,6 +1,6 @@
 import { lazy } from "react";
-import { Navigate } from "react-router-dom";
-import { authRoles } from "src/app/auth";
+// import { Navigate } from "react-router-dom";
+// import { authRoles } from "src/app/auth";
 // import MarketplaceOrderDetailWithSidebarsContentScrollPage from './shops/marketplaceOrderDetailPage/MarketplaceOrderDetailWithSidebarsContentScrollPage';
 
 const Cart = lazy(() => import("./shops/Cart"));

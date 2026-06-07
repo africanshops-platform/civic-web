@@ -1,4 +1,4 @@
-import SignUpPage from "./SignUpPage";
+// import SignUpPage from "./SignUpPage";
 import authRoles from "../../auth/authRoles";
 import RegisterUserPage from "./RegisterUserPage";
 

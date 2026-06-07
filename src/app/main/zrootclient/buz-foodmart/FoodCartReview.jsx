@@ -1,11 +1,9 @@
-import _ from "@lodash";
+// import _ from "@lodash";
 import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { motion } from "framer-motion";
-import { useEffect, useState, Suspense, lazy } from "react";
 import {
   Button,
   Backdrop,
@@ -17,15 +15,13 @@ import {
 } from "@mui/material";
 import FusePageSimple from "@fuse/core/FusePageSimple";
 import useThemeMediaQuery from "@fuse/hooks/useThemeMediaQuery";
-import { formatCurrency } from "src/app/main/vendors-shop/PosUtils";
-import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
+import { useEffect, useState, Suspense, lazy } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Controller } from "react-hook-form";
-import { toast } from "react-toastify";
-import { selectUser } from "src/app/auth/user/store/userSlice";
 import { useAppSelector } from "app/store/hooks";
-import FoodCartSummaryAndPay from "./components/FoodCartSummaryAndPay";
+import { toast } from "react-toastify";
 import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
 import {
   getLgasByStateId,
@@ -33,7 +29,15 @@ import {
   getStateByCountryId,
 } from "app/configs/data/client/RepositoryClient";
 import { useGetMyFoodCart } from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
-import MyAddresses from "./../../zrootclient/buz-bookings/user-reservations/MyAddresses";
+// import { formatCurrency } from "app/main/vendors-shop/PosUtils";
+// import { selectUser } from "app/auth/user/store/userSlice";
+import FoodCartSummaryAndPay from "./components/FoodCartSummaryAndPay";
+import MyAddresses from "../buz-bookings/user-reservations/MyAddresses";
+import { formatCurrency } from "../../vendors-shop/PosUtils";
+import { selectUser } from "../../../auth/user/store/userSlice";
+
+
+
 
 const ShopLocationMap = lazy(() => import("../buz-marketplace/components/maps/ShopLocationMap"));
 const ShopLocationMapLoadingPlaceholder = lazy(
@@ -104,7 +108,6 @@ function SectionHeader({ icon, title, subtitle, action }) {
  * Individual food cart item row in the Order Review section
  */
 function ReviewFoodCartItem({ cartItem }) {
-  console.log("ReviewFoodCartItem cartItem:", cartItem);
   const image = cartItem?.martMenu?.imageSrcs?.[0]?.url || cartItem?.imageSrcs?.[0]?.url;
   const title = cartItem?.martMenu?.title || cartItem?.title || "Menu Item";
   const price = cartItem?.martMenu?.price ?? cartItem?.price ?? 0;
@@ -244,8 +247,6 @@ function FoodCartReview() {
   const cartProducts = foodCart?.data?.userFoodCartSession?.cartProducts || [];
   const cartSession = foodCart?.data?.userFoodCartSession || {};
 
-  console.log("Cart-check-products", cartProducts)
-
   const inputSx = {
     "& .MuiOutlinedInput-root": {
       "&:hover fieldset": { borderColor: "#f97316" },
@@ -288,6 +289,7 @@ function FoodCartReview() {
                       subtitle="Required for food order delivery"
                       action={
                         <button
+                          type="button"
                           onClick={() => setAddressModalOpen(true)}
                           className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold w-full sm:w-auto transition-all hover:shadow-md"
                           style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)", color: "white" }}
@@ -753,6 +755,7 @@ function FoodCartReview() {
                   <div className="flex flex-col gap-4 lg:gap-6 lg:h-[calc(100vh-120px)]">
                     {/* Payment Summary — 40% height on desktop */}
                     <div className="lg:h-[40%] lg:min-h-[350px] lg:max-h-[500px]">
+                      {/* FoodCartSummaryAndPay */}
                       <FoodCartSummaryAndPay
                         cartSession={cartSession}
                         intemsInCart={cartProducts}

@@ -8,6 +8,7 @@ import DemoSidebarRight from "./shared-components/DemoSidebarRight";
 import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
 import { useGetAuthUserFoodOrders } from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
 
+
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
   "& .FusePageSimple-header": {
     backgroundColor: theme.palette.background.paper,

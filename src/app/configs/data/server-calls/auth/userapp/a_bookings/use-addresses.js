@@ -8,6 +8,7 @@ import {
 	setDefaultUserAddressApi
 } from 'app/configs/data/client/RepositoryAuthClient';
 import { toast } from 'react-toastify';
+import { handleApiError } from 'app/configs/data/utils/handleApiError';
 
 /** *
  * ==========================================================================
@@ -36,9 +37,7 @@ export function useCreateUserAddress() {
 	const queryClient = useQueryClient();
 
 	return useMutation(
-		(formData) => {
-			return createUserAddressApi(formData);
-		},
+		(formData) => createUserAddressApi(formData),
 		{
 			onSuccess: (data) => {
 				if (data?.data?.success) {
@@ -49,12 +48,7 @@ export function useCreateUserAddress() {
 				}
 			},
 			onError: (error) => {
-				const {
-					response: { data }
-				} = error ?? {};
-				Array.isArray(data?.message)
-					? data?.message?.map((m) => toast.error(m))
-					: toast.error(data?.message || 'Failed to create address');
+				handleApiError(error, 'Failed to create address');
 			}
 		}
 	);
@@ -65,9 +59,7 @@ export function useUpdateUserAddress() {
 	const queryClient = useQueryClient();
 
 	return useMutation(
-		({ addressId, formData }) => {
-			return updateUserAddressApi(addressId, formData);
-		},
+		({ addressId, formData }) => updateUserAddressApi(addressId, formData),
 		{
 			onSuccess: (data) => {
 				if (data?.data?.success) {
@@ -79,12 +71,7 @@ export function useUpdateUserAddress() {
 				}
 			},
 			onError: (error) => {
-				const {
-					response: { data }
-				} = error ?? {};
-				Array.isArray(data?.message)
-					? data?.message?.map((m) => toast.error(m))
-					: toast.error(data?.message || 'Failed to update address');
+				handleApiError(error, 'Failed to update address');
 			}
 		}
 	);
@@ -95,9 +82,7 @@ export function useDeleteUserAddress() {
 	const queryClient = useQueryClient();
 
 	return useMutation(
-		(addressId) => {
-			return deleteUserAddressApi(addressId);
-		},
+		(addressId) => deleteUserAddressApi(addressId),
 		{
 			onSuccess: (data) => {
 				if (data?.data?.success) {
@@ -108,12 +93,7 @@ export function useDeleteUserAddress() {
 				}
 			},
 			onError: (error) => {
-				const {
-					response: { data }
-				} = error ?? {};
-				Array.isArray(data?.message)
-					? data?.message?.map((m) => toast.error(m))
-					: toast.error(data?.message || 'Failed to delete address');
+				handleApiError(error, 'Failed to delete address');
 			}
 		}
 	);
@@ -124,9 +104,7 @@ export function useSetDefaultUserAddress() {
 	const queryClient = useQueryClient();
 
 	return useMutation(
-		(addressId) => {
-			return setDefaultUserAddressApi(addressId);
-		},
+		(addressId) => setDefaultUserAddressApi(addressId),
 		{
 			onSuccess: (data) => {
 				if (data?.data?.success) {
@@ -137,12 +115,7 @@ export function useSetDefaultUserAddress() {
 				}
 			},
 			onError: (error) => {
-				const {
-					response: { data }
-				} = error ?? {};
-				Array.isArray(data?.message)
-					? data?.message?.map((m) => toast.error(m))
-					: toast.error(data?.message || 'Failed to set default address');
+				handleApiError(error, 'Failed to set default address');
 			}
 		}
 	);

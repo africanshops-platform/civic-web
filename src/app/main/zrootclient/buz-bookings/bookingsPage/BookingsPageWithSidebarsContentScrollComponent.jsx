@@ -1,16 +1,14 @@
 import { styled } from "@mui/material/styles";
-import FusePageSimple from "@fuse/core/FusePageSimple";
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
+import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
 import useThemeMediaQuery from "@fuse/hooks/useThemeMediaQuery";
+import useGetAllBookingProperties from "app/configs/data/server-calls/auth/userapp/a_bookings/useBookingPropertiesRepo";
+import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import DemoHeader from "./shared-components/DemoHeader";
 import DemoContent from "./shared-components/DemoContent";
 import DemoSidebar from "./shared-components/DemoSidebar";
 import DemoSidebarRight from "./shared-components/DemoSidebarRight";
-import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
-import useGetAllBookingProperties from "app/configs/data/server-calls/auth/userapp/a_bookings/useBookingPropertiesRepo";
-import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import ServiceStatusLandingPage from "../../aapp-settings-from-admin/ServiceStatusLandingPage";
-// import ServiceStatusLandingPage from "app/main/zrootclient/aapp-settings-from-admin/ServiceStatusLandingPage";
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
   "& .FusePageSimple-header": {
@@ -82,11 +80,11 @@ function ActiveBookingsPage() {
 
       // Price range
       if (newFilters.priceRange && Array.isArray(newFilters.priceRange)) {
-        apiFilters.minPrice = newFilters.priceRange[0];
-        apiFilters.maxPrice = newFilters.priceRange[1];
+        apiFilters.minPrice = newFilters?.priceRange[0];
+        apiFilters.maxPrice = newFilters?.priceRange[1];
       }
 
-      // Room count
+      // Room count 
       if (newFilters.roomCount) {
         apiFilters.roomCount = newFilters.roomCount;
       }
@@ -242,12 +240,6 @@ function BookingsPageWithSidebarsContentScrollComponent() {
     [appSettings?.data?.payload?.bookingsServiceStatus],
   );
 
-  // Log app settings to console only when bookingsServiceStatus changes (development only)
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development" && bookingsServiceStatus !== undefined) {
-      console.log("Bookings Service Status:", bookingsServiceStatus);
-    }
-  }, [bookingsServiceStatus]);
 
   return (
     <ServiceStatusLandingPage

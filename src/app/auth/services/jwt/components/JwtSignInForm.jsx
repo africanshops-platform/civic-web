@@ -13,9 +13,9 @@ import { LockOutlined, RefreshOutlined } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import Button from "@mui/material/Button";
 import { motion } from "framer-motion";
-import useJwtAuth from "../useJwtAuth";
 import { toast } from "react-toastify";
 import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
+import useJwtAuth from "../useJwtAuth";
 
 const defaultValues = {
   email: "",
@@ -139,7 +139,7 @@ function JwtSignInForm() {
 
   function onSubmit({ email, password }) {
     signIn({ email, password }).catch((error) => {
-      console.log("FormJSXError", error);
+      console.error("FormJSXError", error);
       toast.error(error?.message);
     });
   }
