@@ -1,19 +1,20 @@
 import { styled } from "@mui/material/styles";
-import FuseMessage from "@fuse/core/FuseMessage";
+// import FuseMessage from "@fuse/core/FuseMessage";
 import AppContext from "app/AppContext";
 import { lazy, memo, Suspense, useContext } from "react";
 import { useRoutes } from "react-router-dom";
 import { selectFuseCurrentLayoutConfig } from "@fuse/core/FuseSettings/fuseSettingsSlice";
-import Configurator from "app/theme-layouts/shared-components/configurator/Configurator";
+// import Configurator from "app/theme-layouts/shared-components/configurator/Configurator";
 import FuseSuspense from "@fuse/core/FuseSuspense";
 import { useAppSelector } from "app/store/hooks";
-import FooterLayout1 from "./components/FooterLayout1";
+// import FooterLayout1 from "./components/FooterLayout1";
 // import LeftSideLayout1 from './components/LeftSideLayout1';
 // import NavbarWrapperLayout1 from './components/NavbarWrapperLayout1';
 // import RightSideLayout1 from "./components/RightSideLayout1";
+import { useRouteData } from "src/app/main/zrootclient/useRouteData";
 import ToolbarLayout1 from "./components/ToolbarLayout1";
 import FooterAfricanshops from "./components/FooterAfricanshops";
-import { useRouteData } from "src/app/main/zrootclient/useRouteData";
+
 
 const FuseDialog = lazy(() => import("@fuse/core/FuseDialog/FuseDialog"));
 const Root = styled("div")(({ config }) => ({
@@ -59,9 +60,9 @@ function Layout1(props) {
             {children}
           </div>
 
-          {getUrlString && <>{getUrlString === "home" && <FooterAfricanshops />}</>}
+          {getUrlString && <div>{getUrlString === "home" && <FooterAfricanshops />}</div>}
 
-          {getRootUrlString && <>{getRootUrlString === "/" && <FooterAfricanshops />}</>}
+          {getRootUrlString && <div>{getRootUrlString === "/" && <FooterAfricanshops />}</div>}
         </main>
       </div>
 

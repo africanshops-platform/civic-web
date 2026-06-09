@@ -42,6 +42,7 @@ import ContactUs from "../main/vendors-shop/home/home/ContactUs";
 import MarketplaceDealsWithSidebarsContentScrollComponent from "../main/zrootclient/buz-marketplace/shops/marketplace/MarketplaceDealsWithSidebarsContentScrollComponent";
 
 /***Civic Platform Module Configs */
+import KycManagePage from "../main/zrootclient/civic-shared/kyc/KycManagePage";
 import civicTaxPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPagesConfig";
 import civicTaxPublicPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPublicPagesConfig";
 import securityPagesConfig from "../main/zrootclient/buz-security/securityPagesConfig";
@@ -251,6 +252,22 @@ const routes = [
    * CIVIC PLATFORM — Public routes end
    * ##############################################################
    */
+
+  {
+    path: "/account/kyc",
+    settings: {
+      layout: {
+        config: {
+          navbar: { display: false },
+          toolbar: { display: true },
+          footer: { display: false },
+          leftSidePanel: { display: false },
+          rightSidePanel: { display: false },
+        },
+      },
+    },
+    element: <KycManagePage />,
+  },
 
   // Main domain homepage (ALWAYS ACTIVE - subdomain routing disabled)
   // ...(!onMerchantSubdomain

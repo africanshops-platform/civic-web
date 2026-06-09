@@ -1,0 +1,15 @@
+https://www.youtube.com/watch?v=cGFKc-XRYKQ
+
+https://www.youtube.com/watch?v=kTPGE_5QpNg
+
+https://www.youtube.com/watch?v=BYCKvM8eZGA
+
+https://www.youtube.com/watch?v=z_dbnYHAQYg
+
+https://www.youtube.com/watch?v=9dKA2hq4vf0
+
+
+ Bash(pip3 install pdfplumber reportlab pypdf --quiet 2>&1 | tail -5)
+  ⎿  /bin/bash: line 1: pip3: command not found
+
+● Bash(python3 -m pip install pdfplumber reportlab pypdf --quiet 2>&1 | tail -5)

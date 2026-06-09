@@ -2,6 +2,9 @@ import { useState, useMemo } from 'react';
 import { Typography, Button, Chip, Fab } from '@mui/material';
 import { Shield, Add } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAppSelector } from "app/store/hooks";
+// import Logo from "app/theme-layouts/shared-components/Logo";
+import { selectUser } from "src/app/auth/user/store/userSlice";
 import { Link } from 'react-router-dom';
 import IncidentMap from '../components/IncidentMap';
 import IncidentCard from '../components/IncidentCard';
@@ -24,6 +27,7 @@ const F = {
 };
 
 export default function SecurityMapPublicPage() {
+   const user = useAppSelector(selectUser);
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [activeFilter,     setActiveFilter]     = useState('');
 
@@ -191,6 +195,9 @@ export default function SecurityMapPublicPage() {
               <IncidentCard incident={selectedIncident} />
 
               {/* Sign-in nudge */}
+
+
+
               <div style={{
                 marginTop: 'clamp(16px,2vw,24px)',
                 padding: 'clamp(14px,2vw,20px)',
@@ -198,21 +205,33 @@ export default function SecurityMapPublicPage() {
                 background: 'rgba(234,88,12,0.12)',
                 border: '1px solid rgba(234,88,12,0.3)',
               }}>
-                <Typography sx={{ color: '#fb923c', fontWeight: 700, fontSize: F.panelBody, mb: 1 }}>
-                  🔒 Full details after sign-in
-                </Typography>
-                <Typography sx={{ color: 'rgba(255,255,255,0.65)', fontSize: F.panelBody, lineHeight: 1.7 }}>
-                  Sign in to see the full response timeline, assigned officers, and to report nearby incidents.
-                </Typography>
-                <Button component={Link} to="/sign-in" fullWidth variant="contained"
-                  sx={{
-                    mt: 2, background: 'linear-gradient(135deg,#dc2626,#991b1b)',
-                    color: 'white', fontWeight: 700, borderRadius: '12px',
-                    textTransform: 'none', fontSize: F.btnPrimary,
-                    py: { xs: 1.3, sm: 1.5 },
-                  }}>
-                  Sign In
-                </Button>
+                {user?.email ? (
+                 <Button component={Link} to="/security/soc/dashboard" fullWidth variant="contained"
+                      sx={{
+                        mt: 2, background: 'linear-gradient(135deg,#dc2626,#991b1b)',
+                        color: 'white', fontWeight: 700, borderRadius: '12px',
+                        textTransform: 'none', fontSize: F.btnPrimary,
+                        py: { xs: 1.3, sm: 1.5 },
+                      }}>
+                      SOC Dashboard
+                    </Button>
+                ) : (
+                  <div>
+                    <Typography sx={{ color: 'rgba(255,255,255,0.65)', fontSize: F.panelBody, lineHeight: 1.7 }}>
+                      Sign in to see the full response timeline, assigned officers, and to report nearby incidents.
+                    </Typography>
+                    <Button component={Link} to="/sign-in" fullWidth variant="contained"
+                      sx={{
+                        mt: 2, background: 'linear-gradient(135deg,#dc2626,#991b1b)',
+                        color: 'white', fontWeight: 700, borderRadius: '12px',
+                        textTransform: 'none', fontSize: F.btnPrimary,
+                        py: { xs: 1.3, sm: 1.5 },
+                      }}>
+                      Sign In
+                    </Button>
+                  </div>
+                )}
+                
               </div>
             </motion.div>
           )}

@@ -1,6 +1,8 @@
 import { styled } from '@mui/material/styles';
 import { useEffect, useState, useCallback, useMemo, memo } from 'react';
-import { Button, Chip, LinearProgress, Slider } from '@mui/material';
+import { Button, Chip, 
+  // LinearProgress,
+  Slider } from '@mui/material';
 import {
   AccountBalance, CheckCircle, Warning, Schedule, Download,
   HowToVote, Forum, Build, Assessment, Edit, Lock, LockOpen,
@@ -12,6 +14,7 @@ import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import CivicTaxHeader from './shared-components/CivicTaxHeader';
 import CampaignsBrowseSidebarLeft from './shared-components/CampaignsBrowseSidebarLeft';
 import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSidebarRight';
+
 
 /* ── Font tokens ── */
 const F = {
@@ -95,6 +98,7 @@ const ORANGE_GRADIENT = 'linear-gradient(135deg, #f97316 0%, #ea580c 60%, #c2410
 
 /* ── Sub-components ── */
 function ComplianceRing({ score }) {
+  // eslint-disable-next-line no-nested-ternary
   const color = score >= 80 ? '#16a34a' : score >= 60 ? '#ea580c' : '#dc2626';
   const circumference = 2 * Math.PI * 28;
   const dash = (score / 100) * circumference;

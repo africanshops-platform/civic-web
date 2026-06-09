@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 
 const GovernanceDashboardWithSidebarsPage = lazy(() => import('./screens/GovernanceDashboardWithSidebarsPage'));
 const VotingPortalPage = lazy(() => import('./screens/VotingPortalPage'));
@@ -24,7 +25,7 @@ const LAYOUT = {
 
 const governancePagesConfig = {
   settings: LAYOUT,
-  routes: [
+  routes: kycProtect([
     { path: 'governance/dashboard', element: <GovernanceDashboardWithSidebarsPage /> },
     { path: 'governance/elections/:electionId/vote', element: <VotingPortalPage /> },
     { path: 'governance/participate', element: <CitizenParticipationPage /> },
@@ -34,7 +35,7 @@ const governancePagesConfig = {
     { path: 'governance/elections/:electionId/collation', element: <CollationCenterPage /> },
     { path: 'governance/elections/:electionId/oversight', element: <ElectionOversightPage /> },
     { path: 'governance/elections/:electionId/audit', element: <CollationAuditPage /> },
-  ],
+  ]),
 };
 
 export default governancePagesConfig;

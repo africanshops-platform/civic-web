@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 
 const CommunityFeedWithSidebarsPage = lazy(() => import('./screens/CommunityFeedWithSidebarsPage'));
 const CreateIssuePage = lazy(() => import('./screens/CreateIssuePage'));
@@ -23,7 +24,7 @@ const LAYOUT = {
 
 const socialPagesConfig = {
   settings: LAYOUT,
-  routes: [
+  routes: kycProtect([
     { path: 'community/feed', element: <CommunityFeedWithSidebarsPage /> },
     { path: 'community/create-issue', element: <CreateIssuePage /> },
     { path: 'community/issues/:issueId', element: <IssueDetailPage /> },
@@ -32,7 +33,7 @@ const socialPagesConfig = {
     { path: 'community/projects', element: <CommunityProjectsPage /> },
     { path: 'community/projects/:projectId', element: <ProjectDetailPage /> },
     { path: 'community/my-engagement', element: <MyEngagementPage /> },
-  ],
+  ]),
 };
 
 export default socialPagesConfig;

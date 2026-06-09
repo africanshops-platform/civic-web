@@ -4,43 +4,40 @@ import jwtDecode from 'jwt-decode';
 import Cookie from 'js-cookie';
 import { getSessionRedirectUrl, resetSessionRedirectUrl } from '@fuse/core/FuseAuthorization/sessionRedirectUrl';
 import { toast } from 'react-toastify';
+import { handleApiError } from 'app/configs/data/utils/handleApiError';
 import { clientSigin } from '../../client/RepositoryClient';
 import config from '../../../../auth/services/jwt/jwtAuthConfig';
-import { handleApiError } from 'app/configs/data/utils/handleApiError';
+
+
 
 export function useShopAdminLogin() {
 	return useMutation(clientSigin, {
 		onSuccess: (data) => {
-			console.log('LoginData', data);
+			const user = data?.data?.user;
+			const accessToken = data?.data?.userAccessToken;
 
-			if (data?.data?.user && data?.data?.userAccessToken) {
+			if (user && accessToken) {
+				const userId = user?.id ?? user?._id;
 				const transFormedUser = {
-					id: data?.data?.user?.id,
-					name: data?.data?.user?.name,
-					email: data?.data?.user?.email,
+					id: userId,
+					name: user?.name,
+					email: user?.email,
 					role: 'user',
-					avatar: data?.data?.user?.avatar
+					avatar: user?.avatar
 				};
 
-				if (data?.data?.userAccessToken) {
-					localStorage.setItem(config.tokenStorageKey, data?.data?.userAccessToken);
-					axios.defaults.headers.common.accessToken = `${data?.data?.userAccessToken}`;
-				}
+				localStorage.setItem(config.tokenStorageKey, accessToken);
+				axios.defaults.headers.common.accessToken = `${accessToken}`;
+				localStorage.setItem(config.isAuthenticatedStatus, isTokenValid(accessToken));
 
-				if (isTokenValid(data?.data?.userAccessToken)) {
-					localStorage.setItem(config.isAuthenticatedStatus, true);
-				} else {
-					localStorage.setItem(config.isAuthenticatedStatus, false);
-				}
+				const refreshToken = data?.data?.userRefreshToken;
+				const sessionId = data?.data?.sessionId;
+				if (refreshToken) localStorage.setItem(config.refreshTokenStorageKey, refreshToken);
+				if (sessionId) localStorage.setItem(config.sessionIdStorageKey, sessionId);
 
-				if (transFormedUser) {
-					setUserCredentialsStorage(transFormedUser);
-				}
+				setUserCredentialsStorage(transFormedUser);
 			} else if (data) {
-				console.log('LoginError22_', data.data);
-				Array.isArray(data?.data?.message)
-					? data?.data?.message?.map((m) => toast.error(m.message))
-					: toast.error(data?.data?.message);
+				handleApiError({ response: data });
 			} else {
 				toast.info('something unexpected happened');
 			}
@@ -67,16 +64,14 @@ const isTokenValid = (accessToken) => {
 };
 
 const setUserCredentialsStorage = (userCredentials) => {
-	const setUserCookie = Cookie.set(config.adminCredentials, JSON.stringify({ userCredentials }));
+	Cookie.set(config.adminCredentials, JSON.stringify({ userCredentials }));
 
-	if (setUserCookie) {
-		const redirectUrl = getSessionRedirectUrl();
+	const redirectUrl = getSessionRedirectUrl();
 
-		if (redirectUrl) {
-			resetSessionRedirectUrl();
-			window.location.href = redirectUrl;
-		} else {
-			window.location.reload();
-		}
+	if (redirectUrl) {
+		resetSessionRedirectUrl();
+		window.location.href = redirectUrl;
+	} else {
+		window.location.reload();
 	}
 };

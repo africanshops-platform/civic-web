@@ -1,10 +1,8 @@
 import { lazy } from "react";
+import { kycProtect } from "../zrootclient/civic-shared/kyc/kycProtectRoutes";
 
 const FinanceDashboardApp = lazy(() => import("./FinanceDashboardApp"));
 const FinanceDashboardAppWithdarwals = lazy(() => import("./FinanceDashboardAppWithdarwals"));
-/**
- * The finance dashboard app config.
- */
 
 const AfricanshopsFinanceDashboardAppConfig = {
   settings: {
@@ -13,17 +11,15 @@ const AfricanshopsFinanceDashboardAppConfig = {
     },
   },
 
-  routes: [
+  routes: kycProtect([
     {
       path: "africanshops/finance",
       element: <FinanceDashboardApp />,
     },
-
     {
       path: "africanshops/withdrawals",
       element: <FinanceDashboardAppWithdarwals />,
-      // element: <FinanceDashboardApp />
     },
-  ],
+  ]),
 };
 export default AfricanshopsFinanceDashboardAppConfig;

@@ -12,20 +12,22 @@ import {
 import NavbarToggleButton from "app/theme-layouts/shared-components/navbar/NavbarToggleButton";
 import { selectFuseNavbar } from "app/theme-layouts/shared-components/navbar/navbarSlice";
 import { useAppSelector } from "app/store/hooks";
-import AdjustFontSize from "../../shared-components/AdjustFontSize";
-import FullScreenToggle from "../../shared-components/FullScreenToggle";
-import LanguageSwitcher from "../../shared-components/LanguageSwitcher";
-import NavigationShortcuts from "../../shared-components/navigation/NavigationShortcuts";
-import NavigationSearch from "../../shared-components/navigation/NavigationSearch";
-import UserMenu from "../../shared-components/UserMenu";
-import QuickPanelToggleButton from "../../shared-components/quickPanel/QuickPanelToggleButton";
-import LinkPanelButton from "./shared/LinkPanelButton";
-import Logo from "app/theme-layouts/shared-components/Logo";
+// import Logo from "app/theme-layouts/shared-components/Logo";
 import LogoHome from "app/theme-layouts/shared-components/LogoHome";
 import { selectUser } from "src/app/auth/user/store/userSlice";
 import CartToggleButton from "app/theme-layouts/shared-components/quickPanel/CartToggleButton";
 import LanHubSwitcher from "app/theme-layouts/shared-components/LanHubSwitcher";
 import { useRouteData } from "src/app/main/zrootclient/useRouteData";
+import CivicHubSwitcher from "app/theme-layouts/shared-components/CivicHubSwitcher";
+// import AdjustFontSize from "../../shared-components/AdjustFontSize";
+// import FullScreenToggle from "../../shared-components/FullScreenToggle";
+// import LanguageSwitcher from "../../shared-components/LanguageSwitcher";
+// import NavigationShortcuts from "../../shared-components/navigation/NavigationShortcuts";
+import NavigationSearch from "../../shared-components/navigation/NavigationSearch";
+import UserMenu from "../../shared-components/UserMenu";
+import QuickPanelToggleButton from "../../shared-components/quickPanel/QuickPanelToggleButton";
+// import LinkPanelButton from "./shared/LinkPanelButton";
+
 
 /**
  * The toolbar layout 1.
@@ -41,7 +43,9 @@ function ToolbarLayout1(props) {
   const { getUrlString } = useRouteData();
   // console.log("URL_ARRAY_22",getUrlString);
 
-  useEffect(() => {}, [user?._id, user?._email]);
+  useEffect(() => {
+    // console.log("USER_INFO_TOOLBAR", user);
+  }, [user?._id, user?._email]);
 
   return (
     <ThemeProvider theme={toolbarTheme}>
@@ -91,13 +95,14 @@ function ToolbarLayout1(props) {
           <div className="flex h-full items-center overflow-x-auto px-8">
             {/* <LinkPanelButton /> */}
 
+            <CivicHubSwitcher />
             <LanHubSwitcher />
             {/* <LanguageSwitcher /> */}
 
             {/* <AdjustFontSize /> */}
             {/* <FullScreenToggle /> */}
 
-            {getUrlString && <>{getUrlString === "marketplace" && <NavigationSearch />}</>}
+            {getUrlString && <div>{getUrlString === "marketplace" && <NavigationSearch />}</div>}
 
             <QuickPanelToggleButton />
             <CartToggleButton />

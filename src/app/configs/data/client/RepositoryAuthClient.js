@@ -4,6 +4,35 @@ import { toast } from 'react-toastify';
 import { resetSessionForShopUsers } from 'app/configs/utils/authUtils';
 import { getAdminAccessToken } from '../utils/opsUtils';
 import { API_ENDPOINTS } from './serverEndpoints/endpoints';
+import jwtAuthConfig from 'src/app/auth/services/jwt/jwtAuthConfig';
+
+// ─── Token-refresh state (module-level so all AuthApi() instances share it) ──
+let isRefreshing = false;
+let refreshQueue = [];
+
+function drainQueue(error, token = null) {
+	refreshQueue.forEach(({ resolve, reject }) => (token ? resolve(token) : reject(error)));
+	refreshQueue = [];
+}
+
+async function doTokenRefresh() {
+	const stored = localStorage.getItem(jwtAuthConfig.refreshTokenStorageKey);
+	if (!stored) throw new Error('No refresh token stored');
+
+	// Use a fresh instance so the global 401 interceptor does not race with this call.
+	const refreshAxios = axios.create();
+	const response = await refreshAxios.post(`${import.meta.env.VITE_API_BASE_URL_PROD}/auth-user/refresh-token`, {
+		refreshToken: stored
+	});
+
+	const { userAccessToken, userRefreshToken } = response.data;
+	if (!userAccessToken) throw new Error('Refresh response missing userAccessToken');
+
+	localStorage.setItem(jwtAuthConfig.tokenStorageKey, userAccessToken);
+	if (userRefreshToken) localStorage.setItem(jwtAuthConfig.refreshTokenStorageKey, userRefreshToken);
+
+	return userAccessToken;
+}
 
 /**
  * ####MAIN ENDPOINTS STARTS
@@ -48,25 +77,55 @@ export function AuthApi() {
 
 	Api.interceptors.response.use(
 		(response) => response,
-		(error) => {
-			console.error('Interceptor---ERROR', error);
+		async (error) => {
+			const originalRequest = error.config;
+
+			if (error?.response?.status === 401) {
+				// Already retried once → the refreshed token is also being rejected.
+				// Stop here and log the user out to avoid an infinite loop.
+				if (originalRequest._isRetry) {
+					userLogOutCall();
+					toast.error(
+						error.response?.data?.message ?? 'Your session has expired. Please log in again.'
+					);
+					return Promise.reject(error);
+				}
+
+				originalRequest._isRetry = true;
+
+				// Another request is already refreshing — queue this one.
+				if (isRefreshing) {
+					return new Promise((resolve, reject) => {
+						refreshQueue.push({ resolve, reject });
+					}).then((token) => {
+						originalRequest.headers.userauthcredential = token;
+						return Api(originalRequest);
+					});
+				}
+
+				isRefreshing = true;
+				try {
+					const newToken = await doTokenRefresh();
+					isRefreshing = false;
+					drainQueue(null, newToken);
+					originalRequest.headers.userauthcredential = newToken;
+					return Api(originalRequest);
+				} catch (refreshError) {
+					isRefreshing = false;
+					drainQueue(refreshError);
+					userLogOutCall();
+					toast.error('Your session has expired. Please log in again.');
+					return Promise.reject(refreshError);
+				}
+			}
 
 			if (error?.response?.status === 403) {
-				console.log('responseSTATS', error?.response?.status);
-				// merchantLogOutCall();
-				userLogOutCall();
 				toast.error(
-					error.response && error.response.data.message ? error.response.data.message : error.message
+					error.response?.data?.message ?? 'Access denied. You do not have permission to perform this action.'
 				);
-
-				return Promise.reject({ status: 401, errors: ['Unauthorized'] });
+				return Promise.reject(error);
 			}
 
-			if (error.response?.status === 422) {
-				const errors = Object.values(error?.response?.data?.errors || {});
-			}
-
-			// console.log("INTECEPTOR___ERROR", Promise.reject(error))
 			return Promise.reject(error);
 		}
 	);
@@ -328,6 +387,9 @@ export const userWithdrawRequestApi = (withdrawFormData) =>
  * #######################################################################################
  * --------------------------------------------------------------------------------------------------------------------
  */
+
+/** Revoke a specific session on the server — DELETE /auth-user/sessions/:sessionId */
+export const revokeSessionApi = (sessionId) => AuthApi().delete(`/auth-user/sessions/${sessionId}`);
 
 // Users Logout functionality  usersproducts
 export const logOut = () => {

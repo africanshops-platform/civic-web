@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 
 const HealthcareDashboardWithSidebarsPage = lazy(() => import('./screens/HealthcareDashboardWithSidebarsPage'));
 const FacilityDetailPage = lazy(() => import('./screens/FacilityDetailPage'));
@@ -20,13 +21,13 @@ const LAYOUT = {
 
 const healthcarePagesConfig = {
   settings: LAYOUT,
-  routes: [
+  routes: kycProtect([
     { path: 'healthcare/dashboard', element: <HealthcareDashboardWithSidebarsPage /> },
     { path: 'healthcare/facility/:facilityId', element: <FacilityDetailPage /> },
     { path: 'healthcare/book', element: <AppointmentBookingPage /> },
     { path: 'healthcare/my-appointments', element: <MyAppointmentsPage /> },
     { path: 'healthcare/alerts', element: <HealthAlertsPage /> },
-  ],
+  ]),
 };
 
 export default healthcarePagesConfig;

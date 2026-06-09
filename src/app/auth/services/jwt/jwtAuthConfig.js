@@ -2,9 +2,11 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL_PROD; /** production & dev */
 
 const jwtAuthConfig = {
 	tokenStorageKey: 'jwt_access_token',
+	refreshTokenStorageKey: 'jwt_refresh_token',
+	sessionIdStorageKey: 'jwt_session_id',
 	signInUrl: 'mock-api/auth/sign-in',
 	signUpUrl: 'mock-api/auth/sign-up',
-	tokenRefreshUrl: 'mock-api/auth/refresh',
+	tokenRefreshUrl: `${baseUrl}/auth-user/refresh-token`,
 	getUserUrl: 'mock-api/auth/user',
 	updateUserUrl: 'mock-api/auth/user',
 	updateTokenFromHeader: true,

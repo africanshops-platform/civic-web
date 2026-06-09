@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 
 const CampaignsBrowseWithSidebarsPage = lazy(() => import('./screens/CampaignsBrowseWithSidebarsPage'));
 const CampaignDetailPage = lazy(() => import('./screens/CampaignDetailPage'));
@@ -19,16 +20,17 @@ const LAYOUT = {
   },
 };
 
+
 const civicTaxPagesConfig = {
   settings: LAYOUT,
-  routes: [
+  routes: kycProtect([
     { path: 'civictax/campaigns', element: <CampaignsBrowseWithSidebarsPage /> },
     { path: 'civictax/campaigns/:campaignId/view', element: <CampaignDetailPage /> },
     { path: 'civictax/my-contributions', element: <MyContributionsPage /> },
     { path: 'civictax/projects', element: <LgaProjectTrackerPage /> },
     { path: 'civictax/:transactionId/receipt', element: <ContributionReceiptPage /> },
     { path: 'civictax/compulsory-tax',         element: <CivicTaxObligationsPage /> },
-  ],
+  ]),
 };
 
 export default civicTaxPagesConfig;

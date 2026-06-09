@@ -12,6 +12,7 @@ import {
 } from "@fuse/core/FuseAuthorization/sessionRedirectUrl";
 // import { useAdminLogin } from "app/configs/data/server-calls/merchant-auth";
 import { useShopAdminLogin } from "app/configs/data/server-calls/auth/admin-auth";
+import { revokeSessionApi } from "app/configs/data/client/RepositoryAuthClient";
 
 const defaultAuthContext = {
   isAuthenticated: false,
@@ -118,22 +119,20 @@ function JwtAuthProvider(props) {
 
   const handleSignInSuccess = useCallback((userData, accessToken) => {
     setSession(accessToken);
-    setIsAuthenticated(setIsAthenticatedStorage(accessToken));
-
+    // Store auth status in localStorage then update React state with the real boolean
+    setIsAthenticatedStorage(accessToken);
+    setIsAuthenticated(true);
     setUserCredentialsStorage(userData);
+    setUser(userData);
 
-    // Get the redirect URL from session storage
+    // Only navigate away if there is an explicit redirect URL stored in session
     const redirectUrl = getSessionRedirectUrl();
-
     if (redirectUrl) {
-      // Clear the redirect URL from session storage
       resetSessionRedirectUrl();
-      // Redirect to the stored URL
       window.location.href = redirectUrl;
-    } else {
-      // Default behavior: reload to home page
-      window.location.reload();
     }
+    // No reload here — auto-login silently restores the session without reloading.
+    // The explicit sign-in reload is handled in admin-auth.js → setUserCredentialsStorage.
   }, []); /**here is where token is stored */
   /**
    * Handle sign-up success
@@ -208,42 +207,65 @@ function JwtAuthProvider(props) {
   /** Check if the access token exist and is valid on mount */
   useEffect(() => {
     const attemptAutoLogin = async () => {
-      const accessToken = getAccessToken();
+      let accessToken = getAccessToken();
 
-      if (isTokenValid(accessToken)) {
-        try {
-          setIsLoading(true);
-          const response = await axios.get(config.getAuthAdminInBravortAdminUrl, {
-            headers: { shoparccreed: `${accessToken}` },
-          });
+      // Access token is missing or expired — try a silent refresh before giving up
+      if (!isTokenValid(accessToken)) {
+        const storedRefreshToken = localStorage.getItem(config.refreshTokenStorageKey);
 
-          const transFormedUser = {
-            id: response?.data?.user?.id,
-            name: response?.data?.user?.name,
-            email: response?.data?.user?.email,
-            role: "merchant",
-            shopplan: response?.data?.user?.shopplan,
-          };
-
-          handleSignInSuccess(transFormedUser, accessToken);
+        if (!storedRefreshToken) {
           setIsLoading(false);
-          return true;
-        } catch (error) {
-          const axiosError = error;
-          toast.error(
-            error?.response && error?.response?.data?.message
-              ? error?.response?.data?.message
-              : error?.message,
-          );
-          handleSignInFailure(axiosError);
-          setIsLoading(false);
+          resetSession();
+          removeUserCredentialsStorage();
           return false;
         }
-      } else {
+
+        try {
+          // Fresh instance — bypass the global 401 interceptor for this call.
+          const refreshResp = await axios.create().post(config.tokenRefreshUrl, { refreshToken: storedRefreshToken });
+          const newAccess = refreshResp.data?.userAccessToken;
+          const newRefresh = refreshResp.data?.userRefreshToken;
+
+          if (!newAccess) throw new Error('Missing access token in refresh response');
+
+          setSession(newAccess);
+          if (newRefresh) localStorage.setItem(config.refreshTokenStorageKey, newRefresh);
+          accessToken = newAccess;
+        } catch {
+          setIsLoading(false);
+          resetSession();
+          removeUserCredentialsStorage();
+          localStorage.removeItem(config.refreshTokenStorageKey);
+          localStorage.removeItem(config.sessionIdStorageKey);
+          return false;
+        }
+      }
+
+      // We now have a valid access token — verify it with the backend
+      try {
+        setIsLoading(true);
+        const response = await axios.get(config.getAuthAdminInBravortAdminUrl, {
+          headers: { shoparccreed: `${accessToken}` },
+        });
+
+        const transFormedUser = {
+          id: response?.data?.user?.id,
+          name: response?.data?.user?.name,
+          email: response?.data?.user?.email,
+          role: "merchant",
+          shopplan: response?.data?.user?.shopplan,
+        };
+
+        handleSignInSuccess(transFormedUser, accessToken);
         setIsLoading(false);
-        resetSession();
-        removeUserCredentialsStorage();
-        // signOut()
+        return true;
+      } catch (error) {
+        const axiosError = error;
+        toast.error(
+          error?.response?.data?.message ?? error?.message,
+        );
+        handleSignInFailure(axiosError);
+        setIsLoading(false);
         return false;
       }
     };
@@ -266,24 +288,16 @@ function JwtAuthProvider(props) {
 
   const adminLogIn = useShopAdminLogin();
   const handleRequest = async (
-    url,
+    _url,
     data,
-    //  handleSuccess,
-    handleSignInSuccess,
-    //  handleFailure,
+    _handleSignInSuccess,
     handleSignInFailure,
   ) => {
     try {
-      adminLogIn.mutate(data);
+      await adminLogIn.mutateAsync(data);
+      return null;
     } catch (error) {
       const axiosError = error;
-
-      toast.error(
-        error?.response && error?.response?.data?.message
-          ? error?.response?.data?.message
-          : error?.message,
-      );
-
       handleSignInFailure(axiosError);
       return axiosError;
     }
@@ -304,13 +318,24 @@ function JwtAuthProvider(props) {
   /**
    * Sign out
    */
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    // Revoke this session on the server so the guard invalidates it on all devices/tabs.
+    // Fire-and-forget — we clear local state regardless of whether the call succeeds.
+    const sessionId = localStorage.getItem(config.sessionIdStorageKey);
+    if (sessionId) {
+      try {
+        await revokeSessionApi(sessionId);
+      } catch {
+        // server-side revocation failed (e.g. already expired); continue with local cleanup
+      }
+    }
+
     resetAuthStatusStorage();
     resetSession();
     removeIsAthenticatedStorage();
-    // setIsAuthenticated(false);
-    // setUser(null);
     removeUserCredentialsStorage();
+    localStorage.removeItem(config.refreshTokenStorageKey);
+    localStorage.removeItem(config.sessionIdStorageKey);
 
     window.location.reload();
   }, []);
@@ -330,23 +355,36 @@ function JwtAuthProvider(props) {
     }
   }, []);
   /**
-   * Refresh access token
+   * Refresh access token using the stored refresh token.
+   * Returns the new access token on success, null if no refresh token is stored,
+   * or the error object on failure.
    */
   const refreshToken = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(config.tokenRefreshUrl);
-      const accessToken = response?.headers?.["New-Access-Token"];
-
-      if (accessToken) {
-        setSession(accessToken);
-        return accessToken;
+      const storedRefreshToken = localStorage.getItem(config.refreshTokenStorageKey);
+      if (!storedRefreshToken) {
+        setIsLoading(false);
+        return null;
       }
 
+      const response = await axios.create().post(config.tokenRefreshUrl, { refreshToken: storedRefreshToken });
+      const newAccessToken = response.data?.userAccessToken;
+      const newRefreshToken = response.data?.userRefreshToken;
+
+      if (newAccessToken) {
+        setSession(newAccessToken);
+        if (newRefreshToken) localStorage.setItem(config.refreshTokenStorageKey, newRefreshToken);
+        setIsLoading(false);
+        return newAccessToken;
+      }
+
+      setIsLoading(false);
       return null;
     } catch (error) {
       const axiosError = error;
       handleError(axiosError);
+      setIsLoading(false);
       return axiosError;
     }
   };
@@ -356,31 +394,30 @@ function JwtAuthProvider(props) {
    *
    */
   useEffect(() => {
-    if (config.updateTokenFromHeader && isAuthenticated) {
-      axios.interceptors.response.use(
-        (response) => {
-          const newAccessToken = response?.headers?.["New-Access-Token"];
+    if (!config.updateTokenFromHeader || !isAuthenticated) return undefined;
 
-          if (newAccessToken) {
-            setSession(newAccessToken);
-          }
+    // Register once per auth state change; eject on cleanup to prevent stacking.
+    const interceptorId = axios.interceptors.response.use(
+      (response) => {
+        const newAccessToken = response?.headers?.["New-Access-Token"];
+        if (newAccessToken) setSession(newAccessToken);
+        return response;
+      },
+      (error) => {
+        const axiosError = error;
+        if (axiosError?.response?.status === 401) {
+          signOut();
+          // eslint-disable-next-line no-console
+          console.warn("Unauthorized request. User was signed out.");
+        }
+        return Promise.reject(axiosError);
+      },
+    );
 
-          return response;
-        },
-        (error) => {
-          const axiosError = error;
-
-          if (axiosError?.response?.status === 401) {
-            signOut();
-            // eslint-disable-next-line no-console
-            console.warn("Unauthorized request. User was signed out.");
-          }
-
-          return Promise.reject(axiosError);
-        },
-      );
-    }
-  }, [isAuthenticated]);
+    return () => {
+      axios.interceptors.response.eject(interceptorId);
+    };
+  }, [isAuthenticated, setSession, signOut]);
   const storedAccessToken = getAccessToken();
   useEffect(() => {
     if (storedAccessToken) {

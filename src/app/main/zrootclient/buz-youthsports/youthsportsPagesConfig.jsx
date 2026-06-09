@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 
 const YouthSportsDashboardWithSidebarsPage = lazy(() => import('./screens/YouthSportsDashboardWithSidebarsPage'));
 const ProgramDetailPage = lazy(() => import('./screens/ProgramDetailPage'));
@@ -20,13 +21,13 @@ const LAYOUT = {
 
 const youthsportsPagesConfig = {
   settings: LAYOUT,
-  routes: [
+  routes: kycProtect([
     { path: 'youth/dashboard', element: <YouthSportsDashboardWithSidebarsPage /> },
     { path: 'youth/programs/:programId', element: <ProgramDetailPage /> },
     { path: 'youth/tournaments', element: <TournamentsPage /> },
     { path: 'youth/talents', element: <TalentsPage /> },
     { path: 'youth/mentors', element: <MentorsPage /> },
-  ],
+  ]),
 };
 
 export default youthsportsPagesConfig;

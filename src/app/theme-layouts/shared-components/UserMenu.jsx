@@ -194,6 +194,18 @@ function UserMenu({ user }) {
               <ListItemText primary="Settings" />
             </MenuItem>
 
+            <MenuItem
+              component={Link}
+              to="/account/kyc"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:identification</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Identity & KYC" />
+            </MenuItem>
+
             <Divider variant="middle" />
             <MenuItem
               onClick={() => {

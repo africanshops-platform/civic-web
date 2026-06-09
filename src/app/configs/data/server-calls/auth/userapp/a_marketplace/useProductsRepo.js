@@ -71,14 +71,10 @@ export function useMyCart(userId) {
 
 /** *get menu of user marketplace cart items for both AuthUser && UnAuth-User */
 export function useGetMyMarketplaceCartByUserCred(userId) {
-	if (!userId || userId === 'new') {
-		return {};
-	}
-
 	return useQuery(
-		['__cart'], // , userId
-
-		() => getUserShoppingCartForAuthAndGuest()
+		['__cart'],
+		() => getUserShoppingCartForAuthAndGuest(),
+		{ enabled: !!userId && userId !== 'new' }
 	);
 } // (Msvs => Done)
 // export function useGetMyMarketplaceCartByUserCred(userId) {
