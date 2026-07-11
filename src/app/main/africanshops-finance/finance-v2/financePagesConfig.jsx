@@ -1,0 +1,46 @@
+import { lazy } from 'react';
+import { Navigate } from 'react-router-dom';
+
+const FinanceShellPage = lazy(() => import('./FinanceShellPage'));
+const FinanceOverviewContent = lazy(() => import('./screens/FinanceOverviewContent'));
+const FinanceTransactionsContent = lazy(() => import('./screens/FinanceTransactionsContent'));
+const FinanceTransferContent = lazy(() => import('./screens/FinanceTransferContent'));
+const FinanceWithdrawalContent = lazy(() => import('./screens/FinanceWithdrawalContent'));
+const FinanceSavingsContent = lazy(() => import('./screens/FinanceSavingsContent'));
+const FinanceWalletsContent = lazy(() => import('./screens/FinanceWalletsContent'));
+const FinanceCardsContent = lazy(() => import('./screens/FinanceCardsContent'));
+
+const LAYOUT = {
+  layout: {
+    config: {
+      navbar: { display: false },
+      toolbar: { display: true },
+      footer: { display: false },
+      leftSidePanel: { display: false },
+      rightSidePanel: { display: false },
+    },
+  },
+};
+
+const financePagesConfig = {
+  settings: LAYOUT,
+  auth: ['user'],
+  routes: [
+    {
+      path: 'africanshops/finance-v2',
+      element: <FinanceShellPage />,
+      children: [
+        { path: '', element: <Navigate to="overview" replace /> },
+        { path: 'overview', element: <FinanceOverviewContent /> },
+        { path: 'transactions', element: <FinanceTransactionsContent /> },
+        { path: 'transfer', element: <FinanceTransferContent /> },
+        { path: 'withdrawal', element: <FinanceWithdrawalContent /> },
+        { path: 'savings', element: <FinanceSavingsContent /> },
+        { path: 'wallets', element: <FinanceWalletsContent /> },
+        { path: 'cards', element: <FinanceCardsContent /> },
+      ],
+    },
+  ],
+};
+
+export default financePagesConfig;

@@ -170,17 +170,101 @@ function UserMenu({ user }) {
               <ListItemText primary="Food Orders" />
             </MenuItem>
 
+            <Divider variant="middle" />
+
+            {/* ── Finance Section ── */}
+            <div className="px-16 pt-8 pb-4">
+              <Typography className="text-10 font-semibold uppercase tracking-widest" color="text.disabled">
+                Finance
+              </Typography>
+            </div>
+
             <MenuItem
               component={Link}
-              to="/africanshops/finance"
+              to="/africanshops/finance-v2/overview"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:home</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Finance Overview" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/africanshops/finance-v2/transactions"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:clipboard-document-list</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Transactions" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/africanshops/finance-v2/transfer"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:arrows-right-left</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Transfer Money" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/africanshops/finance-v2/withdrawal"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:arrow-up-tray</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Withdraw" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/africanshops/finance-v2/savings"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:banknotes</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Savings" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/africanshops/finance-v2/wallets"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:wallet</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Multi-Currency Wallets" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/africanshops/finance-v2/cards"
               onClick={userMenuClose}
               role="button"
             >
               <ListItemIcon className="min-w-40">
                 <FuseSvgIcon>heroicons-outline:credit-card</FuseSvgIcon>
               </ListItemIcon>
-              <ListItemText primary="Wallet" />
+              <ListItemText primary="Virtual Card" />
             </MenuItem>
+
+            <Divider variant="middle" />
+
 
             <MenuItem
               component={Link}

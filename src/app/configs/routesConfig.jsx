@@ -17,6 +17,7 @@ import resetPasswordConfig from "../main/sign-reset-password/resetPasswordPagesC
 import userReservationPagesConfig from "../main/zrootclient/buz-bookings/user-reservations/userReservationPagesConfig";
 /***#######################################Bookings & Reservations-based-config  ends########################*/
 import AfricanshopsFinanceDashboardAppConfig from "../main/africanshops-finance/AfricanshopsFinanceDashboardAppConfig";
+import financePagesConfig from "../main/africanshops-finance/finance-v2/financePagesConfig";
 import AfricanshopsMessengerAppConfig from "../main/africanshops-messenger/AfricanshopsMessengerAppConfig";
 
 import blogAppConfig from "../main/newsblog/blogAppConfig";
@@ -108,6 +109,7 @@ const routeConfigs = [
    * */
   // SupportHelpCenterAppConfig,
   AfricanshopsFinanceDashboardAppConfig,
+  financePagesConfig,
   AfricanshopsMessengerAppConfig,
 
   // SettingsAppConfig,

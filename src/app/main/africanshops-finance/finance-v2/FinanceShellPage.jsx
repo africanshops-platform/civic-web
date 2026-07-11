@@ -1,0 +1,125 @@
+import { styled } from '@mui/material/styles';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { Outlet, Navigate, useNavigate } from 'react-router-dom';
+import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
+import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
+import FinanceHeader from './screens/shared/FinanceHeader';
+import FinanceSidebarLeft from './screens/shared/FinanceSidebarLeft';
+import FinanceSidebarRight from './screens/shared/FinanceSidebarRight';
+import { useMyAccount, useBalance, useTransactionHistory, useKycStatus } from './hooks/useFintechApi';
+import WalletSetupWizard from './screens/WalletSetupWizard';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
+import { FinanceThemeProvider, useFinanceTheme } from './FinanceThemeContext';
+
+// Backgrounds are set per-theme via inline styles on the header/sidebar/content
+// components themselves (tokens.pageBg etc.) so this shell can switch between
+// the light and dark finance-v2 variants at runtime — only structural/layout
+// rules live here.
+const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
+  '& .FusePageSimple-header': {
+    borderBottomWidth: 1,
+    borderStyle: 'solid',
+  },
+  '& .FusePageSimple-leftSidebar': {
+    width: 240,
+    backgroundColor: 'transparent',
+  },
+  '& .FusePageSimple-rightSidebar': {
+    width: 260,
+    backgroundColor: 'transparent',
+  },
+}));
+
+function FinanceShellInner() {
+  const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
+  const [leftOpen, setLeftOpen] = useState(!isMobile);
+  const [rightOpen, setRightOpen] = useState(!isMobile);
+  const navigate = useNavigate();
+  const { tokens } = useFinanceTheme();
+
+  useEffect(() => {
+    setLeftOpen(!isMobile);
+    setRightOpen(!isMobile);
+  }, [isMobile]);
+
+  const { data: account, isLoading: accountLoading } = useMyAccount();
+  const { data: balance, isLoading: balanceLoading } = useBalance('NGN');
+  const { data: txHistory } = useTransactionHistory({ limit: 5 });
+  const { data: kycStatus } = useKycStatus();
+
+  const handleLeftToggle = useCallback(() => setLeftOpen(v => !v), []);
+  const handleRightToggle = useCallback(() => setRightOpen(v => !v), []);
+
+  const recentTx = useMemo(() => txHistory?.transactions ?? txHistory ?? [], [txHistory]);
+
+  const header = useMemo(() => (
+    <FinanceHeader
+      leftToggle={handleLeftToggle}
+      rightToggle={handleRightToggle}
+      kycStatus={kycStatus?.kycStatus}
+    />
+  ), [handleLeftToggle, handleRightToggle, kycStatus?.kycStatus]);
+
+  const leftSidebar = useMemo(() => <FinanceSidebarLeft />, []);
+
+  const rightSidebar = useMemo(() => (
+    <FinanceSidebarRight
+      balance={balance}
+      balanceLoading={balanceLoading}
+      recentTx={recentTx}
+      account={account}
+    />
+  ), [balance, balanceLoading, recentTx, account]);
+
+  // Show wallet setup wizard for brand-new users
+  if (!accountLoading && account === null) {
+    return (
+      <div style={{ background: tokens.pageBg, minHeight: '100vh' }}>
+        <WalletSetupWizard onComplete={() => window.location.reload()} />
+      </div>
+    );
+  }
+
+  if (accountLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" style={{ background: tokens.pageBg }}>
+        <div className="text-center">
+          <CircularProgress sx={{ color: tokens.accentSolid }} />
+          <Typography className="mt-16 text-sm" style={{ color: tokens.textPrimary }}>Loading your wallet…</Typography>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Root
+      header={header}
+      content={
+        <div
+          className="w-full h-full"
+          style={{ background: tokens.pageBg, minHeight: '100%' }}
+        >
+          <Outlet context={{ account, balance, balanceLoading, kycStatus }} />
+        </div>
+      }
+      leftSidebarOpen={leftOpen}
+      leftSidebarOnClose={() => setLeftOpen(false)}
+      leftSidebarContent={leftSidebar}
+      rightSidebarOpen={rightOpen}
+      rightSidebarOnClose={() => setRightOpen(false)}
+      rightSidebarContent={rightSidebar}
+      scroll="content"
+    />
+  );
+}
+
+function FinanceShell() {
+  return (
+    <FinanceThemeProvider>
+      <FinanceShellInner />
+    </FinanceThemeProvider>
+  );
+}
+
+export default memo(FinanceShell);

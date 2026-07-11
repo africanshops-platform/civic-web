@@ -4,7 +4,8 @@ import { kycProtect } from "../zrootclient/civic-shared/kyc/kycProtectRoutes";
 const FinanceDashboardApp = lazy(() => import("./FinanceDashboardApp"));
 const FinanceDashboardAppWithdarwals = lazy(() => import("./FinanceDashboardAppWithdarwals"));
 
-const AfricanshopsFinanceDashboardAppConfig = {
+const 
+AfricanshopsFinanceDashboardAppConfig = {
   settings: {
     layout: {
       config: {},

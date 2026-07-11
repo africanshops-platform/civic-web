@@ -101,6 +101,7 @@ export default function KycDocumentStep({ completed = false, documentType = null
   const fileRef = useRef(null);
 
   const [docType,          setDocType]         = useState('NIN');
+  const [legalName,        setLegalName]       = useState('');
   const [docNumber,        setDocNumber]        = useState('');
   const [file,             setFile]             = useState(null);
   const [preview,          setPreview]          = useState(null);
@@ -128,6 +129,7 @@ export default function KycDocumentStep({ completed = false, documentType = null
 
   function validate() {
     const errs = {};
+    if (!legalName.trim()) errs.legalName = 'Full legal name is required';
     if (!docNumber.trim()) errs.docNumber = 'Document number is required';
     if (!file) errs.file = 'Upload a clear photo of your document';
     return errs;
@@ -147,6 +149,7 @@ export default function KycDocumentStep({ completed = false, documentType = null
         documentType:     docType,
         documentNumber:   docNumber.trim().toUpperCase(),
         documentImageUrl: imageUrl,
+        legalName:        legalName.trim(),
       });
     } catch (err) {
       clearInterval(t);
@@ -218,6 +221,28 @@ export default function KycDocumentStep({ completed = false, documentType = null
             );
           })}
         </Box>
+
+        {/* Full legal name — the canonical name matched against later (e.g. withdrawal beneficiaries) */}
+        <TextField fullWidth label="Full Legal Name"
+          value={legalName}
+          onChange={(e) => { setLegalName(e.target.value); setErrors((er) => ({ ...er, legalName: undefined })); }}
+          error={!!errors.legalName}
+          helperText={errors.legalName || 'Exactly as it appears on your ID document'}
+          disabled={busy}
+          placeholder="e.g. Eke Ferdinand Udoka"
+          sx={{
+            mb: 3,
+            '& .MuiOutlinedInput-root': {
+              color: '#fff',
+              '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
+              '&:hover fieldset': { borderColor: 'rgba(167,139,250,0.5)' },
+              '&.Mui-focused fieldset': { borderColor: '#a78bfa' },
+            },
+            '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)', fontSize: F.body },
+            '& .MuiInputLabel-root.Mui-focused': { color: '#a78bfa' },
+            '& .MuiFormHelperText-root': { color: errors.legalName ? '#f87171' : 'rgba(255,255,255,0.35)', fontSize: F.small },
+          }}
+        />
 
         {/* Document number */}
         <TextField fullWidth label="Document Number"
