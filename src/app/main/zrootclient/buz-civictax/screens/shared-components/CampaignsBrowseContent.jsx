@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ClienttErrorPage from '../../../components/ClienttErrorPage';
-import { CivicLoadingSkeleton, CivicEmptyState } from '../../../civic-shared';
+import { CivicLoadingSkeleton, CivicEmptyState, CivicPaginationBar } from '../../../civic-shared';
 import CampaignCard from '../../components/CampaignCard';
 import { CAMPAIGN_CATEGORIES } from '../../mock';
 
@@ -13,7 +13,7 @@ const F = {
   subH:    'clamp(1.4rem, 2.2vw, 1.8rem)',
 };
 
-function CampaignsBrowseContent({ campaigns, isLoading, isError, stats, activeCategory }) {
+function CampaignsBrowseContent({ campaigns, isLoading, isError, stats, activeCategory, pagination, onPageChange }) {
   const navigate = useNavigate();
 
   if (isLoading) return <CivicLoadingSkeleton message="Finding campaigns in your area..." cardCount={4} />;
@@ -80,6 +80,8 @@ function CampaignsBrowseContent({ campaigns, isLoading, isError, stats, activeCa
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CivicPaginationBar pagination={pagination} onPageChange={onPageChange} theme="light" />
     </div>
   );
 }

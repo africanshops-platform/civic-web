@@ -1,118 +1,100 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { mockCampaigns, CAMPAIGN_STATS, mockContributions, mockMyContributionStats, mockLgaProjects } from '../mock';
 import { toast } from 'react-toastify';
+import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 
-const USE_MOCK = true;
+// ─── raw API layer ────────────────────────────────────────────────────────────
+const api = {
+  getCampaigns:        (params) => AuthApi().get('/civic/tax/campaigns', { params }),
+  getCampaignDetail:   (id)     => AuthApi().get(`/civic/tax/campaigns/${id}`),
+  getMyContributions:  (params) => AuthApi().get('/civic/tax/contributions/mine', { params }),
+  getContribReceipt:   (id)     => AuthApi().get(`/civic/tax/contributions/${id}`),
+  getLgaProjects:      (params) => AuthApi().get('/civic/tax/projects', { params }),
+  contribute:          (data)   => AuthApi().post(`/civic/tax/campaigns/${data.campaignId}/contribute`, data),
+  getMyObligations:    (params) => AuthApi().get('/civic/tax/obligations/mine', { params }),
+  payObligation:       (data)   => AuthApi().post('/civic/tax/obligations/pay', data),
+  getObligationHistory:(params) => AuthApi().get('/civic/tax/obligations/history', { params }),
+};
 
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
+// ─── helpers ─────────────────────────────────────────────────────────────────
+const toNaira = (kobo) => Number(kobo) / 100;
+const toKobo  = (naira) => Math.round(Number(naira) * 100);
 
-function applyFilters(items, filters = {}) {
-  return items.filter((item) => {
-    if (filters.category && item.category !== filters.category) return false;
-    if (filters.status && item.status !== filters.status) return false;
-    if (filters.stateId && item.jurisdiction?.stateId !== filters.stateId) return false;
-    if (filters.lgaId && item.jurisdiction?.lgaId !== filters.lgaId) return false;
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      if (!item.title.toLowerCase().includes(q) && !item.description?.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+function buildParams(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v != null && v !== '')
+  );
 }
 
+// Always send page/limit as integers (never filtered out, never NaN/float)
+function paginate(page, limit) {
+  return { page: Math.max(1, parseInt(page, 10) || 1), limit: Math.max(1, parseInt(limit, 10) || 20) };
+}
+
+function extractPagination(d, page, limit) {
+  const total      = d?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  return { page, limit, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 };
+}
+
+// ─── hooks ────────────────────────────────────────────────────────────────────
+
 export function useCampaigns(filters = {}) {
+  const { category, status, stateId, lgaId, search, page = 1, limit = 20 } = filters;
+  const { page: p, limit: l } = paginate(page, limit);
+  const params = { ...buildParams({ lga: lgaId, state: stateId, status, category }), page: p, limit: l };
+
   return useQuery(
     ['civictax-campaigns', filters],
-    async () => {
-      if (USE_MOCK) {
-        await delay(700);
-        const filtered = applyFilters(mockCampaigns, filters);
-        return {
-          data: {
-            campaigns: filtered,
-            pagination: { total: filtered.length, page: 1, limit: 10 },
-            stats: CAMPAIGN_STATS,
-          },
-        };
-      }
-    },
-    { keepPreviousData: true, staleTime: 2 * 60 * 1000 }
+    () => api.getCampaigns(params),
+    {
+      select: (res) => {
+        const d = res.data;
+        let campaigns = d.data ?? d.campaigns ?? [];
+        if (search) {
+          const q = search.toLowerCase();
+          campaigns = campaigns.filter(
+            (c) => c.title?.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
+          );
+        }
+        return { data: { campaigns, pagination: extractPagination(d, p, l), stats: null } };
+      },
+      keepPreviousData: true,
+      staleTime: 2 * 60 * 1000,
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Failed to load campaigns.'),
+    }
   );
 }
 
 export function useCampaignDetail(campaignId) {
   return useQuery(
     ['civictax-campaign', campaignId],
-    async () => {
-      if (USE_MOCK) {
-        await delay(450);
-        const campaign = mockCampaigns.find((c) => c.id === campaignId) || mockCampaigns[0];
-        return { data: { campaign } };
-      }
-    },
-    { enabled: Boolean(campaignId), staleTime: 3 * 60 * 1000 }
+    () => api.getCampaignDetail(campaignId),
+    {
+      enabled: Boolean(campaignId),
+      select: (res) => ({ data: { campaign: res.data } }),
+      staleTime: 3 * 60 * 1000,
+    }
   );
 }
 
-export function useMyContributions() {
+export function useMyContributions(page = 1, limit = 20) {
+  const { page: p, limit: l } = paginate(page, limit);
   return useQuery(
-    ['civictax-my-contributions'],
-    async () => {
-      if (USE_MOCK) {
-        await delay(550);
-        return { data: { contributions: mockContributions, stats: mockMyContributionStats } };
-      }
-    },
-    { staleTime: 60 * 1000 }
-  );
-}
-
-export function useLgaProjects(filters = {}) {
-  return useQuery(
-    ['civictax-lga-projects', filters],
-    async () => {
-      if (USE_MOCK) {
-        await delay(600);
-        const filtered = mockLgaProjects.filter((p) => {
-          if (filters.campaignId && p.campaignId !== filters.campaignId) return false;
-          if (filters.status && p.status !== filters.status) return false;
-          return true;
-        });
-        return { data: { projects: filtered } };
-      }
-    },
-    { keepPreviousData: true, staleTime: 2 * 60 * 1000 }
-  );
-}
-
-export function useContributeToCampaign() {
-  const queryClient = useQueryClient();
-  return useMutation(
-    async (payload) => {
-      if (USE_MOCK) {
-        await delay(1400);
+    ['civictax-my-contributions', p, l],
+    () => api.getMyContributions({ page: p, limit: l }),
+    {
+      select: (res) => {
+        const d = res.data;
         return {
           data: {
-            success: true,
-            transactionId: `TXN-2026-${Date.now().toString().slice(-6)}`,
-            message: 'Contribution successful! Thank you for making a difference.',
-            amount: payload.amount,
-            campaignId: payload.campaignId,
+            contributions: (d.data ?? []).map((c) => ({ ...c, amountNaira: toNaira(c.amountKobo) })),
+            stats:      { total: d.total ?? 0 },
+            pagination: extractPagination(d, p, l),
           },
         };
-      }
-    },
-    {
-      onSuccess: (data) => {
-        if (data?.data?.success) {
-          toast.success(data.data.message || 'Contribution successful!');
-          queryClient.invalidateQueries(['civictax-campaigns']);
-          queryClient.invalidateQueries(['civictax-my-contributions']);
-        }
       },
-      onError: () => {
-        toast.error('Contribution failed. Please try again.');
-      },
+      keepPreviousData: true,
+      staleTime: 60 * 1000,
     }
   );
 }
@@ -120,13 +102,145 @@ export function useContributeToCampaign() {
 export function useContributionReceipt(transactionId) {
   return useQuery(
     ['civictax-receipt', transactionId],
-    async () => {
-      if (USE_MOCK) {
-        await delay(400);
-        const contribution = mockContributions.find((c) => c.transactionId === transactionId) || mockContributions[0];
-        return { data: { receipt: { ...contribution, transactionId: transactionId || contribution.transactionId } } };
-      }
-    },
-    { enabled: Boolean(transactionId), staleTime: 10 * 60 * 1000 }
+    () => api.getContribReceipt(transactionId),
+    {
+      enabled: Boolean(transactionId),
+      select: (res) => ({ data: { receipt: res.data } }),
+      staleTime: 10 * 60 * 1000,
+    }
+  );
+}
+
+export function useLgaProjects(filters = {}) {
+  const { stateId, lgaId, status, page = 1, limit = 20 } = filters;
+  const { page: p, limit: l } = paginate(page, limit);
+  const params = { ...buildParams({ lga: lgaId, state: stateId, status }), page: p, limit: l };
+
+  return useQuery(
+    ['civictax-lga-projects', filters],
+    () => api.getLgaProjects(params),
+    {
+      select: (res) => {
+        const d = res.data;
+        return {
+          data: {
+            projects:   d.data ?? d.projects ?? [],
+            pagination: extractPagination(d, p, l),
+          },
+        };
+      },
+      keepPreviousData: true,
+      staleTime: 2 * 60 * 1000,
+    }
+  );
+}
+
+export function useContributeToCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) =>
+      api.contribute({
+        campaignId:      payload.campaignId,
+        amountKobo:      toKobo(payload.amount),
+        idempotencyKey:  crypto.randomUUID(),
+        note:            payload.note ?? undefined,
+      }),
+    {
+      onSuccess: (res) => {
+        toast.success(res.data?.message ?? 'Contribution successful! Thank you for making a difference.');
+        queryClient.invalidateQueries(['civictax-campaigns']);
+        queryClient.invalidateQueries(['civictax-my-contributions']);
+      },
+      onError: (err) => {
+        toast.error(err?.response?.data?.message ?? 'Contribution failed. Please try again.');
+      },
+    }
+  );
+}
+
+// ─── Obligations ─────────────────────────────────────────────────────────────
+
+const OBL_STATUS_MAP = {
+  OVERDUE:        'overdue',
+  UNPAID:         'due_soon',
+  PARTIALLY_PAID: 'due_soon',
+  PAID:           'paid',
+  WAIVED:         'paid',
+};
+
+function normalizeObligation(obl) {
+  const amountKobo  = Number(obl.amountKobo ?? 0);
+  const paidKobo    = Number(obl.paidKobo ?? 0);
+  const remainingKobo = Math.max(0, amountKobo - paidKobo);
+
+  return {
+    ...obl,
+    // UI-friendly fields
+    uiStatus:       OBL_STATUS_MAP[obl.status] ?? 'upcoming',
+    amountNaira:    toNaira(amountKobo),
+    paidNaira:      toNaira(paidKobo),
+    remainingNaira: toNaira(remainingKobo),
+    remainingKobo,
+  };
+}
+
+export function useMyObligations(page = 1, limit = 20) {
+  const { page: p, limit: l } = paginate(page, limit);
+  return useQuery(
+    ['civictax-my-obligations', p, l],
+    () => api.getMyObligations({ page: p, limit: l }),
+    {
+      select: (res) => {
+        const d = res.data;
+        return {
+          data: {
+            obligations: (d.data ?? []).map(normalizeObligation),
+            pagination:  extractPagination(d, p, l),
+          },
+        };
+      },
+      keepPreviousData: true,
+      staleTime: 60 * 1000,
+    }
+  );
+}
+
+export function usePayObligation() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ obligationId, remainingKobo }) =>
+      api.payObligation({
+        obligationId,
+        amountKobo:     remainingKobo,
+        idempotencyKey: crypto.randomUUID(),
+      }),
+    {
+      onSuccess: () => {
+        toast.success('Tax payment successful!');
+        queryClient.invalidateQueries(['civictax-my-obligations']);
+        queryClient.invalidateQueries(['civictax-obligation-history']);
+      },
+      onError: (err) => {
+        toast.error(err?.response?.data?.message ?? 'Payment failed. Please try again.');
+      },
+    }
+  );
+}
+
+export function useObligationHistory(page = 1, limit = 20) {
+  const { page: p, limit: l } = paginate(page, limit);
+  return useQuery(
+    ['civictax-obligation-history', p, l],
+    () => api.getObligationHistory({ page: p, limit: l }),
+    {
+      select: (res) => {
+        const d = res.data;
+        return {
+          data: { history: d.data ?? [], pagination: extractPagination(d, p, l) },
+        };
+      },
+      keepPreviousData: true,
+      staleTime: 2 * 60 * 1000,
+    }
   );
 }

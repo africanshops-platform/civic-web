@@ -11,7 +11,7 @@ import CivicTaxHeader from './shared-components/CivicTaxHeader';
 import CampaignsBrowseSidebarLeft from './shared-components/CampaignsBrowseSidebarLeft';
 import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSidebarRight';
 import ProjectMilestoneTimeline from '../components/ProjectMilestoneTimeline';
-import { CivicLoadingSkeleton, CivicEmptyState } from '../../civic-shared';
+import { CivicLoadingSkeleton, CivicEmptyState, CivicPaginationBar } from '../../civic-shared';
 
 const F = {
   body:    'clamp(1.3rem,  2vw,   1.64rem)',
@@ -130,8 +130,10 @@ function ActiveLgaProjectTrackerPage() {
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
-  const { data, isLoading } = useLgaProjects();
-  const projects = useMemo(() => data?.data?.projects || [], [data]);
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useLgaProjects({ page });
+  const projects    = useMemo(() => data?.data?.projects    || [], [data]);
+  const pagination  = useMemo(() => data?.data?.pagination,       [data]);
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v)  => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
@@ -182,9 +184,11 @@ function ActiveLgaProjectTrackerPage() {
             {projects.map((project, i) => <ProjectCard key={project.id} project={project} index={i} />)}
           </div>
         )}
+
+        <CivicPaginationBar pagination={pagination} onPageChange={setPage} theme="light" />
       </div>
     );
-  }, [projects, isLoading, navigate]);
+  }, [projects, isLoading, navigate, pagination]);
 
   const leftSidebar  = useMemo(() => <CampaignsBrowseSidebarLeft />, []);
   const rightSidebar = useMemo(() => <CampaignsBrowseSidebarRight />, []);

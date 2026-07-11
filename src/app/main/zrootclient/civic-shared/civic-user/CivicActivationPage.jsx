@@ -66,6 +66,7 @@ export default function CivicActivationPage({ kycData = {}, onManageBiometrics }
         ].join(','),
       },
     }}>
+      
 
       {/* Branding */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, mt: 1 }}>

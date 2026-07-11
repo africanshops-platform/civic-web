@@ -24,15 +24,17 @@ function ActiveCampaignsBrowsePage() {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
   const [filters, setFilters] = useState({});
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     setLeftSidebarOpen(!isMobile);
     setRightSidebarOpen(!isMobile);
   }, [isMobile]);
 
-  const { data, isLoading, isError } = useCampaigns(filters);
+  const { data, isLoading, isError } = useCampaigns({ ...filters, page });
+  const pagination = useMemo(() => data?.data?.pagination, [data]);
 
-  const handleFilterChange = useCallback((newFilters) => setFilters(newFilters), []);
+  const handleFilterChange = useCallback((newFilters) => { setFilters(newFilters); setPage(1); }, []);
   const handleLeftToggle = useCallback(() => setLeftSidebarOpen((v) => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
   const handleLeftClose = useCallback(() => setLeftSidebarOpen(false), []);
@@ -58,8 +60,10 @@ function ActiveCampaignsBrowsePage() {
       isError={isError}
       stats={stats}
       activeCategory={filters.category}
+      pagination={pagination}
+      onPageChange={setPage}
     />
-  ), [campaigns, isLoading, isError, stats, filters.category]);
+  ), [campaigns, isLoading, isError, stats, filters.category, pagination]);
 
   const leftSidebar = useMemo(() => (
     <CampaignsBrowseSidebarLeft onFilterChange={handleFilterChange} />

@@ -10,7 +10,7 @@ import { useMyContributions } from '../hooks/useCivicTaxRepo';
 import CivicTaxHeader from './shared-components/CivicTaxHeader';
 import CampaignsBrowseSidebarLeft from './shared-components/CampaignsBrowseSidebarLeft';
 import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSidebarRight';
-import { CivicStatCard, CivicEmptyState, CivicLoadingSkeleton } from '../../civic-shared';
+import { CivicStatCard, CivicEmptyState, CivicLoadingSkeleton, CivicPaginationBar } from '../../civic-shared';
 import { CAMPAIGN_CATEGORIES } from '../mock';
 
 const F = {
@@ -74,9 +74,11 @@ function ActiveMyContributionsPage() {
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
-  const { data, isLoading } = useMyContributions();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useMyContributions(page);
   const contributions = useMemo(() => data?.data?.contributions || [], [data]);
   const stats         = useMemo(() => data?.data?.stats, [data]);
+  const pagination    = useMemo(() => data?.data?.pagination, [data]);
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v)  => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
@@ -143,6 +145,8 @@ function ActiveMyContributionsPage() {
           )}
         </motion.div>
 
+        <CivicPaginationBar pagination={pagination} onPageChange={setPage} theme="light" />
+
         {contributions.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
             style={{ display: 'flex', justifyContent: 'center', marginTop: 'clamp(14px, 2vw, 22px)' }}>
@@ -155,7 +159,7 @@ function ActiveMyContributionsPage() {
         )}
       </div>
     );
-  }, [contributions, stats, isLoading, navigate]);
+  }, [contributions, stats, isLoading, navigate, pagination]);
 
   const leftSidebar  = useMemo(() => <CampaignsBrowseSidebarLeft />, []);
   const rightSidebar = useMemo(() => <CampaignsBrowseSidebarRight />, []);
