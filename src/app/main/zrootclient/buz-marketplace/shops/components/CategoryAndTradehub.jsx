@@ -1,8 +1,8 @@
-import NavLinkAdapter from "@fuse/core/NavLinkAdapter";
+// import NavLinkAdapter from "@fuse/core/NavLinkAdapter";
 import { Typography } from "@mui/material";
 import useProductCats from "app/configs/data/server-calls/product-categories/useProductCategories";
-import React, { useEffect, useState } from "react";
-import { useRef } from "react";
+import  { useEffect, useState, useRef } from "react";
+// import { useRef } from "react";
 import { useParams } from "react-router";
 
 const CategoryAndTradehub = ({ onFilterChange, initialFilters = {}, resetRef }) => {

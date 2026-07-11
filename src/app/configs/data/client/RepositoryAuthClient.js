@@ -259,7 +259,7 @@ export const getUseTripByReservationId = (reservationId) => {
 }; // (Done => Msvs)
 
 export const cancelReservationApi = (formData) => {
-	console.log('Canceling reservation....1', formData?.reservationId);
+	// console.log('Canceling reservation....1', formData?.reservationId);
 	return AuthApi().put(`${API_ENDPOINTS.CANCEL_USER_RESERVATION}/${formData?.reservationId}`);
 };
 

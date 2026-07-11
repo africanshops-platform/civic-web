@@ -6,7 +6,7 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState, Suspense, lazy } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import {
   Button,
   Backdrop,
@@ -18,21 +18,21 @@ import {
 } from "@mui/material";
 import FusePageSimple from "@fuse/core/FusePageSimple";
 import useThemeMediaQuery from "@fuse/hooks/useThemeMediaQuery";
-import { useNavigate, useParams } from "react-router";
-import { formatCurrency, generateClientUID } from "src/app/main/vendors-shop/PosUtils";
-import { format } from "date-fns";
-import ClienttErrorPage from "../../components/ClienttErrorPage";
+import { useNavigate,  } from "react-router";
+import { formatCurrency,  } from "src/app/main/vendors-shop/PosUtils";
+// import { format } from "date-fns";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Controller } from "react-hook-form";
 import { toast } from "react-toastify";
-import { PaystackButton } from "react-paystack";
+// import { PaystackButton } from "react-paystack";
 import { selectUser } from "src/app/auth/user/store/userSlice";
 import { useAppSelector } from "app/store/hooks";
-import { selectFuseCurrentLayoutConfig } from "@fuse/core/FuseSettings/fuseSettingsSlice";
+// import { selectFuseCurrentLayoutConfig } from "@fuse/core/FuseSettings/fuseSettingsSlice";
 import { useMyCart } from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
-import CartSummaryAndPay from "./components/CartSummaryAndPay";
+
 import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
 import {
   getMarketsByLgaId,
@@ -40,6 +40,8 @@ import {
   getStateByCountryId,
 } from "app/configs/data/client/clientToApiRoutes";
 import MyAddresses from "../../buz-bookings/user-reservations/MyAddresses";
+import CartSummaryAndPay from "./components/CartSummaryAndPay";
+// import ClienttErrorPage from "../../components/ClienttErrorPage";
 
 // Lazy load map components for better performance
 const ShopLocationMap = lazy(() => import("../components/maps/ShopLocationMap"));

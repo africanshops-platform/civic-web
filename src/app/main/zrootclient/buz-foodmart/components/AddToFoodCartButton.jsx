@@ -1,7 +1,7 @@
-import { Button, Typography } from "@mui/material";
+import { Button } from "@mui/material";
 import { useUpdateFoodCartItemQty } from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
 import { useEffect } from "react";
-import { formatCurrency } from "src/app/main/vendors-shop/PosUtils";
+// import { formatCurrency } from "src/app/main/vendors-shop/PosUtils";
 
 const AddToFoodCartButton = ({ onSubmit, loading, productId, cartItems, quantityLeft }) => {
   let checkArray = [];

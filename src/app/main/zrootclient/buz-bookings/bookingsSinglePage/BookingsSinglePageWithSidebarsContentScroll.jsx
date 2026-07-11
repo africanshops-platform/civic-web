@@ -1,17 +1,14 @@
 import { styled } from "@mui/material/styles";
-import FusePageSimple from "@fuse/core/FusePageSimple";
+// import FusePageSimple from "@fuse/core/FusePageSimple";
 import { useCallback, useEffect, useMemo, useState, memo } from "react";
 import useThemeMediaQuery from "@fuse/hooks/useThemeMediaQuery";
-import DemoHeader from "./shared-components/DemoHeader";
-import DemoContent from "./shared-components/SingleListDemoContent";
-import DemoSidebar from "./shared-components/DemoSidebar";
-import DemoSidebarRight from "./shared-components/DemoSidebarRight";
+
 import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
-import useGetAllProducts from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
-import { useForm } from "react-hook-form";
-import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
-import { getLgasByStateId, getStateByCountryId } from "app/configs/data/client/RepositoryClient";
-import useGetAllBookingProperties, {
+// import useGetAllProducts from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
+// import { useForm } from "react-hook-form";
+// import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
+// import { getLgasByStateId, getStateByCountryId } from "app/configs/data/client/RepositoryClient";
+import  {
   useGetAllAmenities,
   useGetBookingProperty,
 } from "app/configs/data/server-calls/auth/userapp/a_bookings/useBookingPropertiesRepo";
@@ -25,10 +22,14 @@ import {
 } from "app/configs/data/server-calls/auth/userapp/a_bookings/use-reservations";
 import { useGetMerchantPreview } from "app/configs/data/server-calls/auth/userapp/a_merchants/useMerchantRepo";
 import useCountries from "src/app/hooks/useCountries";
-import { differenceInCalendarDays, differenceInDays, eachDayOfInterval } from "date-fns";
+import { differenceInCalendarDays,  eachDayOfInterval } from "date-fns";
 import { toDate } from "date-fns-tz";
 import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import ServiceStatusLandingPage from "../../aapp-settings-from-admin/ServiceStatusLandingPage";
+import DemoHeader from "./shared-components/DemoHeader";
+import DemoContent from "./shared-components/SingleListDemoContent";
+import DemoSidebar from "./shared-components/DemoSidebar";
+import DemoSidebarRight from "./shared-components/DemoSidebarRight";
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
   // marginLeft:'100px',
@@ -314,6 +315,7 @@ const MemoizedActiveBookingsSinglePage = memo(ActiveBookingsSinglePage);
  * Main Bookings Single Page Component with Service Status Check
  * Wraps the active bookings single page with service status landing pages
  */
+
 
 function BookingsSinglePageWithSidebarsContentScroll() {
   // Fetch user app settings

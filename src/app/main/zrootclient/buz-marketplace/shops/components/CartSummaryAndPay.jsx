@@ -184,7 +184,7 @@ const CartSummaryAndPay = ({
   const onSuccess = async (paystackResponse) => {
     try {
       const oderData = {
-        refOrderId: "AFSH" + generateClientUID() + "MKT",
+        refOrderId: "AFSH" + cartSessionPayload?.id + "MKT",
         cartItems: cartSessionPayload?.cartProducts,
 
         itemsPrice: parseInt(subtotal),
@@ -496,7 +496,7 @@ const CartSummaryAndPay = ({
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 }}
-                reference={"AFSH" + generateClientUID() + "REF"}
+                reference={"AFSH" + cartSessionPayload?.id + "REF"}
                 email={user?.email}
                 amount={grandTotal * 100}
                 publicKey={publicKey}

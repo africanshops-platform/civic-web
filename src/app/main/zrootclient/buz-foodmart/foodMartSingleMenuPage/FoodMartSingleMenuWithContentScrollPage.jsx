@@ -1,31 +1,32 @@
 import { styled } from "@mui/material/styles";
-import FusePageSimple from "@fuse/core/FusePageSimple";
+// import FusePageSimple from "@fuse/core/FusePageSimple";
 import { useCallback, useEffect, useState, useMemo, memo } from "react";
 import useThemeMediaQuery from "@fuse/hooks/useThemeMediaQuery";
-import DemoHeader from "./shared-components/DemoHeader";
-import DemoContent from "./shared-components/DemoContent";
-import DemoSidebar from "./shared-components/DemoSidebar";
-import DemoSidebarRight from "./shared-components/DemoSidebarRight";
+
 import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
-import useGetAllProducts from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
-import { useForm } from "react-hook-form";
-import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
-import { getLgasByStateId, getStateByCountryId } from "app/configs/data/client/RepositoryClient";
-import useGetAllBookingProperties from "app/configs/data/server-calls/auth/userapp/a_bookings/useBookingPropertiesRepo";
-import useGetAllFoodMarts, {
+// import useGetAllProducts from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
+// import { useForm } from "react-hook-form";
+// import useSellerCountries from "app/configs/data/server-calls/countries/useCountries";
+// import { getLgasByStateId, getStateByCountryId } from "app/configs/data/client/RepositoryClient";
+// import useGetAllBookingProperties from "app/configs/data/server-calls/auth/userapp/a_bookings/useBookingPropertiesRepo";
+import  {
   useAddToFoodCart,
   useGetMartMenu,
   useGetMyFoodCart,
-  useGetMyFoodCartByUserCred,
+  // useGetMyFoodCartByUserCred,
   useGetSingleMenuItem,
 } from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
 import { useNavigate, useParams } from "react-router";
 import { useAppSelector } from "app/store/hooks";
 import { selectUser } from "src/app/auth/user/store/userSlice";
-import { getFoodVendorSession, storeFoodVendorSession } from "src/app/main/vendors-shop/PosUtils";
+// import { getFoodVendorSession, storeFoodVendorSession } from "src/app/main/vendors-shop/PosUtils";
 import { toast } from "react-toastify";
 import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import ServiceStatusLandingPage from "../../aapp-settings-from-admin/ServiceStatusLandingPage";
+import DemoHeader from "./shared-components/DemoHeader";
+import DemoContent from "./shared-components/DemoContent";
+import DemoSidebar from "./shared-components/DemoSidebar";
+import DemoSidebarRight from "./shared-components/DemoSidebarRight";
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
   "& .FusePageSimple-header": {

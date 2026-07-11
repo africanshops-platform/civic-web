@@ -5,6 +5,7 @@ import RecommendedHead from "./rcshubcomponents/RecommendedHead";
 import useGetAllFoodMarts from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
 import FoodMartCard from "./rcshubcomponents/FoodMartCard";
 
+
 function RestaurantAndSpotsHub() {
   const { data: AllFoodMarts, isLoading, isError } = useGetAllFoodMarts();
 

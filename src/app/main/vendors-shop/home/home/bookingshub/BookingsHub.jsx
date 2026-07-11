@@ -6,6 +6,7 @@ import useGetAllBookingProperties from "app/configs/data/server-calls/auth/usera
 import BookinghubBookingCard from "./bookingshubcomponents/BookinghubBookingCard";
 // import BookingCard from "app/main/zrootclient/buz-bookings/bookingsPage/shared-components/BookingCard";
 
+
 function BookingsHub() {
   const { data: bookingprops, isLoading, isError } = useGetAllBookingProperties();
 

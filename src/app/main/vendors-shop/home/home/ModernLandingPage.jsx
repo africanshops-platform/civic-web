@@ -33,7 +33,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import HomeIcon from "@mui/icons-material/Home";
 import BusinessIcon from "@mui/icons-material/Business";
 import MapIcon from "@mui/icons-material/Map";
-import DescriptionIcon from "@mui/icons-material/Description";
+// import DescriptionIcon from "@mui/icons-material/Description";
 
 /**
  * MODERN LANDING PAGE - Completely New Design

@@ -3,14 +3,14 @@ import { lazy } from "react";
 // import { authRoles } from "src/app/auth";
 // import UserReservationDetailWithSidebarsContentScrollPage from "./userReservationDetailPage/UserReservationDetailWithSidebarsContentScrollPage";
 
-const ModernReversedResetPasswordPage = lazy(() => import("./ModernReversedResetPasswordPage"));
+// const ModernReversedResetPasswordPage = lazy(() => import("./ModernReversedResetPasswordPage"));
 const ReviewReservation = lazy(() => import("./ReviewReservation"));
 
-const UserReservationsDetail = lazy(() => import("./UserReservationsDetail"));
+// const UserReservationsDetail = lazy(() => import("./UserReservationsDetail"));
 const ReviewReservationPaymentSucces = lazy(() => import("./ReviewReservationPaymentSucces"));
 
 /**User Reservations */
-const UserReservations = lazy(() => import("./UserReservations"));
+// const UserReservations = lazy(() => import("./UserReservations"));
 const UserReservationsWithSidebarsContentScrollPage = lazy(
   () => import("./userReservationsPage/UserReservationsWithSidebarsContentScrollPage"),
 );
@@ -45,6 +45,7 @@ const userReservationPagesConfig = {
       },
     },
   },
+
 
   routes: [
     {
