@@ -1,99 +1,147 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
-import { mockIncidents, SECURITY_STATS, mockOfficers } from '../mock';
+import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 
-const USE_MOCK = true;
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
+// ─── raw API layer ────────────────────────────────────────────────────────────
+const api = {
+  getPublicIncidents: (params) => AuthApi().get('/soc/incidents/public', { params }),
+  getMyReports:       (params) => AuthApi().get('/soc/incidents/mine', { params }),
+  getIncidentDetail:  (id)     => AuthApi().get(`/soc/incidents/${id}`),
+  getActiveAlerts:    (params) => AuthApi().get('/soc/alerts/active', { params }),
+  reportIncident:     (data)   => AuthApi().post('/soc/incidents/report', data),
+};
 
-function applyFilters(items, filters = {}) {
-  return items.filter((item) => {
-    if (filters.severity && item.severity !== filters.severity) return false;
-    if (filters.category && item.category !== filters.category) return false;
-    if (filters.status && item.status !== filters.status) return false;
-    if (filters.stateId && item.location?.state !== filters.stateId) return false;
-    if (filters.lgaId && item.location?.lga !== filters.lgaId) return false;
-    return true;
-  });
+function buildParams(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v != null && v !== '')
+  );
 }
 
+function paginate(page, limit) {
+  return { page: Math.max(1, parseInt(page, 10) || 1), limit: Math.max(1, parseInt(limit, 10) || 20) };
+}
+
+function extractPagination(d, page, limit) {
+  const total      = d?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  return { page, limit, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 };
+}
+
+function normalizeIncident(i) {
+  return {
+    ...i,
+    severity:    (i.severity ?? '').toLowerCase(),
+    status:      (i.status   ?? '').toLowerCase(),
+    category:    (i.category ?? '').toLowerCase(),
+    description: i.description ?? '',
+    reportedAt:  i.reportedAt ?? i.createdAt ?? null,
+    location: {
+      lat:     i.latitude  ?? i.location?.lat,
+      lng:     i.longitude ?? i.location?.lng,
+      address: i.locationAddress ?? i.location?.address ?? '',
+      lga:     i.jurisdiction?.lga   ?? i.location?.lga   ?? '',
+      state:   i.jurisdiction?.state ?? i.location?.state ?? '',
+    },
+  };
+}
+
+// ─── hooks ────────────────────────────────────────────────────────────────────
+
 export function useIncidents(filters = {}) {
+  const { severity, category, status, stateId, lgaId, page = 1, limit = 20 } = filters;
+  const { page: p, limit: l } = paginate(page, limit);
+  const params = { ...buildParams({ lga: lgaId, state: stateId, severity, category, status }), page: p, limit: l };
+
   return useQuery(
     ['security-incidents', filters],
-    async () => {
-      if (USE_MOCK) {
-        await delay(650);
-        const filtered = applyFilters(mockIncidents, filters);
-        return { data: { incidents: filtered, stats: SECURITY_STATS } };
-      }
-    },
-    { keepPreviousData: true, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+    () => api.getPublicIncidents(params),
+    {
+      select: (res) => {
+        const d = res.data;
+        return {
+          data: {
+            incidents:  (d.data ?? []).map(normalizeIncident),
+            stats:      { total: d.total ?? 0 },
+            pagination: extractPagination(d, p, l),
+          },
+        };
+      },
+      keepPreviousData: true,
+      staleTime: 30 * 1000,
+      refetchInterval: 30 * 1000,
+    }
   );
 }
 
 export function useIncidentDetail(incidentId) {
   return useQuery(
     ['security-incident', incidentId],
-    async () => {
-      if (USE_MOCK) {
-        await delay(400);
-        const incident = mockIncidents.find((i) => i.id === incidentId) || mockIncidents[0];
-        return { data: { incident } };
-      }
-    },
-    { enabled: Boolean(incidentId), staleTime: 20 * 1000 }
+    () => api.getIncidentDetail(incidentId),
+    {
+      enabled: Boolean(incidentId),
+      select: (res) => ({ data: { incident: res.data } }),
+      staleTime: 20 * 1000,
+    }
   );
 }
 
-export function useMyReports() {
+export function useMyReports(page = 1, limit = 20) {
+  const { page: p, limit: l } = paginate(page, limit);
   return useQuery(
-    ['security-my-reports'],
-    async () => {
-      if (USE_MOCK) {
-        await delay(500);
-        return { data: { reports: mockIncidents.slice(0, 3) } };
-      }
-    },
-    { staleTime: 60 * 1000 }
+    ['security-my-reports', p, l],
+    () => api.getMyReports({ page: p, limit: l }),
+    {
+      select: (res) => {
+        const d = res.data;
+        return {
+          data: {
+            reports:    (d.data ?? []).map(normalizeIncident),
+            pagination: extractPagination(d, p, l),
+          },
+        };
+      },
+      keepPreviousData: true,
+      staleTime: 60 * 1000,
+    }
   );
 }
 
-export function useOfficers() {
+export function useSocAlerts(lga, state) {
+  const params = buildParams({ lga, state });
+
   return useQuery(
-    ['security-officers'],
-    async () => {
-      if (USE_MOCK) {
-        await delay(400);
-        return { data: { officers: mockOfficers } };
-      }
-    },
-    { staleTime: 60 * 1000 }
+    ['security-alerts', lga, state],
+    () => api.getActiveAlerts(params),
+    {
+      select: (res) => res.data?.data ?? [],
+      staleTime: 60 * 1000,
+      refetchInterval: 60 * 1000,
+      enabled: Boolean(lga),
+    }
   );
 }
 
 export function useReportIncident() {
   const queryClient = useQueryClient();
   return useMutation(
-    async (payload) => {
-      if (USE_MOCK) {
-        await delay(1500);
-        return {
-          data: {
-            success: true,
-            reportId: `inc_${Date.now().toString().slice(-5)}`,
-            message: 'Incident report submitted. Our team has been notified.',
-          },
-        };
-      }
-    },
+    (payload) =>
+      api.reportIncident({
+        title:           payload.title || `${payload.category} incident`,
+        description:     payload.description ?? '',
+        category:        payload.category,
+        locationAddress: payload.locationAddress,
+        coordinates:     payload.coordinates ?? undefined,
+        jurisdiction:    payload.jurisdiction,
+      }),
     {
-      onSuccess: (data) => {
-        if (data?.data?.success) {
-          toast.success(data.data.message);
-          queryClient.invalidateQueries(['security-incidents']);
-          queryClient.invalidateQueries(['security-my-reports']);
-        }
+      onSuccess: (res) => {
+        toast.success(res.data?.message ?? 'Incident report submitted. Our team has been notified.');
+        queryClient.invalidateQueries(['security-incidents']);
+        queryClient.invalidateQueries(['security-my-reports']);
       },
-      onError: () => toast.error('Failed to submit report. Please try again.'),
+      onError: (err) => {
+        toast.error(err?.response?.data?.message ?? 'Failed to submit report. Please try again.');
+      },
     }
   );
 }
@@ -101,12 +149,8 @@ export function useReportIncident() {
 export function useUpdateIncidentStatus() {
   const queryClient = useQueryClient();
   return useMutation(
-    async ({ incidentId, status, note }) => {
-      if (USE_MOCK) {
-        await delay(800);
-        return { data: { success: true } };
-      }
-    },
+    ({ incidentId, status, note }) =>
+      AuthApi().put('/soc/admin/incidents/resolve', { incidentId, resolution: note }),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['security-incidents']);

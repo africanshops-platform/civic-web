@@ -137,6 +137,7 @@ export const INCIDENT_CATEGORIES = [
   { id: 'kidnapping', label: 'Kidnapping', icon: '🚨', color: '#7c3aed', bg: '#ede9fe' },
   { id: 'fire', label: 'Fire Outbreak', icon: '🔥', color: '#ea580c', bg: '#fff7ed' },
   { id: 'accident', label: 'Road Accident', icon: '🚗', color: '#2563eb', bg: '#dbeafe' },
+  { id: 'theft', label: 'Theft', icon: '🧤', color: '#0891b2', bg: '#cffafe' },
   { id: 'other', label: 'Other', icon: '⚠️', color: '#6b7280', bg: '#f3f4f6' },
 ];
 
@@ -149,6 +150,7 @@ export const SEVERITY_CONFIG = {
 
 export const STATUS_CONFIG = {
   active: { label: 'Active', color: '#dc2626', bg: '#fee2e2' },
+  reported: { label: 'Reported', color: '#2563eb', bg: '#dbeafe' },
   responding: { label: 'Responding', color: '#d97706', bg: '#fef3c7' },
   resolved: { label: 'Resolved', color: '#16a34a', bg: '#dcfce7' },
   false_alarm: { label: 'False Alarm', color: '#6b7280', bg: '#f3f4f6' },

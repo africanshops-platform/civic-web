@@ -9,6 +9,7 @@ import SocDashboardContent from './shared-components/SocDashboardContent';
 import SocDashboardSidebarLeft from './shared-components/SocDashboardSidebarLeft';
 import SocDashboardSidebarRight from './shared-components/SocDashboardSidebarRight';
 import { useIncidents } from '../hooks/useSecurityRepo';
+import { CivicPaginationBar } from '../../civic-shared';
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
   '& .FusePageSimple-header': {
@@ -21,19 +22,26 @@ const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
   '& .FusePageSimple-content': { backgroundColor: '#0f172a' },
 }));
 
+
 function ActiveSocDashboardPage() {
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
   const [filters, setFilters] = useState({});
+  const [page, setPage] = useState(1);
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
-  const { data, isLoading, isError } = useIncidents(filters);
-  const incidents = useMemo(() => data?.data?.incidents, [data?.data?.incidents]);
-  const stats = useMemo(() => data?.data?.stats, [data?.data?.stats]);
+  const { data, isLoading, isError } = useIncidents({ ...filters, page });
 
-  const handleFilterChange = useCallback((f) => setFilters(f), []);
+  console.log('Fetched incidents data__1:', data?.data?.incidents);
+  const incidents   = useMemo(() => data?.data?.incidents,   [data]);
+  const stats       = useMemo(() => data?.data?.stats,       [data]);
+  const pagination  = useMemo(() => data?.data?.pagination,  [data]);
+
+  console.log('Fetched incidents data__2:', incidents);
+
+  const handleFilterChange = useCallback((f) => { setFilters(f); setPage(1); }, []);
   const handleLeftToggle = useCallback(() => setLeftSidebarOpen((v) => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
   const handleLeftClose = useCallback(() => setLeftSidebarOpen(false), []);
@@ -45,8 +53,13 @@ function ActiveSocDashboardPage() {
   ), [handleLeftToggle, handleRightToggle]);
 
   const content = useMemo(() => (
-    <SocDashboardContent incidents={incidents} isLoading={isLoading} isError={isError} stats={stats} />
-  ), [incidents, isLoading, isError, stats]);
+    <div style={{ background: '#0f172a' }}>
+      <SocDashboardContent incidents={incidents} isLoading={isLoading} isError={isError} stats={stats} />
+      <div style={{ padding: '0 clamp(20px,4vw,48px) clamp(24px,3.5vw,40px)' }}>
+        <CivicPaginationBar pagination={pagination} onPageChange={setPage} theme="dark" />
+      </div>
+    </div>
+  ), [incidents, isLoading, isError, stats, pagination]);
 
   const leftSidebar = useMemo(() => (
     <SocDashboardSidebarLeft onFilterChange={handleFilterChange} />

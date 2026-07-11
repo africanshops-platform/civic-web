@@ -29,6 +29,7 @@
     "@popperjs/core": "2.11.8",
     "@reduxjs/toolkit": "2.2.5",
     "@simplewebauthn/browser": "^13.3.0",
+    "@vis.gl/react-google-maps": "^1.8.3",
     "apexcharts": "3.49.1",
     "autosuggest-highlight": "3.3.4",
     "aws-amplify": "6.3.6",

@@ -11,7 +11,7 @@ import SecurityHeader from './shared-components/SecurityHeader';
 import SocDashboardSidebarLeft from './shared-components/SocDashboardSidebarLeft';
 import SocDashboardSidebarRight from './shared-components/SocDashboardSidebarRight';
 import IncidentCard from '../components/IncidentCard';
-import { CivicLoadingSkeleton, CivicEmptyState } from '../../civic-shared';
+import { CivicLoadingSkeleton, CivicEmptyState, CivicPaginationBar } from '../../civic-shared';
 import { SECURITY_STATS } from '../mock';
 
 const F = {
@@ -36,8 +36,10 @@ function ActiveMyReportsPage() {
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
-  const { data, isLoading } = useMyReports();
-  const reports = useMemo(() => data?.data?.reports || [], [data]);
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useMyReports(page);
+  const reports     = useMemo(() => data?.data?.reports     || [], [data]);
+  const pagination  = useMemo(() => data?.data?.pagination,       [data]);
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v)  => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
@@ -125,6 +127,8 @@ function ActiveMyReportsPage() {
             </div>
           )}
 
+          <CivicPaginationBar pagination={pagination} onPageChange={setPage} theme="dark" />
+
           {/* ── Emergency footer ── */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.38 }}
             style={{ marginTop: 'clamp(28px,4.5vw,52px)', padding: 'clamp(14px,2.5vw,22px)', borderRadius: 'clamp(12px,2vw,18px)', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', textAlign: 'center' }}>
@@ -138,7 +142,7 @@ function ActiveMyReportsPage() {
         </div>
       </div>
     );
-  }, [reports, isLoading, navigate]);
+  }, [reports, isLoading, navigate, pagination]);
 
   const leftSidebar  = useMemo(() => <SocDashboardSidebarLeft />, []);
   const rightSidebar = useMemo(() => <SocDashboardSidebarRight />, []);

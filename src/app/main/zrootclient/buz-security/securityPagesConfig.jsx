@@ -26,4 +26,5 @@ const securityPagesConfig = {
   ]),
 };
 
+
 export default securityPagesConfig;

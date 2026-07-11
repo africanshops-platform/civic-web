@@ -18,6 +18,7 @@ const F = {
 
 const NIGERIA_CENTER = [9.082, 8.6753];
 
+
 function SocDashboardContent({ incidents, isLoading, isError, stats }) {
   const [view, setView]                         = useState('map');
   const [selectedIncident, setSelectedIncident] = useState(null);
@@ -86,15 +87,16 @@ function SocDashboardContent({ incidents, isLoading, isError, stats }) {
       </div>
 
       {/* ── Main view ── */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 500 }}>
         <AnimatePresence mode="wait">
           {view === 'map' ? (
-            <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ height: '100%', minHeight: 500 }}>
+            <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ position: 'absolute', inset: 0 }}>
               <IncidentMap incidents={incidents || []} center={NIGERIA_CENTER} zoom={6} dark height="100%" onIncidentClick={handleSelectIncident} />
             </motion.div>
           ) : (
             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ padding: 'clamp(16px, 2.4vw, 28px)', overflowY: 'auto', height: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,380px),1fr))', gap: 'clamp(14px, 2vw, 22px)', alignContent: 'start' }}>
+              style={{ position: 'absolute', inset: 0, padding: 'clamp(16px, 2.4vw, 28px)', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,380px),1fr))', gap: 'clamp(14px, 2vw, 22px)', alignContent: 'start' }}>
               {(incidents || []).map((incident, i) => (
                 <IncidentCard key={incident.id} incident={incident} index={i} onSelect={handleSelectIncident} />
               ))}
