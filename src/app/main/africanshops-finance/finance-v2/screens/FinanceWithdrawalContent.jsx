@@ -18,7 +18,7 @@ import TransactionPinField from './shared/TransactionPinField';
 import ForgotPinDialog from './shared/ForgotPinDialog';
 
 export default function FinanceWithdrawalContent() {
-  const { account, balance } = useOutletContext();
+  const { account, balance, refetchFinanceData } = useOutletContext();
   const { mutate: initiate, isLoading: initiating } = useWithdrawalInitiate();
   const { mutate: confirm, isLoading: confirming } = useWithdrawalConfirm();
   const { mutate: deleteBeneficiary } = useDeleteBeneficiary();
@@ -72,6 +72,7 @@ export default function FinanceWithdrawalContent() {
       } else {
         setResult(res);
         setStep('success');
+        refetchFinanceData?.();
       }
     } catch (err) {
       setError(err.message);
@@ -85,6 +86,7 @@ export default function FinanceWithdrawalContent() {
       const res = await confirm({ btxId: btxData.btxId, otp });
       setResult(res);
       setStep('success');
+      refetchFinanceData?.();
     } catch (err) {
       setError(err.message);
       if (err.status === 410) setOtpExpired(true);

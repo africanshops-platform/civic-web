@@ -25,7 +25,7 @@ import ForgotPinDialog from './shared/ForgotPinDialog';
  * works, not just ones verified as the caller's own account.
  */
 export default function FinanceExternalTransferContent() {
-  const { account, balance } = useOutletContext();
+  const { account, balance, refetchFinanceData } = useOutletContext();
   const { mutate: initiate, isLoading: initiating } = useExternalTransferInitiate();
   const { mutate: confirm, isLoading: confirming } = useExternalTransferConfirm();
   const { mutate: deleteBeneficiary } = useDeleteBeneficiary();
@@ -79,6 +79,7 @@ export default function FinanceExternalTransferContent() {
       } else {
         setResult(res);
         setStep('success');
+        refetchFinanceData?.();
       }
     } catch (err) {
       setError(err.message);
@@ -92,6 +93,7 @@ export default function FinanceExternalTransferContent() {
       const res = await confirm({ btxId: btxData.btxId, otp });
       setResult(res);
       setStep('success');
+      refetchFinanceData?.();
     } catch (err) {
       setError(err.message);
       if (err.status === 410) setOtpExpired(true);

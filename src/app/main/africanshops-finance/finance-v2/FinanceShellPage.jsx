@@ -44,9 +44,20 @@ function FinanceShellInner() {
   }, [isMobile]);
 
   const { data: account, isLoading: accountLoading } = useMyAccount();
-  const { data: balance, isLoading: balanceLoading } = useBalance('NGN');
-  const { data: txHistory } = useTransactionHistory({ limit: 5 });
+  const { data: balance, isLoading: balanceLoading, refetch: refetchBalance } = useBalance('NGN');
+  const { data: txHistory, refetch: refetchTxHistory } = useTransactionHistory({ limit: 5 });
   const { data: kycStatus } = useKycStatus();
+
+  // Retail-6 (2026-07-12) bugfix: withdrawals/transfers/High-Yield fund all
+  // mutate balance server-side, but the balance shown here comes from this
+  // one useBalance() instance owned by the shell — child screens had no way
+  // to tell it to refetch, so a successful mutation left the old balance on
+  // screen until an unrelated navigation/remount happened to refire it.
+  // Exposed via Outlet context so any child screen can call it post-success.
+  const refetchFinanceData = useCallback(() => {
+    refetchBalance();
+    refetchTxHistory();
+  }, [refetchBalance, refetchTxHistory]);
 
   const handleLeftToggle = useCallback(() => setLeftOpen(v => !v), []);
   const handleRightToggle = useCallback(() => setRightOpen(v => !v), []);
@@ -100,7 +111,7 @@ function FinanceShellInner() {
           className="w-full h-full"
           style={{ background: tokens.pageBg, minHeight: '100%' }}
         >
-          <Outlet context={{ account, balance, balanceLoading, kycStatus }} />
+          <Outlet context={{ account, balance, balanceLoading, kycStatus, refetchFinanceData }} />
         </div>
       }
       leftSidebarOpen={leftOpen}

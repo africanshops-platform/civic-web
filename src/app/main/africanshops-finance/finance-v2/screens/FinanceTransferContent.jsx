@@ -38,7 +38,7 @@ function fieldSx(tokens, fontSize = '1.5rem') {
 const STEPS = { FORM: 'form', PIN: 'pin', OTP: 'otp', SUCCESS: 'success' };
 
 export default function FinanceTransferContent() {
-  const { account, balance } = useOutletContext();
+  const { account, balance, refetchFinanceData } = useOutletContext();
   const { mutate, isLoading } = useTransfer();
   const { tokens } = useFinanceTheme();
   const card = { background: tokens.cardBg, border: `1px solid ${tokens.cardBorder}`, boxShadow: tokens.cardShadow };
@@ -70,6 +70,7 @@ export default function FinanceTransferContent() {
       if (res?.requiresOtp) { setStep(STEPS.OTP); return; }
       setResult(res);
       setStep(STEPS.SUCCESS);
+      refetchFinanceData?.();
     } catch (err) { setError(err.message); }
   }
 
