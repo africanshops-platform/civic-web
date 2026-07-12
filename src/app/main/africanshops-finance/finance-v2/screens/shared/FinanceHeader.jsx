@@ -30,8 +30,12 @@ export default function FinanceHeader({ leftToggle, rightToggle, kycStatus }) {
   const meta = PAGE_META[pathname] ?? { title: 'Finance', subtitle: '' };
   const user = useSelector(selectUser);
   const isKycPending = kycStatus === 'PENDING_REVIEW';
-  const displayName = user?.data?.displayName ?? user?.name ?? 'User';
-  const email = user?.data?.email ?? user?.email ?? '';
+  // Retail-9 (2026-07-12) bugfix: order was reversed relative to the main
+  // site header (UserMenu.jsx: `user.name ? user.name : user.data.displayName`)
+  // — preferring .data.displayName first showed a stale/default value here
+  // while the correctly-ordered main header showed the real name.
+  const displayName = user?.name || user?.data?.displayName || 'User';
+  const email = user?.email || user?.data?.email || '';
   const initial = displayName[0]?.toUpperCase() ?? 'U';
   const { mode, toggleMode, tokens } = useFinanceTheme();
 
@@ -47,7 +51,7 @@ export default function FinanceHeader({ leftToggle, rightToggle, kycStatus }) {
       {/* Left toggle */}
       <Tooltip title="Toggle navigation">
         <IconButton onClick={leftToggle} size="small" sx={{ color: tokens.textSecondary, '&:hover': { background: tokens.accentSoft } }}>
-          <FuseSvgIcon size={22}>heroicons-outline:bars-3</FuseSvgIcon>
+          <FuseSvgIcon size={22}>heroicons-outline:menu</FuseSvgIcon>
         </IconButton>
       </Tooltip>
 

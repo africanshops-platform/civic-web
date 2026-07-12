@@ -10,6 +10,8 @@ import { useMyAccount, useBalance, useTransactionHistory, useKycStatus } from '.
 import WalletSetupWizard from './screens/WalletSetupWizard';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
+import { useSelector } from 'react-redux';
+import { selectUser } from 'src/app/auth/user/store/userSlice';
 import { FinanceThemeProvider, useFinanceTheme } from './FinanceThemeContext';
 
 // Backgrounds are set per-theme via inline styles on the header/sidebar/content
@@ -43,10 +45,24 @@ function FinanceShellInner() {
     setRightOpen(!isMobile);
   }, [isMobile]);
 
-  const { data: account, isLoading: accountLoading } = useMyAccount();
+  const { data: rawAccount, isLoading: accountLoading } = useMyAccount();
   const { data: balance, isLoading: balanceLoading, refetch: refetchBalance } = useBalance('NGN');
   const { data: txHistory, refetch: refetchTxHistory } = useTransactionHistory({ limit: 5 });
   const { data: kycStatus } = useKycStatus();
+  const authUser = useSelector(selectUser);
+
+  // Retail-9 (2026-07-12) bugfix: accountName on the fintech `accounts` row
+  // is set once at wallet-creation time and never kept in sync with the
+  // user's actual profile name — every finance screen showing "Account Name"
+  // was displaying that stale snapshot (e.g. a generic "Guest User" default)
+  // instead of the real, current name already shown correctly in the main
+  // site header/dropdown. Overriding once here, at the single shared source,
+  // so every consumer of `account` via Outlet context gets it for free.
+  const realName = authUser?.name || authUser?.data?.displayName;
+  const account = useMemo(
+    () => (rawAccount && realName ? { ...rawAccount, accountName: realName } : rawAccount),
+    [rawAccount, realName],
+  );
 
   // Retail-6 (2026-07-12) bugfix: withdrawals/transfers/High-Yield fund all
   // mutate balance server-side, but the balance shown here comes from this
