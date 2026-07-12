@@ -162,7 +162,7 @@ export default function FinanceSavingsContent() {
           <motion.div variants={item}>
             <div className="rounded-3xl p-32 text-center" style={card}>
               <div className="w-80 h-80 rounded-3xl flex items-center justify-center mx-auto mb-24" style={{ background: tokens.successBg }}>
-                <FuseSvgIcon size={40} style={{ color: tokens.success }}>heroicons-outline:banknotes</FuseSvgIcon>
+                <FuseSvgIcon size={40} style={{ color: tokens.success }}>heroicons-outline:cash</FuseSvgIcon>
               </div>
               <Typography style={{ fontSize: F.sectionHead, fontWeight: 700, color: tokens.textPrimary, marginBottom: 8 }}>
                 Open High-Yield Savings
@@ -173,8 +173,8 @@ export default function FinanceSavingsContent() {
 
               <div className="grid grid-cols-3 gap-12 mb-28 max-w-sm mx-auto">
                 {[
-                  { icon: 'heroicons-outline:arrow-trending-up', label: `${apy}% APY` },
-                  { icon: 'heroicons-outline:arrow-path', label: '3 free/mo' },
+                  { icon: 'heroicons-outline:trending-up', label: `${apy}% APY` },
+                  { icon: 'heroicons-outline:refresh', label: '3 free/mo' },
                   { icon: 'heroicons-outline:lock-closed', label: 'Protected' },
                 ].map(f => (
                   <div key={f.label} className="rounded-xl p-12 text-center" style={{ background: tokens.successBg }}>
@@ -204,7 +204,7 @@ export default function FinanceSavingsContent() {
                   <div className="flex items-center justify-between mb-16">
                     <div className="flex items-center gap-12">
                       <div className="w-44 h-44 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.16)' }}>
-                        <FuseSvgIcon size={24} className="text-white">heroicons-solid:banknotes</FuseSvgIcon>
+                        <FuseSvgIcon size={24} className="text-white">heroicons-solid:cash</FuseSvgIcon>
                       </div>
                       <div>
                         <Typography className="uppercase tracking-widest font-semibold" style={{ fontSize: F.small, color: 'rgba(255,255,255,0.7)' }}>High-Yield Balance</Typography>
@@ -235,7 +235,7 @@ export default function FinanceSavingsContent() {
                       className="flex items-center gap-8 rounded-xl px-16 py-10 font-semibold text-white transition-all duration-200 cursor-pointer"
                       style={{ fontSize: F.label, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.24)' }}
                     >
-                      <FuseSvgIcon size={18} className="text-white">heroicons-solid:arrow-up-tray</FuseSvgIcon>
+                      <FuseSvgIcon size={18} className="text-white">heroicons-solid:upload</FuseSvgIcon>
                       Withdraw
                     </button>
                   </div>

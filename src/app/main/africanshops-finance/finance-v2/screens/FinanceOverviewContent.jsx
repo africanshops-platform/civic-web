@@ -25,11 +25,11 @@ const F = {
 // (success/info/tertiary/accent) on flat white cards, not raw hex-with-alpha —
 // keeps every color sourced from the theme instead of hardcoded per-tile.
 const QUICK_ACTIONS = [
-  { label: 'Transfer',  icon: 'heroicons-solid:arrow-path',              to: '/africanshops/finance-v2/transfer' },
-  { label: 'Withdraw',  icon: 'heroicons-solid:arrow-up-tray',           to: '/africanshops/finance-v2/withdrawal' },
-  { label: 'Savings',   icon: 'heroicons-solid:banknotes',               to: '/africanshops/finance-v2/savings' },
-  { label: 'Wallets',   icon: 'heroicons-solid:wallet',                  to: '/africanshops/finance-v2/wallets' },
-  { label: 'History',   icon: 'heroicons-solid:clipboard-document-list', to: '/africanshops/finance-v2/transactions' },
+  { label: 'Transfer',  icon: 'heroicons-solid:refresh',              to: '/africanshops/finance-v2/transfer' },
+  { label: 'Withdraw',  icon: 'heroicons-solid:upload',           to: '/africanshops/finance-v2/withdrawal' },
+  { label: 'Savings',   icon: 'heroicons-solid:cash',               to: '/africanshops/finance-v2/savings' },
+  { label: 'Wallets',   icon: 'heroicons-solid:briefcase',                  to: '/africanshops/finance-v2/wallets' },
+  { label: 'History',   icon: 'heroicons-solid:clipboard-list', to: '/africanshops/finance-v2/transactions' },
   { label: 'Cards',     icon: 'heroicons-solid:credit-card',             to: '/africanshops/finance-v2/cards' },
 ];
 
@@ -76,7 +76,7 @@ function BalanceCard({ balance, isLoading, tokens }) {
             style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.16)' }}
           >
             <FuseSvgIcon size={20} className="text-white">
-              {hidden ? 'heroicons-outline:eye' : 'heroicons-outline:eye-slash'}
+              {hidden ? 'heroicons-outline:eye' : 'heroicons-outline:eye-off'}
             </FuseSvgIcon>
           </button>
         </div>
@@ -93,13 +93,13 @@ function BalanceCard({ balance, isLoading, tokens }) {
         <div className="flex gap-12 mt-8">
           <Link to="/africanshops/finance-v2/transfer" style={{ textDecoration: 'none' }}>
             <button className="flex items-center gap-8 rounded-xl px-16 py-10 font-semibold text-white transition-all duration-200 cursor-pointer" style={{ fontSize: F.label, background: tokens.accentGradient }}>
-              <FuseSvgIcon size={18} className="text-white">heroicons-solid:arrow-path</FuseSvgIcon>
+              <FuseSvgIcon size={18} className="text-white">heroicons-solid:refresh</FuseSvgIcon>
               Transfer
             </button>
           </Link>
           <Link to="/africanshops/finance-v2/withdrawal" style={{ textDecoration: 'none' }}>
             <button className="flex items-center gap-8 rounded-xl px-16 py-10 font-semibold transition-all duration-200 cursor-pointer" style={{ fontSize: F.label, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: tokens.heroText }}>
-              <FuseSvgIcon size={18} style={{ color: tokens.heroText }}>heroicons-solid:arrow-up-tray</FuseSvgIcon>
+              <FuseSvgIcon size={18} style={{ color: tokens.heroText }}>heroicons-solid:upload</FuseSvgIcon>
               Withdraw
             </button>
           </Link>
@@ -126,7 +126,7 @@ function TxItem({ tx, index, tokens }) {
         style={{ background: dotBg }}
       >
         <FuseSvgIcon size={20} style={{ color: dotColor }}>
-          {isCredit ? 'heroicons-solid:arrow-down-left' : 'heroicons-solid:arrow-up-right'}
+          {isCredit ? 'heroicons-solid:arrow-down' : 'heroicons-solid:arrow-up'}
         </FuseSvgIcon>
       </div>
       <div className="flex-1 min-w-0">

@@ -63,7 +63,7 @@ function TxRow({ tx, tokens }) {
         <div className="flex items-center gap-12">
           <div className="w-40 h-40 rounded-full flex items-center justify-center shrink-0" style={{ background: dotBg }}>
             <FuseSvgIcon size={18} style={{ color: dotColor }}>
-              {isCredit ? 'heroicons-solid:arrow-down-left' : 'heroicons-solid:arrow-up-right'}
+              {isCredit ? 'heroicons-solid:arrow-down' : 'heroicons-solid:arrow-up'}
             </FuseSvgIcon>
           </div>
           <div className="min-w-0">
@@ -175,7 +175,7 @@ export default function FinanceTransactionsContent() {
           <Button
             onClick={downloadCsv}
             disabled={csvLoading}
-            startIcon={<FuseSvgIcon size={18}>heroicons-outline:arrow-down-tray</FuseSvgIcon>}
+            startIcon={<FuseSvgIcon size={18}>heroicons-outline:download</FuseSvgIcon>}
             sx={{
               color: tokens.accentSolid, border: `1px solid ${tokens.accentSolid}55`, borderRadius: '10px',
               textTransform: 'none', fontWeight: 600, fontSize: F.small,
@@ -191,7 +191,7 @@ export default function FinanceTransactionsContent() {
         <div className="rounded-2xl p-16 mb-16" style={card}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-12 items-end">
             <TextField label="Search" value={filters.search} onChange={e => updateFilter('search', e.target.value)} size="small"
-              InputProps={{ startAdornment: <FuseSvgIcon size={16} style={{ color: tokens.textMuted, marginRight: 4 }}>heroicons-outline:magnifying-glass</FuseSvgIcon> }}
+              InputProps={{ startAdornment: <FuseSvgIcon size={16} style={{ color: tokens.textMuted, marginRight: 4 }}>heroicons-outline:search</FuseSvgIcon> }}
               sx={inputSx(tokens, F.small)} />
             <TextField label="Account Number" value={filters.accountNumber} onChange={e => updateFilter('accountNumber', e.target.value)} size="small" sx={inputSx(tokens, F.small)} />
             <TextField label="Start Date" type="date" value={filters.startDate} onChange={e => updateFilter('startDate', e.target.value)} size="small" InputLabelProps={{ shrink: true }} sx={inputSx(tokens, F.small)} />
@@ -250,7 +250,7 @@ export default function FinanceTransactionsContent() {
                     ? (
                       <tr>
                         <td colSpan={5} className="py-48 text-center">
-                          <FuseSvgIcon size={44} style={{ color: tokens.textMuted, margin: '0 auto 12px', display: 'block' }}>heroicons-outline:clipboard-document-list</FuseSvgIcon>
+                          <FuseSvgIcon size={44} style={{ color: tokens.textMuted, margin: '0 auto 12px', display: 'block' }}>heroicons-outline:clipboard-list</FuseSvgIcon>
                           <Typography style={{ fontSize: F.body, color: tokens.textMuted }}>No transactions found</Typography>
                         </td>
                       </tr>

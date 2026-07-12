@@ -153,7 +153,7 @@ export default function FinanceSidebarRight({ balance, balanceLoading, recentTx,
       {/* Support */}
       <div className="rounded-xl p-12" style={{ background: tokens.accentSoft, border: `1px solid ${tokens.accentSolid}33` }}>
         <div className="flex items-center gap-8 mb-4">
-          <FuseSvgIcon size={16} style={{ color: tokens.accentSolid }}>heroicons-outline:chat-bubble-left-ellipsis</FuseSvgIcon>
+          <FuseSvgIcon size={16} style={{ color: tokens.accentSolid }}>heroicons-outline:chat-alt-2</FuseSvgIcon>
           <Typography style={{ fontSize: F.label, fontWeight: 600, color: tokens.textPrimary }}>Need help?</Typography>
         </div>
         <Typography style={{ fontSize: F.small, color: tokens.textMuted, lineHeight: 1.5 }}>

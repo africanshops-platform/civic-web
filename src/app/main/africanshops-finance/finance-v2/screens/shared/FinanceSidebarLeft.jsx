@@ -19,16 +19,18 @@ const NAV_GROUPS = [
     items: [
       { path: '/africanshops/finance-v2/overview',      icon: 'heroicons-outline:home',              label: 'Overview' },
       { path: '/africanshops/finance-v2/transactions',  icon: 'heroicons-outline:clipboard-list',    label: 'Transactions' },
-      { path: '/africanshops/finance-v2/transfer',      icon: 'heroicons-outline:arrows-right-left', label: 'Transfer' },
+      { path: '/africanshops/finance-v2/fund-account',  icon: 'heroicons-outline:credit-card',       label: 'Fund Account' },
+      { path: '/africanshops/finance-v2/receive-money', icon: 'heroicons-outline:library',           label: 'Receive Money' },
+      { path: '/africanshops/finance-v2/transfer',      icon: 'heroicons-outline:switch-horizontal', label: 'Transfer' },
       { path: '/africanshops/finance-v2/transfer-external', icon: 'heroicons-outline:paper-airplane', label: 'Send to Bank' },
-      { path: '/africanshops/finance-v2/withdrawal',    icon: 'heroicons-outline:arrow-up-tray',     label: 'Withdraw' },
+      { path: '/africanshops/finance-v2/withdrawal',    icon: 'heroicons-outline:upload',     label: 'Withdraw' },
     ],
   },
   {
     label: 'Grow',
     items: [
-      { path: '/africanshops/finance-v2/savings',       icon: 'heroicons-outline:banknotes',         label: 'Savings' },
-      { path: '/africanshops/finance-v2/wallets',       icon: 'heroicons-outline:wallet',            label: 'Wallets' },
+      { path: '/africanshops/finance-v2/savings',       icon: 'heroicons-outline:cash',         label: 'Savings' },
+      { path: '/africanshops/finance-v2/wallets',       icon: 'heroicons-outline:briefcase',            label: 'Wallets' },
       { path: '/africanshops/finance-v2/cards',         icon: 'heroicons-outline:credit-card',       label: 'Cards' },
       { path: '/africanshops/finance-v2/markets',       icon: 'heroicons-outline:presentation-chart-line', label: 'Markets' },
     ],
@@ -36,7 +38,7 @@ const NAV_GROUPS = [
   {
     label: 'Account',
     items: [
-      { path: '/africanshops/finance-v2/settings',      icon: 'heroicons-outline:cog-6-tooth',       label: 'Settings' },
+      { path: '/africanshops/finance-v2/settings',      icon: 'heroicons-outline:cog',       label: 'Settings' },
     ],
   },
 ];
@@ -66,10 +68,14 @@ export default function FinanceSidebarLeft() {
           className="w-36 h-36 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: tokens.accentGradient }}
         >
-          <FuseSvgIcon size={20} className="text-white">heroicons-solid:banknotes</FuseSvgIcon>
+          {/* Explicit white fill, not just a Tailwind class — the real bug
+              was heroicons-solid:banknotes not existing in the bundled v1
+              sprite (silent blank <use>), fixed to :cash; making the color
+              explicit here too so it's never ambiguous against the orange badge. */}
+          <FuseSvgIcon size={20} style={{ color: '#ffffff' }}>heroicons-solid:cash</FuseSvgIcon>
         </div>
         <div>
-          <Typography style={{ fontSize: F.body, fontWeight: 700, color: tokens.textPrimary, lineHeight: 1.2 }}>AfriShops</Typography>
+          <Typography style={{ fontSize: F.body, fontWeight: 700, color: tokens.textPrimary, lineHeight: 1.2 }}>Africanshops</Typography>
           <Typography style={{ fontSize: F.small, color: tokens.textMuted, lineHeight: 1.2 }}>Finance</Typography>
         </div>
       </motion.div>

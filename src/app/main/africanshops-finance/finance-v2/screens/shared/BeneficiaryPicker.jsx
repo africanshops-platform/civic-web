@@ -145,7 +145,7 @@ export default function BeneficiaryPicker({ account, tokens, card, selectedId, o
             sx={{ background: tokens.accentSoft, borderRadius: '10px' }}
           >
             <FuseSvgIcon size={18} style={{ color: tokens.accentSolid }}>
-              {showAddForm === true ? 'heroicons-outline:arrow-uturn-left' : 'heroicons-outline:plus'}
+              {showAddForm === true ? 'heroicons-outline:reply' : 'heroicons-outline:plus'}
             </FuseSvgIcon>
           </IconButton>
         )}
@@ -163,7 +163,7 @@ export default function BeneficiaryPicker({ account, tokens, card, selectedId, o
               value={beneficiarySearch}
               onChange={e => setBeneficiarySearch(e.target.value)}
               InputProps={{
-                startAdornment: <InputAdornment position="start"><FuseSvgIcon size={16} style={{ color: tokens.textMuted }}>heroicons-outline:magnifying-glass</FuseSvgIcon></InputAdornment>,
+                startAdornment: <InputAdornment position="start"><FuseSvgIcon size={16} style={{ color: tokens.textMuted }}>heroicons-outline:search</FuseSvgIcon></InputAdornment>,
               }}
               sx={fieldSx(tokens)}
             />

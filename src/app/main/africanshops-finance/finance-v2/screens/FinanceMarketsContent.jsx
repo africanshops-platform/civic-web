@@ -13,7 +13,7 @@ const PRODUCTS = [
     key: 'treasury-bills',
     title: 'Treasury Bills',
     blurb: 'Lend to the government short-term and earn a fixed, guaranteed return — 91 to 364 days.',
-    icon: 'heroicons-solid:building-library',
+    icon: 'heroicons-solid:library',
     stat: 'Fixed return',
   },
   {

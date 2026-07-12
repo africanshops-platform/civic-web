@@ -156,7 +156,7 @@ export default function FinanceWalletsContent() {
         <div className="flex gap-10">
           <Button
             onClick={() => setTransferDialog(true)}
-            startIcon={<FuseSvgIcon size={16}>heroicons-outline:arrows-right-left</FuseSvgIcon>}
+            startIcon={<FuseSvgIcon size={16}>heroicons-outline:switch-horizontal</FuseSvgIcon>}
             sx={{
               borderRadius: '10px', textTransform: 'none', fontWeight: 600, fontSize: F.label,
               color: tokens.info, border: `1px solid ${tokens.info}55`,
@@ -186,7 +186,7 @@ export default function FinanceWalletsContent() {
         </div>
       ) : walletList.length === 0 ? (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center py-48 rounded-3xl" style={card}>
-          <FuseSvgIcon size={48} style={{ color: tokens.textMuted, margin: '0 auto 16px', display: 'block' }}>heroicons-outline:wallet</FuseSvgIcon>
+          <FuseSvgIcon size={48} style={{ color: tokens.textMuted, margin: '0 auto 16px', display: 'block' }}>heroicons-outline:briefcase</FuseSvgIcon>
           <Typography style={{ fontSize: F.sectionHead, fontWeight: 700, color: tokens.textPrimary, marginBottom: 8 }}>No wallets yet</Typography>
           <Typography style={{ fontSize: F.body, color: tokens.textMuted, marginBottom: 20 }}>Open your first currency wallet to get started</Typography>
           <Button onClick={() => setOpenDialog(true)} variant="contained" sx={{ background: tokens.accentGradient, borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: F.body }}>Open First Wallet</Button>

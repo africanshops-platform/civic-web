@@ -86,7 +86,7 @@ export default function ForgotPinDialog({ open, onClose, tokens, onReset }) {
         <div className="flex items-center justify-between mb-16">
           <Typography style={{ fontSize: F.body, fontWeight: 700, color: tokens.textPrimary }}>Reset Transaction PIN</Typography>
           <IconButton size="small" onClick={handleClose} disabled={requesting || confirming}>
-            <FuseSvgIcon size={18} style={{ color: tokens.textMuted }}>heroicons-outline:x-mark</FuseSvgIcon>
+            <FuseSvgIcon size={18} style={{ color: tokens.textMuted }}>heroicons-outline:x</FuseSvgIcon>
           </IconButton>
         </div>
 
