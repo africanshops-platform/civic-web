@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 import { formatKobo, useTransactionHistory } from '../hooks/useFintechApi';
 import { useMemo, useState } from 'react';
 import { useFinanceTheme } from '../FinanceThemeContext';
+import CashflowChart from './shared/CashflowChart';
+import SpendingDonut from './shared/SpendingDonut';
 
 const F = {
   pageTitle:   'clamp(2.8rem,  4.5vw, 4rem)',
@@ -156,7 +158,23 @@ export default function FinanceOverviewContent() {
     limit: 8,
   });
 
+  // Wider window feeds the cashflow/spending charts — recent-transactions list
+  // above only needs the last 8, charts need trailing-6-months coverage.
+  const { chartStartDate, chartEndDate } = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 6);
+    return { chartStartDate: start.toISOString(), chartEndDate: end.toISOString() };
+  }, []);
+  const { data: chartTxData, isLoading: chartTxLoading } = useTransactionHistory({
+    accountNumber: account?.accountNumber,
+    limit: 200,
+    startDate: chartStartDate,
+    endDate: chartEndDate,
+  });
+
   const transactions = useMemo(() => txData?.transactions ?? txData ?? [], [txData]);
+  const chartTransactions = useMemo(() => chartTxData?.transactions ?? chartTxData ?? [], [chartTxData]);
   const totalKobo    = parseFloat(balance?.availableBalance ?? 0);
   const pendingKobo  = parseFloat(balance?.pendingBalance   ?? 0);
   const reservedKobo = parseFloat(balance?.reservedBalance  ?? 0);
@@ -205,6 +223,16 @@ export default function FinanceOverviewContent() {
               }
             </div>
           ))}
+        </motion.div>
+
+        {/* Cashflow + Spending charts */}
+        <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="rounded-2xl p-20" style={card}>
+            <CashflowChart transactions={chartTransactions} isLoading={chartTxLoading} />
+          </div>
+          <div className="rounded-2xl p-20" style={card}>
+            <SpendingDonut transactions={chartTransactions} isLoading={chartTxLoading} tokens={tokens} />
+          </div>
         </motion.div>
 
         {/* Quick Actions */}

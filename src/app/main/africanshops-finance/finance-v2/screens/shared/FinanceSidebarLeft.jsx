@@ -29,6 +29,7 @@ const NAV_GROUPS = [
       { path: '/africanshops/finance-v2/savings',       icon: 'heroicons-outline:banknotes',         label: 'Savings' },
       { path: '/africanshops/finance-v2/wallets',       icon: 'heroicons-outline:wallet',            label: 'Wallets' },
       { path: '/africanshops/finance-v2/cards',         icon: 'heroicons-outline:credit-card',       label: 'Cards' },
+      { path: '/africanshops/finance-v2/markets',       icon: 'heroicons-outline:presentation-chart-line', label: 'Markets' },
     ],
   },
 ];

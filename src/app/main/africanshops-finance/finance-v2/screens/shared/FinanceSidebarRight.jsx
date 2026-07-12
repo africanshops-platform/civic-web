@@ -4,6 +4,7 @@ import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import { motion } from 'framer-motion';
 import { formatKobo } from '../../hooks/useFintechApi';
 import { useFinanceTheme } from '../../FinanceThemeContext';
+import FxRateChip from './FxRateChip';
 
 const F = {
   sectionHead: 'clamp(1.76rem, 2.6vw, 2.2rem)',
@@ -124,6 +125,9 @@ export default function FinanceSidebarRight({ balance, balanceLoading, recentTx,
           </div>
         </motion.div>
       )}
+
+      {/* Exchange Rate */}
+      <FxRateChip tokens={tokens} />
 
       {/* Recent Transactions */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }} className="flex-1">

@@ -61,6 +61,10 @@ export const useWallets = makeHook((accountNumber) =>
     : Promise.resolve(null)
 );
 
+export const useFxRates = makeHook(() =>
+  AuthApi().get('/fintech-accounts/fx/rates').then(r => unwrap(r)?.rates ?? [])
+);
+
 export const useKycStatus = makeHook(() =>
   AuthApi().get('/auth-user/kyc/status').then(r => unwrap(r))
 );

@@ -5,10 +5,12 @@ const FinanceShellPage = lazy(() => import('./FinanceShellPage'));
 const FinanceOverviewContent = lazy(() => import('./screens/FinanceOverviewContent'));
 const FinanceTransactionsContent = lazy(() => import('./screens/FinanceTransactionsContent'));
 const FinanceTransferContent = lazy(() => import('./screens/FinanceTransferContent'));
+const FinanceExternalTransferContent = lazy(() => import('./screens/FinanceExternalTransferContent'));
 const FinanceWithdrawalContent = lazy(() => import('./screens/FinanceWithdrawalContent'));
 const FinanceSavingsContent = lazy(() => import('./screens/FinanceSavingsContent'));
 const FinanceWalletsContent = lazy(() => import('./screens/FinanceWalletsContent'));
 const FinanceCardsContent = lazy(() => import('./screens/FinanceCardsContent'));
+const FinanceMarketsContent = lazy(() => import('./screens/FinanceMarketsContent'));
 
 const LAYOUT = {
   layout: {
@@ -34,10 +36,12 @@ const financePagesConfig = {
         { path: 'overview', element: <FinanceOverviewContent /> },
         { path: 'transactions', element: <FinanceTransactionsContent /> },
         { path: 'transfer', element: <FinanceTransferContent /> },
+        { path: 'transfer-external', element: <FinanceExternalTransferContent /> },
         { path: 'withdrawal', element: <FinanceWithdrawalContent /> },
         { path: 'savings', element: <FinanceSavingsContent /> },
         { path: 'wallets', element: <FinanceWalletsContent /> },
         { path: 'cards', element: <FinanceCardsContent /> },
+        { path: 'markets', element: <FinanceMarketsContent /> },
       ],
     },
   ],
