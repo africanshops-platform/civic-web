@@ -40,7 +40,12 @@ export default function FinanceSidebarLeft() {
 
   return (
     <div
-      className="flex flex-col h-full py-24 px-12"
+      // flex-1 (not h-full): the parent (.FusePageSimple-sidebarContent) only sets
+      // min-height, not height, so a percentage height here never resolves and the
+      // panel collapses to content height — flex-grow works on real layout space
+      // instead, so this correctly stretches to fill the sidebar, letting the promo
+      // card below sit at the true bottom via nav's flex-1.
+      className="flex flex-col flex-1 py-24 px-12"
       style={{ background: tokens.sidebarBg, borderRight: `1px solid ${tokens.sidebarBorder}` }}
     >
       {/* Logo area */}

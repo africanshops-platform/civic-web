@@ -69,7 +69,9 @@ export default function FinanceSidebarRight({ balance, balanceLoading, recentTx,
 
   return (
     <div
-      className="flex flex-col h-full py-24 px-16 gap-20"
+      // flex-1, not h-full — see FinanceSidebarLeft.jsx for why percentage
+      // height never resolves against .FusePageSimple-sidebarContent.
+      className="flex flex-col flex-1 py-24 px-16 gap-20"
       style={{ background: tokens.sidebarBg, borderLeft: `1px solid ${tokens.sidebarBorder}` }}
     >
       {/* Balance Summary */}
