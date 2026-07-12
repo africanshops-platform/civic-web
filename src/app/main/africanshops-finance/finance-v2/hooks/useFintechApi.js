@@ -77,8 +77,16 @@ export const useBeneficiaries = makeHook((accountNumber) =>
 
 // Public, unauthenticated Paystack passthrough routes (no guard on the gateway) —
 // same ones already used by the shop-dashboard's LinkBankAccountDialog.
+//
+// DEV-ONLY (remove before shipping): Paystack's live test-mode key allows only
+// 3 real bank-account resolves/day. bank_code 001 + account 0000000000 is
+// Paystack's own always-available sandbox test bank — it isn't a real bank so
+// it never appears in the live /bank/list response, hence prepending it here.
 export const useBanksList = makeHook(() =>
-  AuthApi().get('/fintech-accounts/paystack-api/banks/list?country=nigeria&perPage=100').then(r => unwrap(r) ?? [])
+  AuthApi().get('/fintech-accounts/paystack-api/banks/list?country=nigeria&perPage=100').then(r => [
+    { code: '001', name: '🧪 Paystack Test Bank (dev only — use with 0000000000)' },
+    ...(unwrap(r) ?? []),
+  ])
 );
 
 // ── Mutations ──────────────────────────────────────────────────────────────
@@ -196,6 +204,53 @@ export function useDeleteBeneficiary() {
   return { mutate, isLoading, error };
 }
 
+export function useRequestPinReset() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post('/fintech-accounts/user/account/pin/forgot/initiate');
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Could not send reset code';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+export function useConfirmPinReset() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (payload) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post('/fintech-accounts/user/account/pin/forgot/confirm', payload);
+      return unwrap(res);
+    } catch (err) {
+      const status = err?.response?.status;
+      let msg = err?.response?.data?.message ?? 'Could not reset PIN';
+      if (status === 410) msg = 'Code expired. Please start again.';
+      if (status === 429) msg = 'Too many attempts. Please start again.';
+      setError(msg);
+      throw Object.assign(new Error(msg), { status });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
 export function useWithdrawalInitiate() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -233,6 +288,53 @@ export function useWithdrawalConfirm() {
       let msg = err?.response?.data?.message ?? 'Confirmation failed';
       if (status === 410) msg = 'OTP expired. Please start a new withdrawal.';
       if (status === 429) msg = 'Too many attempts. Withdrawal cancelled.';
+      setError(msg);
+      throw Object.assign(new Error(msg), { status });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+export function useExternalTransferInitiate() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (payload) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post('/fintech-accounts/user/transfer/external/initiate', payload);
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Transfer initiation failed';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+export function useExternalTransferConfirm() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (payload) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post('/fintech-accounts/user/transfer/external/confirm', payload);
+      return unwrap(res);
+    } catch (err) {
+      const status = err?.response?.status;
+      let msg = err?.response?.data?.message ?? 'Confirmation failed';
+      if (status === 410) msg = 'OTP expired. Please start a new transfer.';
+      if (status === 429) msg = 'Too many attempts. Transfer cancelled.';
       setError(msg);
       throw Object.assign(new Error(msg), { status });
     } finally {

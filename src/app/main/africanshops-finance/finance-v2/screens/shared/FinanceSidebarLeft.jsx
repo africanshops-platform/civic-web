@@ -20,6 +20,7 @@ const NAV_GROUPS = [
       { path: '/africanshops/finance-v2/overview',      icon: 'heroicons-outline:home',              label: 'Overview' },
       { path: '/africanshops/finance-v2/transactions',  icon: 'heroicons-outline:clipboard-list',    label: 'Transactions' },
       { path: '/africanshops/finance-v2/transfer',      icon: 'heroicons-outline:arrows-right-left', label: 'Transfer' },
+      { path: '/africanshops/finance-v2/transfer-external', icon: 'heroicons-outline:paper-airplane', label: 'Send to Bank' },
       { path: '/africanshops/finance-v2/withdrawal',    icon: 'heroicons-outline:arrow-up-tray',     label: 'Withdraw' },
     ],
   },

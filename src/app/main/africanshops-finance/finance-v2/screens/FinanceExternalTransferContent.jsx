@@ -9,7 +9,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Checkbox from '@mui/material/Checkbox';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useWithdrawalInitiate, useWithdrawalConfirm, useBanksList, useDeleteBeneficiary } from '../hooks/useFintechApi';
+import { useExternalTransferInitiate, useExternalTransferConfirm, useBanksList, useDeleteBeneficiary } from '../hooks/useFintechApi';
 import { useFinanceTheme } from '../FinanceThemeContext';
 import { F, fieldSx } from '../financeUiTokens';
 import OtpTimer from './shared/OtpTimer';
@@ -17,10 +17,17 @@ import BeneficiaryPicker from './shared/BeneficiaryPicker';
 import TransactionPinField from './shared/TransactionPinField';
 import ForgotPinDialog from './shared/ForgotPinDialog';
 
-export default function FinanceWithdrawalContent() {
+/**
+ * Phase C (2026-07-11) — the external counterpart to the internal, free
+ * wallet-to-wallet FinanceTransferContent: sends money to a DIFFERENT
+ * person's bank account. Same beneficiary system as withdrawal, but no
+ * KYC-match-to-self requirement — any saved, Paystack-resolved beneficiary
+ * works, not just ones verified as the caller's own account.
+ */
+export default function FinanceExternalTransferContent() {
   const { account, balance } = useOutletContext();
-  const { mutate: initiate, isLoading: initiating } = useWithdrawalInitiate();
-  const { mutate: confirm, isLoading: confirming } = useWithdrawalConfirm();
+  const { mutate: initiate, isLoading: initiating } = useExternalTransferInitiate();
+  const { mutate: confirm, isLoading: confirming } = useExternalTransferConfirm();
   const { mutate: deleteBeneficiary } = useDeleteBeneficiary();
   const { data: banks, isLoading: banksLoading } = useBanksList();
   const { tokens } = useFinanceTheme();
@@ -45,7 +52,7 @@ export default function FinanceWithdrawalContent() {
   const [otpExpired, setOtpExpired] = useState(false);
   const [forgotPinOpen, setForgotPinOpen] = useState(false);
 
-  const idempotencyKey = useRef(`WD-${crypto.randomUUID()}`);
+  const idempotencyKey = useRef(`XT-${crypto.randomUUID()}`);
 
   const availableNGN = parseFloat(balance?.availableBalance ?? 0) / 100;
   const amountNGN = parseFloat(form.amountNGN || 0);
@@ -79,7 +86,7 @@ export default function FinanceWithdrawalContent() {
   }
 
   async function handleConfirmOtp() {
-    if (otpExpired) { setError('OTP has expired. Please start a new withdrawal.'); return; }
+    if (otpExpired) { setError('OTP has expired. Please start a new transfer.'); return; }
     setError('');
     try {
       const res = await confirm({ btxId: btxData.btxId, otp });
@@ -109,7 +116,7 @@ export default function FinanceWithdrawalContent() {
     setSaveBeneficiary(false);
     setError('');
     setOtpExpired(false);
-    idempotencyKey.current = `WD-${crypto.randomUUID()}`;
+    idempotencyKey.current = `XT-${crypto.randomUUID()}`;
   }
 
   const bankName = bankNameByCode[beneficiary?.beneficiaryBankCode] ?? beneficiary?.beneficiaryBankCode;
@@ -117,8 +124,8 @@ export default function FinanceWithdrawalContent() {
   return (
     <div className="w-full px-16 md:px-24 xl:px-32 py-24 flex justify-center">
       <div className="w-full max-w-md">
-        <Typography style={{ fontSize: F.sectionHead, fontWeight: 700, color: tokens.textPrimary, marginBottom: 4 }}>Withdraw Funds</Typography>
-        <Typography style={{ fontSize: F.body, color: tokens.textMuted, marginBottom: 24 }}>Send money to any Nigerian bank account</Typography>
+        <Typography style={{ fontSize: F.sectionHead, fontWeight: 700, color: tokens.textPrimary, marginBottom: 4 }}>Send to Bank Account</Typography>
+        <Typography style={{ fontSize: F.body, color: tokens.textMuted, marginBottom: 24 }}>Pay anyone's Nigerian bank account directly</Typography>
 
         <AnimatePresence mode="wait">
           {step === 'form' && (
@@ -150,7 +157,7 @@ export default function FinanceWithdrawalContent() {
                 banks={banks}
                 banksLoading={banksLoading}
                 bankNameByCode={bankNameByCode}
-                requireVerified
+                requireVerified={false}
               />
 
               {error && <Alert severity="error" sx={{ ...errorAlertSx, mt: 2 }}>{error}</Alert>}
@@ -171,7 +178,7 @@ export default function FinanceWithdrawalContent() {
             <motion.div key="confirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="rounded-3xl p-24 space-y-16" style={card}>
                 <div className="rounded-2xl p-16" style={{ background: tokens.pageBg, border: `1px solid ${tokens.borderColor}` }}>
-                  <Typography style={{ fontSize: F.small, color: tokens.textSecondary, marginBottom: 8 }}>You're withdrawing</Typography>
+                  <Typography style={{ fontSize: F.small, color: tokens.textSecondary, marginBottom: 8 }}>You're sending</Typography>
                   <Typography style={{ fontSize: F.amountLg, fontWeight: 700, color: tokens.accentSolid, marginBottom: 12 }}>
                     ₦{amountNGN.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                   </Typography>
@@ -202,7 +209,7 @@ export default function FinanceWithdrawalContent() {
                   onClick={handleConfirmPin}
                   sx={{ background: tokens.accentGradient, borderRadius: '12px', fontWeight: 700, py: 1.5, textTransform: 'none', fontSize: F.body, '&:disabled': { background: tokens.borderColor, color: tokens.textMuted } }}
                 >
-                  {initiating ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Confirm Withdrawal'}
+                  {initiating ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Confirm Transfer'}
                 </Button>
                 <Button onClick={() => setStep('form')} sx={{ color: tokens.textMuted, textTransform: 'none', width: '100%', fontSize: F.small }}>Back</Button>
               </div>
@@ -282,7 +289,7 @@ export default function FinanceWithdrawalContent() {
                   ? (
                     <div className="mt-16 text-center">
                       <Typography style={{ fontSize: F.body, color: tokens.danger, marginBottom: 12 }}>OTP expired</Typography>
-                      <Button onClick={restart} sx={{ color: tokens.accentSolid, textTransform: 'none', fontWeight: 700, fontSize: F.label }}>Start New Withdrawal</Button>
+                      <Button onClick={restart} sx={{ color: tokens.accentSolid, textTransform: 'none', fontWeight: 700, fontSize: F.label }}>Start New Transfer</Button>
                     </div>
                   ) : (
                     <>
@@ -293,7 +300,7 @@ export default function FinanceWithdrawalContent() {
                         onClick={handleConfirmOtp}
                         sx={{ mt: 2, background: tokens.accentGradient, borderRadius: '12px', fontWeight: 700, py: 1.5, textTransform: 'none', fontSize: F.body, '&:disabled': { background: tokens.borderColor, color: tokens.textMuted } }}
                       >
-                        {confirming ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Confirm Withdrawal'}
+                        {confirming ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Confirm Transfer'}
                       </Button>
                       <Button onClick={restart} sx={{ mt: 1, color: tokens.textMuted, textTransform: 'none', width: '100%', fontSize: F.small }}>Cancel</Button>
                     </>
@@ -314,7 +321,7 @@ export default function FinanceWithdrawalContent() {
                 >
                   <FuseSvgIcon size={36} style={{ color: tokens.success }}>heroicons-solid:check</FuseSvgIcon>
                 </motion.div>
-                <Typography style={{ fontSize: F.sectionHead, fontWeight: 800, color: tokens.textPrimary, marginBottom: 8 }}>Withdrawal Submitted!</Typography>
+                <Typography style={{ fontSize: F.sectionHead, fontWeight: 800, color: tokens.textPrimary, marginBottom: 8 }}>Transfer Submitted!</Typography>
                 <Typography style={{ fontSize: F.body, color: tokens.textSecondary, marginBottom: 24 }}>
                   {result?.message ?? 'Funds will arrive within minutes.'}
                 </Typography>
@@ -333,7 +340,7 @@ export default function FinanceWithdrawalContent() {
                   >
                     <Checkbox checked={saveBeneficiary} onChange={e => setSaveBeneficiary(e.target.checked)} onClick={e => e.stopPropagation()} />
                     <Typography style={{ fontSize: F.small, color: tokens.textPrimary }}>
-                      Save {beneficiary.beneficiaryAccountName} as a beneficiary for faster withdrawals next time
+                      Save {beneficiary.beneficiaryAccountName} as a beneficiary for faster transfers next time
                     </Typography>
                   </div>
                 )}

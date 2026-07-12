@@ -217,6 +217,18 @@ function UserMenu({ user }) {
 
             <MenuItem
               component={Link}
+              to="/africanshops/finance-v2/transfer-external"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:paper-airplane</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Send to Bank" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
               to="/africanshops/finance-v2/withdrawal"
               onClick={userMenuClose}
               role="button"
