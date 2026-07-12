@@ -37,7 +37,12 @@ export default function WalletSetupWizard({ onComplete }) {
     if (pin.length !== 6) { setPinError('PIN must be 6 digits'); return; }
     if (pin !== confirmPin) { setPinError('PINs do not match'); return; }
     try {
-      const result = await mutate({ accountName: displayName, accountPin: pin, userType: 'USER' });
+      // Retail-8 (2026-07-12) bugfix: email was never sent here, so the
+      // backend's `if (data.email && userType !== 'ADMIN')` gate silently
+      // skipped Paystack DVA provisioning for every account ever created
+      // through this wizard — not just old ones. phone is optional on the
+      // backend side but passed too since it reads data.phone as well.
+      const result = await mutate({ accountName: displayName, accountPin: pin, userType: 'USER', email: user?.email, phone: user?.phoneNumber });
       setAccountData(result);
       setStep(3);
     } catch {}
@@ -67,16 +72,16 @@ export default function WalletSetupWizard({ onComplete }) {
         className="w-80 h-80 rounded-3xl flex items-center justify-center mx-auto mb-24"
         style={{ background: tokens.accentGradient }}
       >
-        <FuseSvgIcon size={40} className="text-white">heroicons-solid:banknotes</FuseSvgIcon>
+        <FuseSvgIcon size={40} className="text-white">heroicons-solid:cash</FuseSvgIcon>
       </div>
       <Typography className="text-3xl font-extrabold mb-12" style={{ color: tokens.textPrimary }}>Set up your wallet</Typography>
       <Typography className="text-base mb-8" style={{ color: tokens.textSecondary }}>
-        Hi {displayName || 'there'}! Your AfriShops Finance wallet unlocks payments,<br className="hidden md:block" /> transfers, savings, and multi-currency accounts.
+        Hi {displayName || 'there'}! Your Africanshops Finance wallet unlocks payments,<br className="hidden md:block" /> transfers, savings, and multi-currency accounts.
       </Typography>
       <div className="grid grid-cols-3 gap-12 my-24 max-w-xs mx-auto">
         {[
-          { icon: 'heroicons-outline:arrow-path', label: 'Transfers' },
-          { icon: 'heroicons-outline:banknotes', label: 'Savings' },
+          { icon: 'heroicons-outline:refresh', label: 'Transfers' },
+          { icon: 'heroicons-outline:cash', label: 'Savings' },
           { icon: 'heroicons-outline:globe-alt', label: 'Multi-FX' },
         ].map(f => (
           <div key={f.label} className="rounded-xl p-12 text-center" style={card}>

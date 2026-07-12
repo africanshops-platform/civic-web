@@ -80,13 +80,8 @@ export const useBeneficiaries = makeHook((accountNumber) =>
 //
 // DEV-ONLY (remove before shipping): Paystack's live test-mode key allows only
 // 3 real bank-account resolves/day. bank_code 001 + account 0000000000 is
-// Paystack's own always-available sandbox test bank — it isn't a real bank so
-// it never appears in the live /bank/list response, hence prepending it here.
 export const useBanksList = makeHook(() =>
-  AuthApi().get('/fintech-accounts/paystack-api/banks/list?country=nigeria&perPage=100').then(r => [
-    { code: '001', name: '🧪 Paystack Test Bank (dev only — use with 0000000000)' },
-    ...(unwrap(r) ?? []),
-  ])
+  AuthApi().get('/fintech-accounts/paystack-api/banks/list?country=nigeria&perPage=100').then(r => unwrap(r) ?? [])
 );
 
 // ── Mutations ──────────────────────────────────────────────────────────────
@@ -292,6 +287,52 @@ export function useSetTransferLimits() {
       return unwrap(res);
     } catch (err) {
       const msg = err?.response?.data?.message ?? 'Could not update transfer limits';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+// Retail-8 (2026-07-12): fund default wallet via card checkout (react-paystack
+// inline popup, same component already used on bookings/marketplace/foodmart)
+export function useVerifyWalletFunding() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (accountNumber, reference) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post(`/fintech-accounts/user/account/${accountNumber}/fund/verify`, { reference });
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Could not confirm payment';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+export function useProvisionMyDva() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (accountNumber) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post(`/fintech-accounts/user/account/${accountNumber}/provision-dva`);
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Could not set up receive-money account';
       setError(msg);
       throw new Error(msg);
     } finally {
