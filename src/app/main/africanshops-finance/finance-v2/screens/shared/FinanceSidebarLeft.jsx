@@ -33,6 +33,12 @@ const NAV_GROUPS = [
       { path: '/africanshops/finance-v2/markets',       icon: 'heroicons-outline:presentation-chart-line', label: 'Markets' },
     ],
   },
+  {
+    label: 'Account',
+    items: [
+      { path: '/africanshops/finance-v2/settings',      icon: 'heroicons-outline:cog-6-tooth',       label: 'Settings' },
+    ],
+  },
 ];
 
 export default function FinanceSidebarLeft() {

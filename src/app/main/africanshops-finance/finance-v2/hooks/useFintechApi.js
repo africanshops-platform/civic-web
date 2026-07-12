@@ -251,6 +251,57 @@ export function useConfirmPinReset() {
   return { mutate, isLoading, error };
 }
 
+// Retail-7 (2026-07-12): change PIN (knows current PIN) + self-service transfer limits
+export function useChangePin() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (accountNumber, payload) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().put(`/fintech-accounts/user/account/${accountNumber}/change-pin`, payload);
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Could not change PIN';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+export const useTransferLimits = makeHook((accountNumber) =>
+  accountNumber
+    ? AuthApi().get(`/fintech-accounts/user/account/${accountNumber}/transfer-limits`).then(r => unwrap(r))
+    : Promise.resolve(null)
+);
+
+export function useSetTransferLimits() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (accountNumber, payload) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().put(`/fintech-accounts/user/account/${accountNumber}/transfer-limits`, payload);
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Could not update transfer limits';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
 export function useWithdrawalInitiate() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
