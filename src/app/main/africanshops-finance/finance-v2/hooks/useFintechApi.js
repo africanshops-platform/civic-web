@@ -367,6 +367,55 @@ export function useOpenSavings() {
   return { mutate, isLoading, error };
 }
 
+// Retail-6 (2026-07-12): High-Yield vault fund/withdraw + rate
+export function useFundHighYield() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (accountNumber, amountKobo, transactionPin) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post(`/fintech-accounts/user/account/${accountNumber}/high-yield/fund`, { amountKobo, transactionPin });
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Failed to fund High-Yield savings';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+export function useWithdrawHighYield() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (accountNumber, amountKobo, transactionPin) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().post(`/fintech-accounts/user/account/${accountNumber}/high-yield/withdraw`, { amountKobo, transactionPin });
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Failed to withdraw from High-Yield savings';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+export const useHighYieldRate = makeHook(() =>
+  AuthApi().get('/fintech-accounts/high-yield/rate').then(r => unwrap(r))
+);
+
 export function useOpenWallet() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);

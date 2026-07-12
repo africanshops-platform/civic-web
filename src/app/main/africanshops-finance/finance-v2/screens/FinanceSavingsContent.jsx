@@ -4,10 +4,22 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import Dialog from '@mui/material/Dialog';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import { motion } from 'framer-motion';
-import { useSavingsBalance, useOpenSavings, formatNaira } from '../hooks/useFintechApi';
+import {
+  useSavingsBalance,
+  useOpenSavings,
+  useFundHighYield,
+  useWithdrawHighYield,
+  useHighYieldRate,
+  formatNaira,
+} from '../hooks/useFintechApi';
 import { useFinanceTheme } from '../FinanceThemeContext';
+import TransactionPinField from './shared/TransactionPinField';
+import { fieldSx } from '../financeUiTokens';
 
 const F = {
   pageTitle:   'clamp(2.8rem,  4.5vw, 4rem)',
@@ -25,25 +37,109 @@ const item      = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 // (growth/savings is a natural fit for the semantic-positive color, same as
 // the reference design's own savings-goal progress bars) rather than orange —
 // orange stays reserved for brand/primary-CTA contexts elsewhere.
+//
+// Retail-6 (2026-07-12): repointed from the old, now-ambiguous "Savings"
+// concept to the High-Yield vault — opt-in, funded only from the default
+// wallet, 3 free withdrawals back per month, daily interest at the
+// admin-set APY. See docs on HIGH_YIELD_SAVINGS in the ledger schema.
+function FundWithdrawDialog({ open, onClose, mode, accountNumber, maxAmountNaira, withdrawalsRemaining, onDone, tokens }) {
+  const { mutate: fund, isLoading: funding, error: fundError } = useFundHighYield();
+  const { mutate: withdraw, isLoading: withdrawing, error: withdrawError } = useWithdrawHighYield();
+  const [amount, setAmount] = useState('');
+  const [pin, setPin] = useState('');
+
+  const isFund = mode === 'fund';
+  const isLoading = isFund ? funding : withdrawing;
+  const error = isFund ? fundError : withdrawError;
+  const amountValid = parseFloat(amount) > 0;
+
+  async function handleSubmit() {
+    const amountKobo = Math.round(parseFloat(amount) * 100);
+    try {
+      if (isFund) await fund(accountNumber, amountKobo, pin);
+      else await withdraw(accountNumber, amountKobo, pin);
+      setAmount('');
+      setPin('');
+      onDone();
+    } catch {
+      // error surfaced via the hook's own error state
+    }
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '20px', background: tokens.cardBg, p: 1 } }}>
+      <div className="p-20">
+        <Typography style={{ fontSize: F.label, fontWeight: 700, color: tokens.textPrimary, marginBottom: 4 }}>
+          {isFund ? 'Add Funds to High-Yield' : 'Withdraw to Default Wallet'}
+        </Typography>
+        <Typography style={{ fontSize: F.small, color: tokens.textMuted, marginBottom: 20 }}>
+          {isFund
+            ? 'Moves money from your default wallet into your High-Yield vault.'
+            : `${withdrawalsRemaining} free withdrawal${withdrawalsRemaining === 1 ? '' : 's'} left this month.`}
+        </Typography>
+
+        {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '10px', fontSize: F.small }}>{error}</Alert>}
+        {!isFund && withdrawalsRemaining === 0 && (
+          <Alert severity="warning" sx={{ mb: 2, borderRadius: '10px', fontSize: F.small }}>
+            No free withdrawals left this month — try again next month.
+          </Alert>
+        )}
+
+        <TextField
+          label="Amount (₦)"
+          value={amount}
+          onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+          fullWidth
+          disabled={!isFund && withdrawalsRemaining === 0}
+          InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
+          sx={{ ...fieldSx(tokens), mb: 3 }}
+        />
+
+        <TransactionPinField value={pin} onChange={setPin} tokens={tokens} />
+
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={handleSubmit}
+          disabled={isLoading || !amountValid || pin.length < 4 || (!isFund && withdrawalsRemaining === 0)}
+          sx={{
+            mt: 3,
+            background: isFund ? `linear-gradient(135deg, ${tokens.success} 0%, #047857 100%)` : tokens.accentGradient,
+            borderRadius: '12px', fontWeight: 700, py: 1.4, textTransform: 'none', fontSize: F.body,
+            '&:disabled': { background: tokens.borderColor, color: tokens.textMuted },
+          }}
+        >
+          {isLoading ? <CircularProgress size={22} sx={{ color: 'white' }} /> : isFund ? 'Add Funds' : 'Withdraw'}
+        </Button>
+      </div>
+    </Dialog>
+  );
+}
+
 export default function FinanceSavingsContent() {
-  const { account } = useOutletContext();
+  const { account, refetchFinanceData } = useOutletContext();
   const { tokens } = useFinanceTheme();
   const card = { background: tokens.cardBg, border: `1px solid ${tokens.cardBorder}`, boxShadow: tokens.cardShadow };
   const { data: savings, isLoading, refetch } = useSavingsBalance(account?.accountNumber);
+  const { data: rate } = useHighYieldRate();
   const { mutate: openSavings, isLoading: opening, error: openError } = useOpenSavings();
   const [success, setSuccess] = useState('');
   const [error, setError]     = useState('');
+  const [dialogMode, setDialogMode] = useState(null); // 'fund' | 'withdraw' | null
 
   const noSavings = !isLoading && savings === null;
   const hasSavings = !isLoading && savings != null;
   const balance  = parseFloat(savings?.balance ?? 0);
   const reserved = parseFloat(savings?.reservedBalance ?? 0);
+  const withdrawalsThisMonth = savings?.withdrawalsThisMonth ?? 0;
+  const withdrawalsRemaining = savings?.withdrawalsRemaining ?? 3;
+  const apy = rate?.apyPercent ?? 12;
 
   async function handleOpen() {
     setError('');
     try {
       await openSavings(account?.accountNumber);
-      setSuccess('Savings account opened successfully!');
+      setSuccess('High-Yield savings opened successfully!');
       refetch();
     } catch (err) { setError(err.message); }
   }
@@ -58,8 +154,8 @@ export default function FinanceSavingsContent() {
 
   return (
     <div className="w-full px-16 md:px-24 xl:px-32 py-24">
-      <Typography style={{ fontSize: F.sectionHead, fontWeight: 700, color: tokens.textPrimary, marginBottom: 4 }}>Savings Account</Typography>
-      <Typography style={{ fontSize: F.body, color: tokens.textMuted, marginBottom: 28 }}>Grow your money securely</Typography>
+      <Typography style={{ fontSize: F.sectionHead, fontWeight: 700, color: tokens.textPrimary, marginBottom: 4 }}>High-Yield Savings</Typography>
+      <Typography style={{ fontSize: F.body, color: tokens.textMuted, marginBottom: 28 }}>Earn {apy}% APY on money you set aside</Typography>
 
       <motion.div variants={container} initial="hidden" animate="show" className="grid gap-20 max-w-2xl">
         {noSavings && (
@@ -69,16 +165,16 @@ export default function FinanceSavingsContent() {
                 <FuseSvgIcon size={40} style={{ color: tokens.success }}>heroicons-outline:banknotes</FuseSvgIcon>
               </div>
               <Typography style={{ fontSize: F.sectionHead, fontWeight: 700, color: tokens.textPrimary, marginBottom: 8 }}>
-                Open a Savings Account
+                Open High-Yield Savings
               </Typography>
               <Typography style={{ fontSize: F.body, color: tokens.textSecondary, marginBottom: 24, maxWidth: 360, margin: '0 auto 24px' }}>
-                Separate your savings from your main wallet. Earn interest and build your financial future.
+                Set money aside from your default wallet and earn {apy}% APY, credited daily. 3 free withdrawals back per month.
               </Typography>
 
               <div className="grid grid-cols-3 gap-12 mb-28 max-w-sm mx-auto">
                 {[
-                  { icon: 'heroicons-outline:shield-check', label: 'Secure' },
-                  { icon: 'heroicons-outline:arrow-trending-up', label: 'Grow' },
+                  { icon: 'heroicons-outline:arrow-trending-up', label: `${apy}% APY` },
+                  { icon: 'heroicons-outline:arrow-path', label: '3 free/mo' },
                   { icon: 'heroicons-outline:lock-closed', label: 'Protected' },
                 ].map(f => (
                   <div key={f.label} className="rounded-xl p-12 text-center" style={{ background: tokens.successBg }}>
@@ -93,7 +189,7 @@ export default function FinanceSavingsContent() {
 
               <Button variant="contained" onClick={handleOpen} disabled={opening}
                 sx={{ background: `linear-gradient(135deg, ${tokens.success} 0%, #047857 100%)`, borderRadius: '12px', fontWeight: 700, py: 1.5, px: 4, textTransform: 'none', fontSize: F.body, '&:disabled': { background: tokens.borderColor, color: tokens.textMuted } }}>
-                {opening ? <CircularProgress size={22} sx={{ color: 'white' }} /> : 'Open Savings Account'}
+                {opening ? <CircularProgress size={22} sx={{ color: 'white' }} /> : 'Open High-Yield Savings'}
               </Button>
             </div>
           </motion.div>
@@ -105,54 +201,82 @@ export default function FinanceSavingsContent() {
               <div className="rounded-3xl p-28 relative overflow-hidden"
                 style={{ background: `linear-gradient(135deg, ${tokens.success} 0%, #047857 100%)` }}>
                 <div className="relative z-10">
-                  <div className="flex items-center gap-12 mb-16">
-                    <div className="w-44 h-44 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.16)' }}>
-                      <FuseSvgIcon size={24} className="text-white">heroicons-solid:banknotes</FuseSvgIcon>
+                  <div className="flex items-center justify-between mb-16">
+                    <div className="flex items-center gap-12">
+                      <div className="w-44 h-44 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.16)' }}>
+                        <FuseSvgIcon size={24} className="text-white">heroicons-solid:banknotes</FuseSvgIcon>
+                      </div>
+                      <div>
+                        <Typography className="uppercase tracking-widest font-semibold" style={{ fontSize: F.small, color: 'rgba(255,255,255,0.7)' }}>High-Yield Balance</Typography>
+                        <Typography style={{ fontSize: F.small, color: 'rgba(255,255,255,0.55)' }}>NGN Vault</Typography>
+                      </div>
                     </div>
-                    <div>
-                      <Typography className="uppercase tracking-widest font-semibold" style={{ fontSize: F.small, color: 'rgba(255,255,255,0.7)' }}>Savings Balance</Typography>
-                      <Typography style={{ fontSize: F.small, color: 'rgba(255,255,255,0.55)' }}>{savings?.walletId ?? 'NGN Savings Wallet'}</Typography>
+                    <div className="rounded-full px-14 py-6" style={{ background: 'rgba(255,255,255,0.16)' }}>
+                      <Typography style={{ fontSize: F.small, fontWeight: 700, color: 'white' }}>{apy}% APY</Typography>
                     </div>
                   </div>
                   <Typography style={{ fontSize: F.balanceLg, fontWeight: 800, color: 'white', marginBottom: 8 }}>
                     {formatNaira(balance, savings?.currency ?? 'NGN')}
                   </Typography>
                   {reserved > 0 && (
-                    <Typography style={{ fontSize: F.body, color: 'rgba(255,255,255,0.7)' }}>+ {formatNaira(reserved)} reserved</Typography>
+                    <Typography style={{ fontSize: F.body, color: 'rgba(255,255,255,0.7)', marginBottom: 16 }}>+ {formatNaira(reserved)} reserved</Typography>
                   )}
+                  <div className="flex gap-12 mt-16">
+                    <button
+                      onClick={() => setDialogMode('fund')}
+                      className="flex items-center gap-8 rounded-xl px-16 py-10 font-semibold text-white transition-all duration-200 cursor-pointer"
+                      style={{ fontSize: F.label, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.24)' }}
+                    >
+                      <FuseSvgIcon size={18} className="text-white">heroicons-solid:plus</FuseSvgIcon>
+                      Add Funds
+                    </button>
+                    <button
+                      onClick={() => setDialogMode('withdraw')}
+                      className="flex items-center gap-8 rounded-xl px-16 py-10 font-semibold text-white transition-all duration-200 cursor-pointer"
+                      style={{ fontSize: F.label, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.24)' }}
+                    >
+                      <FuseSvgIcon size={18} className="text-white">heroicons-solid:arrow-up-tray</FuseSvgIcon>
+                      Withdraw
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div variants={item} className="grid grid-cols-2 gap-14">
-              {[
-                { label: 'Currency', value: savings?.currency ?? 'NGN', icon: 'heroicons-outline:globe-alt' },
-                { label: 'Wallet ID', value: savings?.walletId?.slice(-8) ?? '—', icon: 'heroicons-outline:identification', mono: true },
-              ].map(s => (
-                <div key={s.label} className="rounded-2xl p-16 flex items-center gap-14" style={card}>
-                  <div className="w-44 h-44 rounded-xl flex items-center justify-center shrink-0" style={{ background: tokens.successBg }}>
-                    <FuseSvgIcon size={22} style={{ color: tokens.success }}>{s.icon}</FuseSvgIcon>
-                  </div>
-                  <div>
-                    <Typography style={{ fontSize: F.small, color: tokens.textMuted }}>{s.label}</Typography>
-                    <Typography style={{ fontSize: F.body, fontWeight: 700, color: tokens.textPrimary, fontFamily: s.mono ? 'monospace' : 'inherit' }}>{s.value}</Typography>
-                  </div>
+            {/* Withdrawal-count tracker */}
+            <motion.div variants={item}>
+              <div className="rounded-2xl p-20" style={card}>
+                <div className="flex items-center justify-between mb-10">
+                  <Typography style={{ fontSize: F.label, fontWeight: 600, color: tokens.textPrimary }}>Free Withdrawals This Month</Typography>
+                  <Typography style={{ fontSize: F.body, fontWeight: 700, color: tokens.textPrimary }}>{withdrawalsThisMonth}/3</Typography>
                 </div>
-              ))}
+                <div className="rounded-full h-8 overflow-hidden" style={{ background: tokens.borderColor }}>
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: withdrawalsRemaining === 0 ? tokens.danger : tokens.success }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(withdrawalsThisMonth / 3) * 100}%` }}
+                    transition={{ duration: 0.6 }}
+                  />
+                </div>
+                <Typography style={{ fontSize: F.small, color: tokens.textMuted, marginTop: 8 }}>
+                  Resets on the 1st of next month
+                </Typography>
+              </div>
             </motion.div>
 
             <motion.div variants={item}>
               <div className="rounded-2xl p-20" style={{ background: tokens.successBg }}>
                 <div className="flex items-center gap-10 mb-14">
                   <FuseSvgIcon size={20} style={{ color: tokens.success }}>heroicons-outline:information-circle</FuseSvgIcon>
-                  <Typography style={{ fontSize: F.label, fontWeight: 600, color: tokens.success }}>About Your Savings</Typography>
+                  <Typography style={{ fontSize: F.label, fontWeight: 600, color: tokens.success }}>How High-Yield Works</Typography>
                 </div>
                 <ul className="space-y-10">
                   {[
-                    'Savings balance is separate from your main wallet',
-                    'Transfers between main and savings wallets coming soon',
+                    `Interest accrues daily at ${apy}% APY, credited automatically`,
+                    'Funded only from your default wallet — never a bank transfer source',
+                    '3 free withdrawals back to your default wallet per month',
                     'Balance shown is in Naira (not kobo)',
-                    'Contact support for deposit and withdrawal options',
                   ].map(tip => (
                     <li key={tip} className="flex items-start gap-10">
                       <div className="w-5 h-5 rounded-full shrink-0 mt-4" style={{ background: tokens.success }} />
@@ -165,6 +289,17 @@ export default function FinanceSavingsContent() {
           </>
         )}
       </motion.div>
+
+      <FundWithdrawDialog
+        open={dialogMode !== null}
+        onClose={() => setDialogMode(null)}
+        mode={dialogMode}
+        accountNumber={account?.accountNumber}
+        maxAmountNaira={balance}
+        withdrawalsRemaining={withdrawalsRemaining}
+        onDone={() => { setDialogMode(null); refetch(); refetchFinanceData?.(); }}
+        tokens={tokens}
+      />
     </div>
   );
 }
