@@ -27,6 +27,23 @@ function makeHook(fetcher) {
     }, [args.map(JSON.stringify).join()]);
 
     useEffect(() => { fetch(); }, [fetch]);
+
+    // Retail-N (2026-07-13): this hook predates react-query in this app and
+    // never refetches on its own — react-query's refetchOnWindowFocus default
+    // (refetch when the tab/window regains focus, e.g. after checking a
+    // balance change from another device/tab) had no equivalent here, so
+    // balances/transactions could sit stale until a manual reload.
+    useEffect(() => {
+      function onFocus() { fetch(); }
+      function onVisibility() { if (document.visibilityState === 'visible') fetch(); }
+      window.addEventListener('focus', onFocus);
+      document.addEventListener('visibilitychange', onVisibility);
+      return () => {
+        window.removeEventListener('focus', onFocus);
+        document.removeEventListener('visibilitychange', onVisibility);
+      };
+    }, [fetch]);
+
     return { data, isLoading, error, refetch: fetch };
   };
 }
