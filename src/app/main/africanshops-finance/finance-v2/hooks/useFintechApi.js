@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 
 // Backend uses either `payload` or `data` depending on the route
@@ -10,11 +10,22 @@ function makeHook(fetcher) {
   return function useHook(...args) {
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
     const [error, setError] = useState(null);
+    // Retail-N (2026-07-13) bugfix: the focus/visibility refetch below (added
+    // to fix stale balances) was flipping `isLoading` back to true on every
+    // tab-focus, and consuming screens gate a full-page spinner on isLoading
+    // (e.g. FinanceShellPage's `if (accountLoading) return <spinner/>`) — so
+    // switching back to the tab looked like a full page reload. `isLoading`
+    // must only be true before the FIRST fetch ever completes; every fetch
+    // after that is a silent background refetch (react-query's isFetching,
+    // not isLoading, semantics) — data still updates, nothing unmounts.
+    const hasFetchedOnce = useRef(false);
 
     const fetch = useCallback(async () => {
       try {
-        setIsLoading(true);
+        if (!hasFetchedOnce.current) setIsLoading(true);
+        setIsFetching(true);
         setError(null);
         const result = await fetcher(...args);
         setData(result);
@@ -22,17 +33,17 @@ function makeHook(fetcher) {
         setError(err?.response?.data?.message ?? err?.message ?? 'Request failed');
       } finally {
         setIsLoading(false);
+        setIsFetching(false);
+        hasFetchedOnce.current = true;
       }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [args.map(JSON.stringify).join()]);
 
     useEffect(() => { fetch(); }, [fetch]);
 
-    // Retail-N (2026-07-13): this hook predates react-query in this app and
-    // never refetches on its own — react-query's refetchOnWindowFocus default
-    // (refetch when the tab/window regains focus, e.g. after checking a
-    // balance change from another device/tab) had no equivalent here, so
-    // balances/transactions could sit stale until a manual reload.
+    // react-query's refetchOnWindowFocus equivalent: refetch when the tab/
+    // window regains focus (e.g. after checking a balance change from
+    // another device/tab), but silently — see the isLoading note above.
     useEffect(() => {
       function onFocus() { fetch(); }
       function onVisibility() { if (document.visibilityState === 'visible') fetch(); }
@@ -44,7 +55,7 @@ function makeHook(fetcher) {
       };
     }, [fetch]);
 
-    return { data, isLoading, error, refetch: fetch };
+    return { data, isLoading, isFetching, error, refetch: fetch };
   };
 }
 
@@ -162,6 +173,33 @@ export function useResolveAccountNumber() {
       return unwrap(res);
     } catch (err) {
       const msg = err?.response?.data?.message ?? 'Could not resolve account. Check the number and bank.';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+/**
+ * Retail-N (2026-07-13): resolves an internal (platform) account number to
+ * its holder's name before a transfer is confirmed — no money movement.
+ * Callers should debounce and only invoke once a full account number is typed.
+ */
+export function useResolveInternalAccount() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const mutate = useCallback(async (accountNumber) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await AuthApi().get(`/fintech-accounts/user/account/resolve/${accountNumber}`);
+      return unwrap(res);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'Account not found';
       setError(msg);
       throw new Error(msg);
     } finally {
