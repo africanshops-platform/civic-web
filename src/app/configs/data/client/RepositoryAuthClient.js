@@ -363,6 +363,12 @@ export const payAndPlaceOrderApi = (formData) => {
 	return AuthApi().post(`${API_ENDPOINTS.PAY_AND_PLACE_ORDER}`, formData);
 };
 
+/** Live shipping estimate for the cart-review page — server computes real per-shop
+ * cost from the authenticated user's actual cart, never trust a client-side guess. */
+export const calculateCartShippingApi = (formData) => {
+	return AuthApi().post(`${API_ENDPOINTS.CALCULATE_CART_SHIPPING}`, formData);
+};
+
 /**
  * MANAGE USER WALLET
  * LOGIS

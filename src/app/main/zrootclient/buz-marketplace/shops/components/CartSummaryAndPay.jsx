@@ -1,7 +1,10 @@
 import _ from "@lodash";
-import { Button, Typography, Divider } from "@mui/material";
+// import { Button, Typography, Divider } from "@mui/material";
 import { motion } from "framer-motion";
-import { usePayAndPlaceOrder } from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
+import {
+  usePayAndPlaceOrder,
+  useCalculateCartShipping,
+} from "app/configs/data/server-calls/auth/userapp/a_marketplace/useProductsRepo";
 import { useAppSelector } from "app/store/hooks";
 import { PaystackButton } from "react-paystack";
 import { toast } from "react-toastify";
@@ -9,56 +12,10 @@ import { selectUser } from "src/app/auth/user/store/userSlice";
 import {
   calculateCartTotalAmount,
   formatCurrency,
-  generateClientUID,
-  getShoppingSession,
+  // generateClientUID,
+  // getShoppingSession,
 } from "src/app/main/vendors-shop/PosUtils";
 import { useState, useEffect } from "react";
-
-/**
- * Placeholder function to calculate distance between two coordinates
- * This will be replaced with actual distance calculation using Haversine formula or API
- */
-const calculateDistance = (lat1, lng1, lat2, lng2) => {
-  // Haversine formula for calculating distance between two coordinates
-  const R = 6371; // Radius of the Earth in kilometers
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c; // Distance in kilometers
-  return distance;
-};
-
-/**
- * Placeholder shipping rates table
- * This will be replaced with API call to fetch shipping rates from database
- * Structure: { minDistance: number, maxDistance: number, price: number }
- */
-const PLACEHOLDER_SHIPPING_RATES = [
-  { minDistance: 0, maxDistance: 10, price: 500, label: "Within City" },
-  { minDistance: 10, maxDistance: 50, price: 1500, label: "Nearby Cities" },
-  { minDistance: 50, maxDistance: 150, price: 3000, label: "Same Region" },
-  { minDistance: 150, maxDistance: 300, price: 5000, label: "Neighboring States" },
-  { minDistance: 300, maxDistance: Infinity, price: 8000, label: "Far Distance" },
-];
-
-/**
- * Placeholder state coordinates
- * This will be replaced with API call to fetch state coordinates by ID
- */
-const PLACEHOLDER_STATE_COORDINATES = {
-  1: { lat: 6.5244, lng: 3.3792, name: "Lagos" }, // Lagos
-  2: { lat: 9.082, lng: 8.6753, name: "Abuja" }, // Abuja
-  3: { lat: 7.3775, lng: 3.947, name: "Ibadan" }, // Oyo
-  4: { lat: 6.335, lng: 5.6037, name: "Benin City" }, // Edo
-  5: { lat: 5.0162, lng: 7.9333, name: "Enugu" }, // Enugu
-  // Add more states as needed
-};
 
 /**
  * Placeholder country tax rates
@@ -82,7 +39,6 @@ const CartSummaryAndPay = ({
   orderStateProvinceDestination,
   orderLgaDestination,
   orderMarketPickupDestination,
-  selectedMarketData, // Add this prop to receive selected market data
   dirtyFields,
   isValid,
   setIsProcessingPayment,
@@ -92,8 +48,12 @@ const CartSummaryAndPay = ({
 
   // State for calculated delivery fee
   const [deliveryFee, setDeliveryFee] = useState(0);
-  const [deliveryDistance, setDeliveryDistance] = useState(0);
-  const [deliveryLabel, setDeliveryLabel] = useState("");
+  const [deliveryMode, setDeliveryMode] = useState("");
+  const [deliveryError, setDeliveryError] = useState(null);
+  const {
+    mutate: calculateCartShipping,
+    isLoading: deliveryLoading,
+  } = useCalculateCartShipping();
 
   // Calculate cart subtotal
   let checkItemsArrayForTotal = [];
@@ -120,40 +80,40 @@ const CartSummaryAndPay = ({
 
   const subtotal = calculateCartTotalAmount(checkItemsArrayForTotal);
 
-  // Calculate delivery fee based on distance
+  // Live shipping estimate — recalculated whenever the customer picks/changes their
+  // market pickup point. Real per-shop cost from places-service's rate tables, not a
+  // client-side guess (the backend recomputes this authoritatively at checkout anyway,
+  // this is purely for showing the customer an accurate number before they pay).
   useEffect(() => {
-    if (selectedMarketData && cartSessionPayload?.stateId) {
-      // Get shopping state coordinates (placeholder - will be from API)
-      const shoppingStateCoords =
-        PLACEHOLDER_STATE_COORDINATES[cartSessionPayload.stateId] ||
-        PLACEHOLDER_STATE_COORDINATES[1]; // Default to Lagos
-
-      // Get selected market coordinates
-      const marketLat = parseFloat(selectedMarketData.lat);
-      const marketLng = parseFloat(selectedMarketData.lng);
-      const stateLat = shoppingStateCoords.lat;
-      const stateLng = shoppingStateCoords.lng;
-
-      // Calculate distance between shopping state and delivery market
-      const distance = calculateDistance(stateLat, stateLng, marketLat, marketLng);
-
-      // Find appropriate shipping rate based on distance
-      const shippingRate = PLACEHOLDER_SHIPPING_RATES.find(
-        (rate) => distance >= rate.minDistance && distance < rate.maxDistance,
-      );
-
-      if (shippingRate) {
-        setDeliveryFee(shippingRate.price);
-        setDeliveryDistance(Math.round(distance));
-        setDeliveryLabel(shippingRate.label);
-      }
-    } else {
-      // No market selected, use default delivery fee
-      setDeliveryFee(1000);
-      setDeliveryDistance(0);
-      setDeliveryLabel("Standard Delivery");
+    if (!orderMarketPickupDestination || !cartSessionPayload?.cartProducts?.length) {
+      setDeliveryFee(0);
+      setDeliveryMode("");
+      setDeliveryError(null);
+      return;
     }
-  }, [selectedMarketData, cartSessionPayload?.stateId]);
+
+    calculateCartShipping(
+      { destinationMarketId: orderMarketPickupDestination },
+      {
+        onSuccess: (response) => {
+          const result = response?.data;
+          if (result?.success) {
+            setDeliveryFee(Math.round((result.totalAmountKobo ?? 0) / 100));
+            setDeliveryMode(result.mode ?? "");
+            setDeliveryError(null);
+          }
+        },
+        onError: (error) => {
+          setDeliveryFee(0);
+          setDeliveryMode("");
+          setDeliveryError(
+            error?.response?.data?.message ||
+              "Shipping isn't available to this location yet — try a different pickup point.",
+          );
+        },
+      },
+    );
+  }, [orderMarketPickupDestination, cartSessionPayload?.cartProducts?.length]);
 
   // Calculate VAT based on country (placeholder - will be from API)
   const getTaxRate = () => {
@@ -173,6 +133,21 @@ const CartSummaryAndPay = ({
 
   const { mutate: verifyPaymentAndCreateOrder, isLoading: loadingWhilePaying } =
     usePayAndPlaceOrder();
+
+  // Shared across the button's class/style/disabled + the "complete fields" warning below —
+  // extracted so adding the two delivery-fee checks doesn't mean editing 5 duplicate copies.
+  const isPayDisabled =
+    _.isEmpty(dirtyFields) ||
+    !isValid ||
+    !name ||
+    !phone ||
+    !address ||
+    !orderCountryDestination ||
+    !orderStateProvinceDestination ||
+    !orderLgaDestination ||
+    !orderMarketPickupDestination ||
+    deliveryLoading ||
+    !!deliveryError;
 
   // Update the processing payment state when mutation is loading
   useEffect(() => {
@@ -304,11 +279,11 @@ const CartSummaryAndPay = ({
             <span className="font-semibold text-gray-800">₦{formatCurrency(subtotal)}</span>
           </div>
 
-          {/* Delivery Fees with Distance Info */}
+          {/* Delivery Fees with Mode Info */}
           <div className="flex justify-between text-sm">
             <div className="flex items-center gap-2">
               <span className="text-gray-600">Delivery Fee</span>
-              {deliveryDistance > 0 && (
+              {deliveryMode && !deliveryLoading && (
                 <div className="group relative">
                   <svg
                     className="w-4 h-4 text-gray-400 cursor-help"
@@ -324,13 +299,24 @@ const CartSummaryAndPay = ({
                     />
                   </svg>
                   <div className="absolute hidden group-hover:block bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap z-10">
-                    {deliveryLabel} (~{deliveryDistance}km)
+                    {deliveryMode} delivery
                   </div>
                 </div>
               )}
             </div>
-            <span className="font-semibold text-gray-800">₦{formatCurrency(deliveryFee)}</span>
+            {deliveryLoading ? (
+              <span className="text-xs text-gray-400 italic">calculating…</span>
+            ) : (
+              <span className="font-semibold text-gray-800">₦{formatCurrency(deliveryFee)}</span>
+            )}
           </div>
+
+          {/* Shipping error, if the calculator couldn't resolve a route */}
+          {deliveryError && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+              <p className="text-xs text-red-700">{deliveryError}</p>
+            </div>
+          )}
 
           {/* VAT with Country Info */}
           <div className="flex justify-between text-sm">
@@ -418,80 +404,17 @@ const CartSummaryAndPay = ({
               <PaystackButton
                 text={`🔒 Pay ₦${formatCurrency(grandTotal)}`}
                 className={`w-full py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all duration-300 ${
-                  _.isEmpty(dirtyFields) ||
-                  !isValid ||
-                  !name ||
-                  !phone ||
-                  !address ||
-                  !orderCountryDestination ||
-                  !orderStateProvinceDestination ||
-                  !orderLgaDestination ||
-                  !orderMarketPickupDestination
-                    ? ""
-                    : "paystack-button-enabled"
+                  isPayDisabled ? "" : "paystack-button-enabled"
                 }`}
                 style={{
-                  background:
-                    _.isEmpty(dirtyFields) ||
-                    !isValid ||
-                    !name ||
-                    !phone ||
-                    !address ||
-                    !orderCountryDestination ||
-                    !orderStateProvinceDestination ||
-                    !orderLgaDestination ||
-                    !orderMarketPickupDestination
-                      ? "linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)"
-                      : "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-                  color:
-                    _.isEmpty(dirtyFields) ||
-                    !isValid ||
-                    !name ||
-                    !phone ||
-                    !address ||
-                    !orderCountryDestination ||
-                    !orderStateProvinceDestination ||
-                    !orderLgaDestination ||
-                    !orderMarketPickupDestination
-                      ? "#9ca3af"
-                      : "white",
+                  background: isPayDisabled
+                    ? "linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)"
+                    : "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                  color: isPayDisabled ? "#9ca3af" : "white",
                   border: "none",
-                  cursor:
-                    _.isEmpty(dirtyFields) ||
-                    !isValid ||
-                    !name ||
-                    !phone ||
-                    !address ||
-                    !orderCountryDestination ||
-                    !orderStateProvinceDestination ||
-                    !orderLgaDestination ||
-                    !orderMarketPickupDestination
-                      ? "not-allowed"
-                      : "pointer",
-                  boxShadow:
-                    _.isEmpty(dirtyFields) ||
-                    !isValid ||
-                    !name ||
-                    !phone ||
-                    !address ||
-                    !orderCountryDestination ||
-                    !orderStateProvinceDestination ||
-                    !orderLgaDestination ||
-                    !orderMarketPickupDestination
-                      ? "none"
-                      : "0 4px 15px rgba(234, 88, 12, 0.4)",
-                  filter:
-                    _.isEmpty(dirtyFields) ||
-                    !isValid ||
-                    !name ||
-                    !phone ||
-                    !address ||
-                    !orderCountryDestination ||
-                    !orderStateProvinceDestination ||
-                    !orderLgaDestination ||
-                    !orderMarketPickupDestination
-                      ? "grayscale(20%)"
-                      : "none",
+                  cursor: isPayDisabled ? "not-allowed" : "pointer",
+                  boxShadow: isPayDisabled ? "none" : "0 4px 15px rgba(234, 88, 12, 0.4)",
+                  filter: isPayDisabled ? "grayscale(20%)" : "none",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -502,28 +425,9 @@ const CartSummaryAndPay = ({
                 publicKey={publicKey}
                 onSuccess={(reference) => onSuccess(reference)}
                 onClose={() => onClose()}
-                disabled={
-                  _.isEmpty(dirtyFields) ||
-                  !isValid ||
-                  !name ||
-                  !phone ||
-                  !address ||
-                  !orderCountryDestination ||
-                  !orderStateProvinceDestination ||
-                  !orderLgaDestination ||
-                  !orderMarketPickupDestination ||
-                  loadingWhilePaying
-                }
+                disabled={isPayDisabled || loadingWhilePaying}
               />
-              {(_.isEmpty(dirtyFields) ||
-                !isValid ||
-                !name ||
-                !phone ||
-                !address ||
-                !orderCountryDestination ||
-                !orderStateProvinceDestination ||
-                !orderLgaDestination ||
-                !orderMarketPickupDestination) && (
+              {isPayDisabled && !deliveryError && (
                 <div className="mt-3 text-center">
                   <div
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg"
@@ -547,7 +451,9 @@ const CartSummaryAndPay = ({
                       />
                     </svg>
                     <p className="text-xs text-red-700 font-semibold">
-                      Please complete all required fields to proceed
+                      {deliveryLoading
+                        ? "Calculating shipping cost…"
+                        : "Please complete all required fields to proceed"}
                     </p>
                   </div>
                 </div>

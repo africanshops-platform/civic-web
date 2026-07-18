@@ -1,5 +1,6 @@
 import {
 	addToUserCommodityCartApi,
+	calculateCartShippingApi,
 	cancelUserItemInInvoiceApi,
 	getPlacedOrders,
 	getUserInvoices,
@@ -231,6 +232,19 @@ export function usePayAndPlaceOrder() {
 			onError: handleNestJSError
 		}
 	);
+}
+
+/** ***Live shipping cost estimate for the cart-review page — server computes real
+ * per-shop cost from the authenticated user's actual cart (never a client-side guess).
+ * No global error toast: an unresolved route while the user is still mid-selection isn't
+ * an error worth interrupting them for — the caller shows an inline "unavailable" state
+ * instead (see CartSummaryAndPay.jsx). */
+export function useCalculateCartShipping() {
+	return useMutation((destinationData) => calculateCartShippingApi(destinationData), {
+		onError: (error) => {
+			console.warn('Shipping calculation failed:', error?.response?.data || error?.message);
+		}
+	});
 }
 
 /** *Get Authenticated user orders */

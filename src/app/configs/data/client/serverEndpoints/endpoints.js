@@ -76,6 +76,7 @@ export const API_ENDPOINTS = {
 	REMOVE_CART_ITEM: '/cart/remove-item',
 
 	PAY_AND_PLACE_ORDER: '/paystack-payment/verify-and-create-marketplace-order', // (Msvs => Done)
+	CALCULATE_CART_SHIPPING: '/buzshipping/calculate-cart', // (Msvs => Done)
 	/** ****
 	 * ########################FOOD MART APP SERVER_URLs EDNs Here===========
 	 * ----------------------------------------------------------------------------------------------
