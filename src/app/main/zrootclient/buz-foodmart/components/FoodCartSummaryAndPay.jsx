@@ -3,46 +3,17 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { PaystackButton } from "react-paystack";
 import { toast } from "react-toastify";
-import { usePayAndPlaceFoodOrder } from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
+import {
+  usePayAndPlaceFoodOrder,
+  useCalculateFoodCartShipping,
+} from "app/configs/data/server-calls/auth/userapp/a_foodmart/useFoodMartsRepo";
 import { useAppSelector } from "app/store/hooks";
 import { selectUser } from "../../../../auth/user/store/userSlice";
 import {
   calculateCartTotalAmount,
   formatCurrency,
   generateClientUID,
-  getFoodVendorSession,
 } from "../../../vendors-shop/PosUtils";
-
-// Haversine distance in kilometres
-const haversineKm = (lat1, lng1, lat2, lng2) => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-// Distance-based shipping tiers (placeholder — replace with API lookup)
-const SHIPPING_RATES = [
-  { min: 0,   max: 10,       price: 500,  label: "Within City" },
-  { min: 10,  max: 50,       price: 1500, label: "Nearby Areas" },
-  { min: 50,  max: 150,      price: 3000, label: "Same Region" },
-  { min: 150, max: 300,      price: 5000, label: "Neighbouring States" },
-  { min: 300, max: Infinity, price: 8000, label: "Long Distance" },
-];
-
-// State-centre coordinates for origin estimate (placeholder — replace with API)
-const STATE_COORDS = {
-  1: { lat: 6.5244,  lng: 3.3792,  name: "Lagos" },
-  2: { lat: 9.082,   lng: 8.6753,  name: "Abuja" },
-  3: { lat: 7.3775,  lng: 3.947,   name: "Ibadan" },
-  4: { lat: 6.335,   lng: 5.6037,  name: "Benin City" },
-  5: { lat: 5.0162,  lng: 7.9333,  name: "Enugu" },
-};
 
 // Country VAT rates (placeholder — replace with API)
 const VAT_RATES = {
@@ -64,16 +35,26 @@ function FoodCartSummaryAndPay({
   orderLgaDestination,
   orderMarketPickupDestination,
   district,
-  selectedMarketData,
   dirtyFields,
   isValid,
   setIsProcessingPayment,
 }) {
   const user = useAppSelector(selectUser);
 
-  const [deliveryFee, setDeliveryFee] = useState(1000);
-  const [deliveryDistance, setDeliveryDistance] = useState(0);
-  const [deliveryLabel, setDeliveryLabel] = useState("Standard Delivery");
+  // Food orders are LGA-locked: the vendor's own LGA (real server-side field on the food
+  // cart session, cartSession.lgaId — a stale client-side cookie was used here previously
+  // and was never populated by the actual add-to-cart flow, silently breaking every food
+  // order's foodMart/LGA fields) must match the delivery LGA — food needs to travel fast,
+  // so cross-LGA (let alone cross-state) delivery isn't offered.
+  const isOutsideVendorLga =
+    !!cartSession?.lgaId &&
+    !!orderLgaDestination &&
+    cartSession.lgaId !== orderLgaDestination;
+
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [deliveryError, setDeliveryError] = useState(null);
+  const { mutate: calculateFoodCartShipping, isLoading: deliveryLoading } =
+    useCalculateFoodCartShipping();
 
   // Build subtotal from cart items
   const checkItemsArray = (intemsInCart || []).map((el) => ({
@@ -82,30 +63,41 @@ function FoodCartSummaryAndPay({
   }));
   const subtotal = calculateCartTotalAmount(checkItemsArray);
 
-  // Distance-based delivery fee
+  // Live shipping estimate — recalculated whenever the customer picks/changes their
+  // destination (market pickup point, or a raw LGA for home delivery). Real cost from
+  // places-service's rate tables via the food cart's actual vendor, resolved server-side
+  // — not a client-side guess. This is the ONLY place the calculation runs pre-payment;
+  // onSuccess below just carries the already-computed deliveryFee into the order payload,
+  // it never recalculates (the backend re-runs the same calculation itself, authoritatively,
+  // at verify time — that's a separate concern from what the customer sees before paying).
   useEffect(() => {
-    if (selectedMarketData?.lat && selectedMarketData?.lng) {
-      const origin =
-        STATE_COORDS[cartSession?.stateId] ||
-        STATE_COORDS[orderStateProvinceDestination] ||
-        STATE_COORDS[1]; // default Lagos
-      const km = haversineKm(
-        origin.lat, origin.lng,
-        parseFloat(selectedMarketData.lat),
-        parseFloat(selectedMarketData.lng),
-      );
-      const tier = SHIPPING_RATES.find((r) => km >= r.min && km < r.max);
-      if (tier) {
-        setDeliveryFee(tier.price);
-        setDeliveryDistance(Math.round(km));
-        setDeliveryLabel(tier.label);
-      }
-    } else {
-      setDeliveryFee(1000);
-      setDeliveryDistance(0);
-      setDeliveryLabel("Standard Delivery");
+    if (!orderMarketPickupDestination && !orderLgaDestination) {
+      setDeliveryFee(0);
+      setDeliveryError(null);
+      return;
     }
-  }, [selectedMarketData, cartSession?.stateId, orderStateProvinceDestination]);
+
+    const destinationPayload = orderMarketPickupDestination
+      ? { destinationMarketId: orderMarketPickupDestination }
+      : { destinationGeoId: orderLgaDestination, destinationLevel: "LGA" };
+
+    calculateFoodCartShipping(destinationPayload, {
+      onSuccess: (response) => {
+        const result = response?.data;
+        if (result?.success) {
+          setDeliveryFee(Math.round((result.amountKobo ?? 0) / 100));
+          setDeliveryError(null);
+        }
+      },
+      onError: (error) => {
+        setDeliveryFee(0);
+        setDeliveryError(
+          error?.response?.data?.message ||
+            "Delivery isn't available to this location yet — try a different pickup point.",
+        );
+      },
+    });
+  }, [orderMarketPickupDestination, orderLgaDestination]);
 
   // VAT
   const taxInfo =
@@ -124,7 +116,6 @@ function FoodCartSummaryAndPay({
 
   const onSuccess = async (paystackResponse) => {
     try {
-      const payloadData = getFoodVendorSession();
       const orderData = {
         //|| generateClientUID()
         refOrderId: `AFSHFMKT${cartSession?.id}`,
@@ -139,10 +130,10 @@ function FoodCartSummaryAndPay({
         orderMarketPickupDestination,
         district,
         paymentMethod: methodOfPay,
-        shoppingLgaSession: payloadData?.shopLgaProvinceOrigin,
+        shoppingLgaSession: cartSession?.lgaId,
         paymentResult: paystackResponse,
         shippingAddress: { fullName: name, phone, address },
-        foodMart: payloadData?.foodMartId,
+        foodMart: cartSession?.foodmartId,
         reference: paystackResponse?.reference,
       };
       verifyPaymentAndCreateOrder(orderData);
@@ -166,7 +157,10 @@ function FoodCartSummaryAndPay({
     !orderStateProvinceDestination ||
     !orderLgaDestination ||
     !district ||
-    !orderMarketPickupDestination;
+    !orderMarketPickupDestination ||
+    isOutsideVendorLga ||
+    deliveryLoading ||
+    !!deliveryError;
 
   return (
     <motion.div
@@ -224,22 +218,12 @@ function FoodCartSummaryAndPay({
             <span className="font-semibold text-gray-800">₦{formatCurrency(subtotal)}</span>
           </div>
 
-          {/* Delivery fee with distance tooltip */}
+          {/* Delivery fee — live estimate from the real shipping calculator */}
           <div className="flex justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600">Delivery Fee</span>
-              {deliveryDistance > 0 && (
-                <div className="group relative">
-                  <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="absolute hidden group-hover:block bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap z-10">
-                    {deliveryLabel} (~{deliveryDistance} km)
-                  </div>
-                </div>
-              )}
-            </div>
-            <span className="font-semibold text-gray-800">₦{formatCurrency(deliveryFee)}</span>
+            <span className="text-gray-600">Delivery Fee</span>
+            <span className="font-semibold text-gray-800">
+              {deliveryLoading ? "Calculating…" : `₦${formatCurrency(deliveryFee)}`}
+            </span>
           </div>
 
           {/* VAT with country tooltip */}
@@ -346,7 +330,9 @@ function FoodCartSummaryAndPay({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <p className="text-xs text-red-700 font-semibold">
-                      Please complete all required fields
+                      {isOutsideVendorLga
+                        ? "This food mart only delivers within its own L.G.A/County — choose a delivery location in the same L.G.A."
+                        : deliveryError || "Please complete all required fields"}
                     </p>
                   </div>
                 </div>

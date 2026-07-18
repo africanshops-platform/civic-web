@@ -1,5 +1,6 @@
 import {
 	addToUserFoodCartApi,
+	calculateFoodCartShippingApi,
 	getUserFoodCartApi,
 	getUserFoodInvoicesAndItemsByIdEnpoint,
 	getUserFoodInvoicesEnpoint,
@@ -151,6 +152,18 @@ export function useAddToFoodCart() {
 		}
 	);
 } // (Mcsvs => Done)
+
+/** Live shipping estimate for the food-cart-review page — recalculated as the customer
+ * picks/changes their destination. No global error toast: an unresolved route while the
+ * user is still mid-selection isn't an error worth interrupting them for — the caller
+ * shows an inline "unavailable" state instead (see FoodCartSummaryAndPay.jsx). */
+export function useCalculateFoodCartShipping() {
+	return useMutation((destinationData) => calculateFoodCartShippingApi(destinationData), {
+		onError: (error) => {
+			console.warn('Food shipping calculation failed:', error?.response?.data || error?.message);
+		}
+	});
+}
 
 /** Updated Food cart item quantity */
 export function useUpdateFoodCartItemQty() {

@@ -302,6 +302,12 @@ export const updateUserFoodCartApi = (formData) => {
 	return AuthApi().put(`${API_ENDPOINTS.UPDATE_FOODCART_QTY}`, formData);
 };
 
+/** Live shipping estimate for the food-cart-review page — server computes the real cost
+ * from the authenticated user's actual food cart session, never a client-side guess. */
+export const calculateFoodCartShippingApi = (formData) => {
+	return AuthApi().post(`${API_ENDPOINTS.CALCULATE_FOOD_CART_SHIPPING}`, formData);
+};
+
 /**
  * MANAGE ORDER SECTION
  */

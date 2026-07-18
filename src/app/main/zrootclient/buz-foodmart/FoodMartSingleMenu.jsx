@@ -65,7 +65,7 @@ function FoodMartSingleMenu() {
 
   const { data: foodCart } = useGetMyFoodCartByUserCred(user?.id);
 
-  const onAddToFoodCart = useCallback(() => {
+  const onAddToFoodCart = useCallback(async () => {
     if (!user?.email) {
       navigate("/sign-in");
       return;
@@ -78,9 +78,6 @@ function FoodMartSingleMenu() {
       shop: menu?.data?.shop,
       foodMart: menu?.data?.foodMartVendor,
     };
-    console.log("foodCart", foodCart?.data?.foodcart);
-    console.log("foodCart_LENGTH", foodCart?.data?.foodcart.length);
-    //  return addToFoodCart(formData);
 
     if (foodCart?.data?.foodcart.length < 1) {
       const sessionPayload = {
@@ -92,12 +89,13 @@ function FoodMartSingleMenu() {
         foodMartId: menu?.data?.foodMartVendor,
       };
 
-      const setCartSessionPayload = storeFoodVendorSession(sessionPayload);
-      if (setCartSessionPayload) {
-        addToFoodCart(formData);
-        // getCartWhenAuth()
-        return;
-      }
+      // storeFoodVendorSession must finish writing the cookie before we add to cart —
+      // checkout reads this cookie for the order's foodMart/LGA fields, and an unawaited
+      // call here previously raced the network call inside it, sometimes leaving the
+      // cookie unset by the time checkout ran (order submitted with no foodMart id).
+      await storeFoodVendorSession(sessionPayload);
+      addToFoodCart(formData);
+      return;
     } else {
       const payloadData = getFoodVendorSession();
       //get shopping _client_session
