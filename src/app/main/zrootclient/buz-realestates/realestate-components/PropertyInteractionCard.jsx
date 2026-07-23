@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Button,
   Typography,
@@ -8,13 +8,32 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
+  MenuItem,
+  FormControlLabel,
+  Checkbox,
+  IconButton,
 } from "@mui/material";
+import { Close } from "@mui/icons-material";
 import { useAppSelector } from "app/store/hooks";
 // import { selectFuseCurrentLayoutConfig } from '@fuse/core/FuseSettings/fuseSettingsSlice';
 import { selectUser } from "src/app/auth/user/store/userSlice";
 import NavLinkAdapter from "@fuse/core/NavLinkAdapter";
 import { useCreateInspectionSchedule } from "app/configs/data/server-calls/auth/userapp/a_estates/useInspectionScheduleRepo";
-import { useCreatePropertyOffer } from "app/configs/data/server-calls/auth/userapp/a_estates/useOffersRepo";
+import {
+  useCreatePropertyOffer,
+  useUploadOfferAttachment,
+} from "app/configs/data/server-calls/auth/userapp/a_estates/useOffersRepo";
+
+const FINANCING_TYPES = ["Cash", "Mortgage", "Installment"];
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 /**
  * PropertyInteractionCard Component
@@ -35,10 +54,59 @@ function PropertyInteractionCard({ propertyData, realtorInfo }) {
   const [offerAmount, setOfferAmount] = useState("");
   const [offerPhone, setOfferPhone] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
+  const [financingType, setFinancingType] = useState("Cash");
+  const [isPreApproved, setIsPreApproved] = useState(false);
+  const [proposedMoveInDate, setProposedMoveInDate] = useState("");
+  const [proposedClosingDate, setProposedClosingDate] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [specialConditions, setSpecialConditions] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [offerStep, setOfferStep] = useState("form"); // 'form' | 'review'
+  const fileInputRef = useRef(null);
 
   // Mutations
   const createInspectionMutation = useCreateInspectionSchedule();
   const createOfferMutation = useCreatePropertyOffer();
+  const uploadAttachmentMutation = useUploadOfferAttachment();
+
+  const resetOfferForm = () => {
+    setOfferAmount("");
+    setOfferPhone("");
+    setOfferMessage("");
+    setFinancingType("Cash");
+    setIsPreApproved(false);
+    setProposedMoveInDate("");
+    setProposedClosingDate("");
+    setDepositAmount("");
+    setSpecialConditions("");
+    setAttachments([]);
+    setOfferStep("form");
+  };
+
+  const handleCloseOfferDialog = () => {
+    setOfferDialogOpen(false);
+    resetOfferForm();
+  };
+
+  const handleAttachmentSelect = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const result = await uploadAttachmentMutation.mutateAsync(dataUrl);
+      const url = result?.data?.url;
+      if (url) setAttachments((prev) => [...prev, { url, name: file.name }]);
+    } catch (err) {
+      // useUploadOfferAttachment already toasts the error
+      console.error("Attachment upload failed:", err);
+    }
+  };
+
+  const handleRemoveAttachment = (url) => {
+    setAttachments((prev) => prev.filter((a) => a.url !== url));
+  };
 
   const handleScheduleInspection = () => {
     // Prepare inspection schedule data with all required fields
@@ -79,7 +147,14 @@ function PropertyInteractionCard({ propertyData, realtorInfo }) {
         `${user?.data?.firstName || ""} ${user?.data?.lastName || ""}`.trim(),
       buyerEmail: user?.data?.email || user?.email,
       buyerPhone: offerPhone,
-      message: offerMessage,
+      financingType,
+      isPreApproved,
+      ...(proposedMoveInDate ? { proposedMoveInDate } : {}),
+      ...(proposedClosingDate ? { proposedClosingDate } : {}),
+      ...(offerMessage ? { message: offerMessage } : {}),
+      ...(depositAmount ? { depositAmount: parseFloat(depositAmount) } : {}),
+      ...(specialConditions ? { specialConditions } : {}),
+      ...(attachments.length > 0 ? { attachments } : {}),
     };
 
     // Call mutation to create offer
@@ -87,9 +162,7 @@ function PropertyInteractionCard({ propertyData, realtorInfo }) {
       onSuccess: () => {
         // Close dialog and reset form on success
         setOfferDialogOpen(false);
-        setOfferAmount("");
-        setOfferPhone("");
-        setOfferMessage("");
+        resetOfferForm();
       },
     });
   };
@@ -400,20 +473,15 @@ function PropertyInteractionCard({ propertyData, realtorInfo }) {
       </Dialog>
 
       {/* Make Offer Dialog */}
-      <Dialog
-        open={offerDialogOpen}
-        onClose={() => setOfferDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={offerDialogOpen} onClose={handleCloseOfferDialog} maxWidth="sm" fullWidth>
         <DialogTitle className="bg-orange-500 text-white">
           <div className="flex items-center gap-2">
             <i className="fas fa-tag"></i>
-            Make an Offer
+            {offerStep === "review" ? "Review Your Offer" : "Make an Offer"}
           </div>
         </DialogTitle>
         <DialogContent className="mt-4">
-          {!isAuthenticated ? (
+          {!isAuthenticated && (
             <div className="py-6 text-center">
               <i className="fas fa-lock text-orange-500 text-5xl mb-4"></i>
               <Typography variant="h6" className="font-semibold mb-3 text-gray-900">
@@ -439,7 +507,29 @@ function PropertyInteractionCard({ propertyData, realtorInfo }) {
                 Sign In to Continue
               </Button>
             </div>
-          ) : (
+          )}
+          {isAuthenticated && offerStep === "review" && (
+            <div className="py-4 space-y-1">
+              <ReviewRow label="Offer amount" value={`₦${Number(offerAmount || 0).toLocaleString()}`} />
+              <ReviewRow label="Financing" value={financingType} />
+              {financingType !== "Cash" && <ReviewRow label="Pre-approved" value={isPreApproved ? "Yes" : "No"} />}
+              {proposedMoveInDate && <ReviewRow label="Move-in date" value={proposedMoveInDate} />}
+              {proposedClosingDate && <ReviewRow label="Closing date" value={proposedClosingDate} />}
+              {depositAmount && (
+                <ReviewRow label="Deposit" value={`₦${Number(depositAmount).toLocaleString()}`} />
+              )}
+              <ReviewRow label="Contact phone" value={offerPhone} />
+              {offerMessage && <ReviewRow label="Message" value={offerMessage} />}
+              {specialConditions && <ReviewRow label="Conditions" value={specialConditions} />}
+              {attachments.length > 0 && (
+                <ReviewRow label="Attachments" value={`${attachments.length} file${attachments.length === 1 ? "" : "s"}`} />
+              )}
+              <Typography className="text-sm text-gray-600 mt-4">
+                Check the details above, then confirm to send this offer to the realtor.
+              </Typography>
+            </div>
+          )}
+          {isAuthenticated && offerStep === "form" && (
             <div className="py-4 space-y-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <Typography className="text-sm text-gray-600 mb-1">Listed Price</Typography>
@@ -469,15 +559,122 @@ function PropertyInteractionCard({ propertyData, realtorInfo }) {
                 helperText="We'll use this number to contact you regarding your offer"
               />
               <TextField
+                select
+                label="Financing Type"
+                fullWidth
+                value={financingType}
+                onChange={(e) => setFinancingType(e.target.value)}
+                variant="outlined"
+              >
+                {FINANCING_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
+              {financingType !== "Cash" && (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isPreApproved}
+                      onChange={(e) => setIsPreApproved(e.target.checked)}
+                      sx={{ color: "#ea580c", "&.Mui-checked": { color: "#ea580c" } }}
+                    />
+                  }
+                  label="I'm pre-approved for financing"
+                />
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <TextField
+                  label="Move-in date (optional)"
+                  type="date"
+                  fullWidth
+                  value={proposedMoveInDate}
+                  onChange={(e) => setProposedMoveInDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  variant="outlined"
+                />
+                <TextField
+                  label="Closing date (optional)"
+                  type="date"
+                  fullWidth
+                  value={proposedClosingDate}
+                  onChange={(e) => setProposedClosingDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  variant="outlined"
+                />
+              </div>
+              <TextField
+                label="Deposit amount (₦, optional)"
+                type="number"
+                fullWidth
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                variant="outlined"
+              />
+              <TextField
                 label="Message to Seller (Optional)"
                 multiline
-                rows={4}
+                rows={3}
                 fullWidth
                 value={offerMessage}
                 onChange={(e) => setOfferMessage(e.target.value)}
                 placeholder="Explain your offer or add any additional terms..."
                 variant="outlined"
               />
+              <TextField
+                label="Special conditions (optional)"
+                multiline
+                rows={2}
+                fullWidth
+                value={specialConditions}
+                onChange={(e) => setSpecialConditions(e.target.value)}
+                placeholder="e.g. subject to home inspection"
+                variant="outlined"
+              />
+
+              <div>
+                <Typography className="text-sm font-medium text-gray-700 mb-1">
+                  Supporting documents (optional)
+                </Typography>
+                <Typography className="text-xs text-gray-400 mb-2">
+                  Proof of funds, pre-approval letter, or ID — helps the realtor respond faster
+                </Typography>
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((a) => (
+                    <div
+                      key={a.url}
+                      className="relative flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1 text-xs"
+                    >
+                      <span className="max-w-[100px] truncate">{a.name || "file"}</span>
+                      <IconButton size="small" onClick={() => handleRemoveAttachment(a.url)}>
+                        <Close sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </div>
+                  ))}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadAttachmentMutation.isLoading}
+                    sx={{ borderColor: "#ea580c", color: "#ea580c", textTransform: "none" }}
+                  >
+                    {uploadAttachmentMutation.isLoading ? (
+                      <CircularProgress size={16} sx={{ color: "#ea580c" }} />
+                    ) : (
+                      "+ Add file"
+                    )}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    hidden
+                    onChange={handleAttachmentSelect}
+                  />
+                </div>
+              </div>
+
               <Typography className="text-sm text-gray-600">
                 Your offer will be sent to the realtor for review. They will respond within 48
                 hours.
@@ -486,37 +683,66 @@ function PropertyInteractionCard({ propertyData, realtorInfo }) {
           )}
         </DialogContent>
         <DialogActions className="p-4">
-          <Button
-            onClick={() => setOfferDialogOpen(false)}
-            sx={{ textTransform: "none", fontSize: "0.95rem" }}
-          >
-            Cancel
-          </Button>
-          {isAuthenticated && (
-            <Button
-              onClick={handleMakeOffer}
-              variant="contained"
-              disabled={!offerAmount || !offerPhone || createOfferMutation.isLoading}
-              sx={{
-                backgroundColor: "#ea580c",
-                "&:hover": { backgroundColor: "#c2410c" },
-                textTransform: "none",
-                fontSize: "0.95rem",
-              }}
-            >
-              {createOfferMutation.isLoading ? (
-                <>
-                  <CircularProgress size={20} sx={{ color: "white", mr: 1 }} />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Offer"
+          {offerStep === "review" ? (
+            <>
+              <Button onClick={() => setOfferStep("form")} sx={{ textTransform: "none", fontSize: "0.95rem" }}>
+                Edit
+              </Button>
+              <Button
+                onClick={handleMakeOffer}
+                variant="contained"
+                disabled={createOfferMutation.isLoading}
+                sx={{
+                  backgroundColor: "#ea580c",
+                  "&:hover": { backgroundColor: "#c2410c" },
+                  textTransform: "none",
+                  fontSize: "0.95rem",
+                }}
+              >
+                {createOfferMutation.isLoading ? (
+                  <>
+                    <CircularProgress size={20} sx={{ color: "white", mr: 1 }} />
+                    Submitting...
+                  </>
+                ) : (
+                  "Confirm & Submit"
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={handleCloseOfferDialog} sx={{ textTransform: "none", fontSize: "0.95rem" }}>
+                Cancel
+              </Button>
+              {isAuthenticated && (
+                <Button
+                  onClick={() => setOfferStep("review")}
+                  variant="contained"
+                  disabled={!offerAmount || !offerPhone}
+                  sx={{
+                    backgroundColor: "#ea580c",
+                    "&:hover": { backgroundColor: "#c2410c" },
+                    textTransform: "none",
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Continue to Review
+                </Button>
               )}
-            </Button>
+            </>
           )}
         </DialogActions>
       </Dialog>
     </>
+  );
+}
+
+function ReviewRow({ label, value }) {
+  return (
+    <div className="flex items-start justify-between py-2 border-b border-gray-100 gap-4">
+      <Typography className="text-sm text-gray-500 flex-shrink-0">{label}</Typography>
+      <Typography className="text-sm font-medium text-gray-900 text-right">{value}</Typography>
+    </div>
   );
 }
 

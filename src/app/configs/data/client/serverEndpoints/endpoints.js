@@ -102,7 +102,8 @@ export const API_ENDPOINTS = {
 	CREATE_PROPERTY_OFFER: '/realestate-offers/create',
 	GET_MY_OFFERS: '/realestate-offers/my-offers',
 	UPDATE_OFFER_BID: '/realestate-offers/update',
-	WITHDRAW_OFFER: '/realestate-offers/withdraw'
+	WITHDRAW_OFFER: '/realestate-offers/withdraw',
+	UPLOAD_OFFER_ATTACHMENT: '/realestate-offers/upload-attachment'
 	/** ****
 	 * ########################REALESTATE OFFERS APP SERVER_URLs ENDs Here===========
 	 * ----------------------------------------------------------------------------------------------

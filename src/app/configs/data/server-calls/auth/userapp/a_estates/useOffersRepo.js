@@ -2,7 +2,8 @@ import {
 	createPropertyOfferApi,
 	getMyOffersApi,
 	updateOfferBidApi,
-	withdrawOfferApi
+	withdrawOfferApi,
+	uploadOfferAttachmentApi
 } from 'app/configs/data/client/RepositoryAuthClient';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
@@ -143,6 +144,23 @@ export function useWithdrawOffer() {
 			} else {
 				toast.error(error?.message || 'Failed to withdraw offer');
 			}
+		}
+	});
+}
+
+/**
+ * ############################################################
+ * @param {Upload Offer Attachment} Mutation Hook — base64 data URI in,
+ * Cloudinary secure_url out. Not tied to a specific offer id since an
+ * offer may not exist yet at upload time (create form uploads first).
+ * ############################################################
+ */
+export function useUploadOfferAttachment() {
+	return useMutation((base64) => uploadOfferAttachmentApi(base64), {
+		onError: (error) => {
+			console.error('Upload Offer Attachment Error:', error);
+			const errorData = error?.response?.data;
+			toast.error(errorData?.message || error?.message || 'Failed to upload attachment');
 		}
 	});
 }

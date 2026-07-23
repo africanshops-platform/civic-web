@@ -539,6 +539,11 @@ export const withdrawOfferApi = (offerId) => {
 	return AuthApi().delete(`${API_ENDPOINTS.WITHDRAW_OFFER}/${offerId}`);
 };
 
+/** *Upload a supporting document/photo for an offer (base64 data URI in, Cloudinary url out) */
+export const uploadOfferAttachmentApi = (base64) => {
+	return AuthApi().post(`${API_ENDPOINTS.UPLOAD_OFFER_ATTACHMENT}`, { base64 });
+};
+
 /**
  * ############################################################
  * @param {Realestate Offers Routes ends} FormData
