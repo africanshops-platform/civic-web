@@ -1,51 +1,39 @@
-import { Box, Paper, Avatar, Typography, Divider } from "@mui/material";
-import { BookmarkBorder, GroupOutlined, MailOutline, ArrowForward } from "@mui/icons-material";
+import { Box, Paper, Avatar, Typography, Chip } from "@mui/material";
+import { Verified, Email, Phone } from "@mui/icons-material";
 
+/**
+ * RealtorProfile — shows the real listing shop (merchant) fetched via the
+ * public merchant-preview route. property.shop is a merchant id, not a
+ * "realtor" — there's no separate realtor/agent entity in this schema, and
+ * no network-stats concept (connections/followers/views) for a shop, so
+ * those are shown only when real, never invented.
+ */
 const RealtorProfile = ({ realtor }) => {
-  // Default realtor data if not provided
-  const realtorData = realtor || {
-    name: "Shirleys Home Idu",
-    title: "Property Listings",
-    subtitle: "Hotels & Apartments",
-    location: "Abuja, Federal Capital Territory",
-    website: "Africanshops",
-    avatar: "",
-    stats: {
-      connections: 94,
-      followers: "200.0k",
-      following: "1.2k",
-      profileViews: 156,
-    },
-  };
+  if (!realtor) {
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column" }}>
+        <Paper className="overflow-hidden p-6 text-center">
+          <Typography variant="body2" className="text-gray-500">
+            Listing agent details unavailable
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  const name = realtor.shopname || "Listing Agent";
 
   return (
-    <Box
-      className="relative"
-      sx={{
-        height: "50vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Paper
-        className="overflow-hidden"
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+    <Box className="relative" sx={{ display: "flex", flexDirection: "column" }}>
+      <Paper className="overflow-hidden" sx={{ display: "flex", flexDirection: "column" }}>
         {/* Header Banner */}
         <Box
           className="h-24 relative"
-          sx={{
-            background: "linear-gradient(135deg, #ea580c 0%, #fb923c 100%)",
-          }}
+          sx={{ background: "linear-gradient(135deg, #ea580c 0%, #fb923c 100%)" }}
         >
-          {/* Profile Avatar */}
           <Avatar
-            src={realtorData.avatar}
-            alt={realtorData.name}
+            src={realtor.coverimage || undefined}
+            alt={name}
             sx={{
               width: 80,
               height: 80,
@@ -58,237 +46,54 @@ const RealtorProfile = ({ realtor }) => {
               fontSize: "2rem",
             }}
           >
-            {realtorData.name.charAt(0)}
+            {name.charAt(0)}
           </Avatar>
         </Box>
 
         {/* Profile Content */}
-        <Box
-          className="pb-4 px-4"
-          sx={{
-            marginTop: "50px", // Push content down to avoid avatar overlap
-            flex: 1,
-            overflowY: "auto",
-            padding: "16px",
-            "&::-webkit-scrollbar": {
-              width: "6px",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              bgcolor: "#d1d5db",
-              borderRadius: "3px",
-            },
-          }}
-        >
-          {/* Name and Title */}
-          <Typography
-            variant="h5"
-            className="text-center font-semibold mb-1"
-            sx={{ fontSize: "1.4rem" }}
-          >
-            {realtorData.name}
-          </Typography>
-
-          <Typography
-            variant="body1"
-            className="text-center text-gray-600 mb-1"
-            sx={{ fontSize: "1rem" }}
-          >
-            {realtorData.title}
-          </Typography>
-
-          <Typography
-            variant="body1"
-            className="text-center text-gray-500 mb-1"
-            sx={{ fontSize: "0.95rem" }}
-          >
-            {realtorData.subtitle}
-          </Typography>
-
-          <Typography
-            variant="body1"
-            className="text-center text-gray-500 mb-2"
-            sx={{ fontSize: "0.9rem" }}
-          >
-            {realtorData.location}
-          </Typography>
-
-          <Typography
-            variant="body1"
-            className="text-center mb-3"
-            sx={{
-              color: "#ea580c",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-              "&:hover": { textDecoration: "underline" },
-            }}
-          >
-            {realtorData.website}
-          </Typography>
-
-          {/* View Analytics */}
-          <Box
-            className="flex items-center justify-between py-2 px-3 cursor-pointer rounded transition-colors mb-2"
-            sx={{
-              "&:hover": {
-                background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
-              },
-            }}
-          >
-            <Typography variant="body1" className="text-gray-700" sx={{ fontSize: "0.95rem" }}>
-              View all analytics
+        <Box className="pb-6 px-4" sx={{ marginTop: "50px", padding: "16px" }}>
+          <Box className="flex items-center justify-center gap-1.5">
+            <Typography variant="h5" className="text-center font-semibold" sx={{ fontSize: "1.3rem" }}>
+              {name}
             </Typography>
-            <ArrowForward sx={{ fontSize: 20, color: "#ea580c" }} />
+            {realtor.verified && <Verified sx={{ fontSize: 20, color: "#2563eb" }} />}
           </Box>
 
-          <Divider className="my-2" />
+          <Chip
+            label={realtor.verified ? "Verified Listing Agent" : "Listing Agent"}
+            size="small"
+            className="mt-2"
+            sx={{
+              display: "flex",
+              mx: "auto",
+              backgroundColor: realtor.verified ? "#dbeafe" : "#f3f4f6",
+              color: realtor.verified ? "#1d4ed8" : "#4b5563",
+              fontWeight: 600,
+            }}
+          />
 
-          {/* Connections Section */}
-          <Box className="mb-2">
-            <Typography
-              variant="body1"
-              className="font-semibold mb-3 px-2"
-              sx={{ fontSize: "1.05rem" }}
-            >
-              Network Stats
+          {realtor.shopbio && (
+            <Typography variant="body2" className="text-center text-gray-600 mt-3">
+              {realtor.shopbio}
             </Typography>
+          )}
 
-            {/* Stats Grid - 2x2 Layout */}
-            <Box className="grid grid-cols-2 gap-3 mb-2">
-              {/* Connections */}
-              <Box
-                className="rounded-lg p-3 text-center"
-                sx={{ background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)" }}
-              >
-                <Typography
-                  variant="h5"
-                  className="font-bold"
-                  sx={{ color: "#ea580c", fontSize: "1.5rem" }}
-                >
-                  {realtorData.stats.connections}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  className="mt-1"
-                  sx={{ color: "#9a3412", fontSize: "0.85rem" }}
-                >
-                  Connections
-                </Typography>
-              </Box>
-
-              {/* Profile Views */}
-              <Box
-                className="rounded-lg p-3 text-center"
-                sx={{ background: "linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)" }}
-              >
-                <Typography
-                  variant="h5"
-                  className="font-bold"
-                  sx={{ color: "#7c2d12", fontSize: "1.5rem" }}
-                >
-                  {realtorData.stats.profileViews}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  className="mt-1"
-                  sx={{ color: "#7c2d12", fontSize: "0.85rem" }}
-                >
-                  Profile Views
-                </Typography>
-              </Box>
-
-              {/* Followers */}
-              <Box
-                className="rounded-lg p-3 text-center"
-                sx={{ background: "linear-gradient(135deg, #fb923c 0%, #f97316 100%)" }}
-              >
-                <Typography
-                  variant="h5"
-                  className="font-bold text-white"
-                  sx={{ fontSize: "1.5rem" }}
-                >
-                  {realtorData.stats.followers}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  className="text-white mt-1"
-                  sx={{ fontSize: "0.85rem" }}
-                >
-                  Followers
-                </Typography>
-              </Box>
-
-              {/* Following */}
-              <Box
-                className="rounded-lg p-3 text-center"
-                sx={{ background: "linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)" }}
-              >
-                <Typography
-                  variant="h5"
-                  className="font-bold"
-                  sx={{ color: "#c2410c", fontSize: "1.5rem" }}
-                >
-                  {realtorData.stats.following}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  className="mt-1"
-                  sx={{ color: "#9a3412", fontSize: "0.85rem" }}
-                >
-                  Following
-                </Typography>
-              </Box>
+          {(realtor.shopemail || realtor.shopphone) && (
+            <Box className="mt-4 space-y-2">
+              {realtor.shopemail && (
+                <Box className="flex items-center justify-center gap-2 text-gray-700">
+                  <Email sx={{ fontSize: 18, color: "#ea580c" }} />
+                  <Typography variant="body2">{realtor.shopemail}</Typography>
+                </Box>
+              )}
+              {realtor.shopphone && (
+                <Box className="flex items-center justify-center gap-2 text-gray-700">
+                  <Phone sx={{ fontSize: 18, color: "#ea580c" }} />
+                  <Typography variant="body2">{realtor.shopphone}</Typography>
+                </Box>
+              )}
             </Box>
-          </Box>
-
-          <Divider className="my-2" />
-
-          {/* Menu Items */}
-          <Box className="space-y-1">
-            {/* Saved Items */}
-            <Box
-              className="flex items-center py-2 px-3 cursor-pointer rounded transition-colors"
-              sx={{
-                "&:hover": {
-                  background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
-                },
-              }}
-            >
-              <BookmarkBorder sx={{ fontSize: 22, mr: 2, color: "#ea580c" }} />
-              <Typography variant="body1" className="text-gray-700" sx={{ fontSize: "0.95rem" }}>
-                Saved items
-              </Typography>
-            </Box>
-
-            {/* Groups */}
-            <Box
-              className="flex items-center py-2 px-3 cursor-pointer rounded transition-colors"
-              sx={{
-                "&:hover": {
-                  background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
-                },
-              }}
-            >
-              <GroupOutlined sx={{ fontSize: 22, mr: 2, color: "#ea580c" }} />
-              <Typography variant="body1" className="text-gray-700" sx={{ fontSize: "0.95rem" }}>
-                Groups
-              </Typography>
-            </Box>
-
-            {/* Newsletters */}
-            <Box
-              className="flex items-center py-2 px-3 cursor-pointer rounded transition-colors"
-              sx={{
-                "&:hover": {
-                  background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
-                },
-              }}
-            >
-              <MailOutline sx={{ fontSize: 22, mr: 2, color: "#ea580c" }} />
-              <Typography variant="body1" className="text-gray-700" sx={{ fontSize: "0.95rem" }}>
-                Newsletters
-              </Typography>
-            </Box>
-          </Box>
+          )}
         </Box>
       </Paper>
     </Box>

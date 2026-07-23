@@ -29,6 +29,7 @@ import { selectUser } from "src/app/auth/user/store/userSlice";
 // } from "date-fns";
 import { toDate } from "date-fns-tz";
 import { useGetEstateProperty } from "app/configs/data/server-calls/auth/userapp/a_estates/useEstatePropertiesRepo";
+import { useGetMerchantPreview } from "app/configs/data/server-calls/auth/userapp/a_merchants/useMerchantRepo";
 import GlobalChat from "../realestate-components/GlobalChat";
 import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import ServiceStatusLandingPage from "../../aapp-settings-from-admin/ServiceStatusLandingPage";
@@ -123,10 +124,15 @@ function ActiveRealEstateSinglePage() {
     () => estateList?.data?.propertyListing?.id,
     [estateList?.data?.propertyListing?.id],
   );
-  const realtorName = useMemo(
-    () => estateList?.data?.propertyListing?.realtor?.name || "Realtor",
-    [estateList?.data?.propertyListing?.realtor?.name],
-  );
+
+  // The property record has no `realtor` relation at all — `shop` is the
+  // merchant id. Resolve the real listing shop via the same public preview
+  // route mobile/bookings already use, instead of showing invented realtor
+  // data when `realtor` is always undefined.
+  const { data: merchantPreview } = useGetMerchantPreview(propertyListing?.shop);
+  const realtor = merchantPreview?.data?.merchant;
+
+  const realtorName = useMemo(() => realtor?.shopname || "Listing Agent", [realtor?.shopname]);
 
   // Memoize header component
   const headerComponent = useMemo(
@@ -154,9 +160,9 @@ function ActiveRealEstateSinglePage() {
   const rightSidebarContentComponent = useMemo(
     () =>
       propertyListingId ? (
-        <DemoSidebarRight isLoading={isLoading} listing={propertyListing} />
+        <DemoSidebarRight isLoading={isLoading} listing={propertyListing} realtor={realtor} />
       ) : null,
-    [propertyListingId, isLoading, propertyListing],
+    [propertyListingId, isLoading, propertyListing, realtor],
   );
 
   // Memoize chat component

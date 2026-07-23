@@ -166,6 +166,9 @@ function DemoContent(props) {
               reviewCount={property?.numReviews || 0}
               propertyUseCase={property?.propertyUseCase}
               leaseTerm={property?.leaseTerm}
+              propertyCountryName={property?.propertyCountryName}
+              propertyStateName={property?.propertyStateName}
+              propertyLgaName={property?.propertyLgaName}
             />
           ))}
         </div>

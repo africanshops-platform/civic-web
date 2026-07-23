@@ -19,30 +19,18 @@ import ClienttErrorPage from "src/app/main/zrootclient/components/ClienttErrorPa
 import siteStyle from "@fuse/sitestaticdata/siteStyle";
 import { Link } from "react-router-dom";
 import ImageGalleryView from "./ImageGalleryView";
-import {
-  Reply,
-  Send,
-  ThumbUp,
-  Facebook,
-  Twitter,
-  Instagram,
-  LinkedIn,
-  Wifi,
-  LocalParking,
-  Pool,
-  FitnessCenter,
-  AcUnit,
-  Kitchen,
-  Tv,
-  LocalLaundryService,
-  Security,
-  Balcony,
-  Pets,
-  Elevator,
-  CheckCircle,
-} from "@mui/icons-material";
+import { Reply, Send, ThumbUp, Facebook, Twitter, Instagram, LinkedIn, CheckCircle } from "@mui/icons-material";
 import { useAppSelector } from "app/store/hooks";
 import { selectUser } from "src/app/auth/user/store/userSlice";
+
+// Joins whichever of LGA/state/country the gateway resolved — a failed
+// per-field lookup is dropped silently, never shown as blank/undefined.
+function locationLabel(property) {
+  const parts = [property?.propertyLgaName, property?.propertyStateName, property?.propertyCountryName].filter(
+    Boolean,
+  );
+  return parts.length > 0 ? parts.join(", ") : null;
+}
 
 /**
  * Demo Content
@@ -112,6 +100,17 @@ function DemoContent(props) {
             <div className="bg-white px-6 py-4 mt-4 shadow-md">
               <div className="flex items-center justify-between px-2"></div>
               <h1 className="text-2xl font-bold mt-2 px-2">{estatePropertyData?.title}</h1>
+              {locationLabel(estatePropertyData) && (
+                <p className="text-gray-500 mt-1 px-2 text-sm">📍 {locationLabel(estatePropertyData)}</p>
+              )}
+              {estatePropertyData?.numReviews > 0 && (
+                <div className="flex items-center gap-1 mt-1 px-2">
+                  <Rating value={estatePropertyData.rating} readOnly size="small" precision={0.5} />
+                  <Typography variant="body2" className="text-gray-500">
+                    ({estatePropertyData.numReviews} review{estatePropertyData.numReviews === 1 ? "" : "s"})
+                  </Typography>
+                </div>
+              )}
               <p className="text-gray-600 mt-2 px-2">{estatePropertyData?.shortDescription}</p>
               <div className="flex items-center mt-2 px-2 gap-2">
                 <span className="text-gray-600">Share:</span>
@@ -142,11 +141,9 @@ function DemoContent(props) {
                       ₦{formatCurrency(estatePropertyData?.price)}
                     </Typography>
                     {estatePropertyData?.propertyUseCase === "RENT" && (
-                      <>
-                        <Typography variant="caption" className="text-gray-600 mt-1">
-                          {estatePropertyData?.leaseTerm || "Per Annum"}
-                        </Typography>
-                      </>
+                      <Typography variant="caption" className="text-gray-600 mt-1">
+                        Per {estatePropertyData?.leaseTerm === "MONTH" ? "Month" : estatePropertyData?.leaseTerm === "WEEK" ? "Week" : "Annum"}
+                      </Typography>
                     )}
                   </div>
 
@@ -216,93 +213,48 @@ function DemoContent(props) {
 
             <div className="bg-white px-6 py-6 mt-4 shadow-md rounded-lg">
               <Typography variant="h5" className="font-bold mb-4 px-2">
-                Amenities & Features
+                Property Details
               </Typography>
 
-              {/* Amenities Grid */}
+              {/* Real schema fields only — no fake amenities list, this schema has no
+                  amenities/features data at all */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-2">
-                {/* Use actual amenities from database or fallback to placeholder */}
-                {(
-                  estatePropertyData?.amenities || [
-                    { id: 1, name: "WiFi", icon: "wifi", available: true },
-                    { id: 2, name: "Parking", icon: "parking", available: true },
-                    { id: 3, name: "Swimming Pool", icon: "pool", available: true },
-                    { id: 4, name: "Gym/Fitness Center", icon: "fitness", available: true },
-                    { id: 5, name: "Air Conditioning", icon: "ac", available: true },
-                    { id: 6, name: "Modern Kitchen", icon: "kitchen", available: true },
-                    { id: 7, name: "Cable TV", icon: "tv", available: true },
-                    { id: 8, name: "Laundry Service", icon: "laundry", available: true },
-                    { id: 9, name: "24/7 Security", icon: "security", available: true },
-                    { id: 10, name: "Balcony/Terrace", icon: "balcony", available: true },
-                    { id: 11, name: "Pet Friendly", icon: "pets", available: false },
-                    { id: 12, name: "Elevator Access", icon: "elevator", available: true },
-                  ]
-                ).map((amenity) => {
-                  // Icon mapping
-                  const getAmenityIcon = (iconName) => {
-                    const iconMap = {
-                      wifi: Wifi,
-                      parking: LocalParking,
-                      pool: Pool,
-                      fitness: FitnessCenter,
-                      ac: AcUnit,
-                      kitchen: Kitchen,
-                      tv: Tv,
-                      laundry: LocalLaundryService,
-                      security: Security,
-                      balcony: Balcony,
-                      pets: Pets,
-                      elevator: Elevator,
-                    };
-                    return iconMap[iconName] || CheckCircle;
-                  };
-
-                  const IconComponent = getAmenityIcon(amenity.icon);
-
-                  return (
+                {[
+                  { icon: "🛏️", label: estatePropertyData?.roomCount === 1 ? "Bedroom" : "Bedrooms", value: estatePropertyData?.roomCount },
+                  { icon: "🛁", label: estatePropertyData?.bathroomCount === 1 ? "Bathroom" : "Bathrooms", value: estatePropertyData?.bathroomCount },
+                  { icon: "🛋️", label: estatePropertyData?.sittingroomCount === 1 ? "Sitting room" : "Sitting rooms", value: estatePropertyData?.sittingroomCount },
+                  ...(estatePropertyData?.sqmArea ? [{ icon: "📐", label: "sqm", value: estatePropertyData.sqmArea }] : []),
+                  ...(estatePropertyData?.propertyType ? [{ icon: "🏗️", label: "Type", value: estatePropertyData.propertyType === "LAND" ? "Land" : "Building" }] : []),
+                  ...(estatePropertyData?.propertyUseCase === "RENT" && estatePropertyData?.minimumLeaseTerm
+                    ? [{ icon: "📅", label: "Min. lease", value: `${estatePropertyData.minimumLeaseTerm} ${(estatePropertyData.leaseTerm || "ANNUM").toLowerCase()}${estatePropertyData.minimumLeaseTerm === 1 ? "" : "s"}` }]
+                    : []),
+                ]
+                  .filter((item) => item.value !== undefined && item.value !== null)
+                  .map((item) => (
                     <div
-                      key={amenity.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                        amenity.available
-                          ? "bg-green-50 border-green-200 hover:bg-green-100"
-                          : "bg-gray-50 border-gray-200 opacity-50"
-                      }`}
+                      key={item.label}
+                      className="flex flex-col items-center gap-1 p-3 rounded-lg border border-gray-200 bg-gray-50"
                     >
-                      <IconComponent
-                        sx={{
-                          fontSize: "1.5rem",
-                          color: amenity.available ? "#16a34a" : "#9ca3af",
-                        }}
-                      />
-                      <div className="flex-1">
-                        <Typography
-                          variant="body2"
-                          className={`font-semibold ${
-                            amenity.available ? "text-gray-800" : "text-gray-500"
-                          }`}
-                        >
-                          {amenity.name}
-                        </Typography>
-                      </div>
-                      {amenity.available && (
-                        <CheckCircle sx={{ fontSize: "1rem", color: "#16a34a" }} />
-                      )}
+                      <span className="text-xl">{item.icon}</span>
+                      <Typography variant="body1" className="font-bold text-gray-900">
+                        {item.value}
+                      </Typography>
+                      <Typography variant="caption" className="text-gray-500">
+                        {item.label}
+                      </Typography>
                     </div>
-                  );
-                })}
+                  ))}
               </div>
 
-              {/* Additional Features */}
-              {estatePropertyData?.additionalFeatures && (
-                <div className="mt-6 px-2">
-                  <Typography variant="h6" className="font-semibold mb-3">
-                    Additional Features
+              {estatePropertyData?.legalOwnershipDeclaration && (
+                <div className="mt-4 mx-2 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                  <CheckCircle sx={{ fontSize: "1.1rem" }} />
+                  <Typography variant="body2" className="font-medium">
+                    Legal ownership declared by the listing agent
+                    {estatePropertyData?.documentReferenceNumber
+                      ? ` (Ref: ${estatePropertyData.documentReferenceNumber})`
+                      : ""}
                   </Typography>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <Typography variant="body2" className="text-gray-700 leading-relaxed">
-                      {estatePropertyData.additionalFeatures}
-                    </Typography>
-                  </div>
                 </div>
               )}
             </div>

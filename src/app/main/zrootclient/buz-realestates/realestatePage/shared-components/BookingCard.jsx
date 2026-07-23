@@ -11,6 +11,13 @@ function priceSuffix(propertyUseCase, leaseTerm) {
   return "/yr";
 }
 
+// Joins whichever of LGA/state/country the gateway resolved — a failed
+// per-field lookup is dropped silently, never shown as blank/undefined.
+function locationLabel(lga, state, country) {
+  const parts = [lga, state, country].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
 /**
  * BookingCard Component
  * Displays a property listing with an image slider — real fields only
@@ -30,7 +37,11 @@ function BookingCard({
   reviewCount = 0,
   propertyUseCase,
   leaseTerm,
+  propertyCountryName,
+  propertyStateName,
+  propertyLgaName,
 }) {
+  const location = locationLabel(propertyLgaName, propertyStateName, propertyCountryName);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -189,6 +200,12 @@ function BookingCard({
         >
           {title}
         </Typography>
+
+        {location && (
+          <Typography variant="body2" className="text-gray-500 mb-2 text-[12px]">
+            📍 {location}
+          </Typography>
+        )}
 
         {/* Price and Rating Row */}
         <div className="flex justify-between mb-4">

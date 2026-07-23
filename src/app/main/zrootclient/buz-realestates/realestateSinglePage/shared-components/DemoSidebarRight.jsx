@@ -16,6 +16,7 @@ function DemoSidebarRight(props) {
     isLoading,
 
     listing,
+    realtor,
     // locationValue,
     // coordinates,
     // price,
@@ -45,6 +46,7 @@ function DemoSidebarRight(props) {
                 <Box>
                   <DetailsRight
                     listing={listing}
+                    realtor={realtor}
                     // locationValue={locationValue}
                     // coordinates={coordinates}
                     // price={price}
