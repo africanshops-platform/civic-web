@@ -1,25 +1,34 @@
 import { useState } from "react";
-import { Typography, IconButton, Button } from "@mui/material";
+import { Typography, IconButton, Button, Chip } from "@mui/material";
 import { FavoriteBorder, Favorite, NavigateBefore, NavigateNext } from "@mui/icons-material";
 import NavLinkAdapter from "@fuse/core/NavLinkAdapter";
 import { formatCurrency } from "src/app/main/vendors-shop/PosUtils";
 
+function priceSuffix(propertyUseCase, leaseTerm) {
+  if (propertyUseCase !== "RENT") return "";
+  if (leaseTerm === "MONTH") return "/mo";
+  if (leaseTerm === "WEEK") return "/wk";
+  return "/yr";
+}
+
 /**
  * BookingCard Component
- * Displays hotel/apartment listing with image slider
+ * Displays a property listing with an image slider — real fields only
+ * (propertyUseCase/leaseTerm/rating/numReviews all come straight off the
+ * estatelistproperties model, no bookings-specific placeholders like
+ * "duration"/"host" that don't exist on this schema).
  */
 function BookingCard({
   id,
   slug,
   images = [],
   title,
-  address,
   price,
   roomCount,
+  sittingroomCount,
   rating = 0,
   reviewCount = 0,
-  duration = "3 - 8 hours",
-  host = "Captain",
+  propertyUseCase,
   leaseTerm,
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -86,14 +95,25 @@ function BookingCard({
             <img
               src={images[currentImageIndex]?.url || images[currentImageIndex]}
               alt={`${title} - Image ${currentImageIndex + 1}`}
-              className="w-full h-full transition ease-in-out delay-150  hover:scale-105 object-cover"
-              // height={384}
+              className="w-full h-full transition ease-in-out delay-150 hover:scale-105 object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center px-4 py-2">
               <Typography color="text.secondary">No image available</Typography>
             </div>
           )}
+
+          {/* Listing type badge */}
+          <Chip
+            label={propertyUseCase === "SALE" ? "For Sale" : "For Rent"}
+            size="small"
+            className="absolute top-3 left-3"
+            sx={{
+              backgroundColor: propertyUseCase === "SALE" ? "#2563eb" : "#ea580c",
+              color: "white",
+              fontWeight: 700,
+            }}
+          />
 
           {/* Favorite Button */}
           <IconButton
@@ -151,11 +171,15 @@ function BookingCard({
 
       {/* Content Section */}
       <div className="p-10">
-        {/* Duration and Host */}
+        {/* Room summary */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-          <span>{duration}</span>
-          <span>•</span>
-          <span>{host}</span>
+          {roomCount ? <span>🛏️ {roomCount} {roomCount === 1 ? "Bedroom" : "Bedrooms"}</span> : null}
+          {roomCount && sittingroomCount ? <span>•</span> : null}
+          {sittingroomCount ? (
+            <span>
+              🛋️ {sittingroomCount} Sitting {sittingroomCount === 1 ? "Room" : "Rooms"}
+            </span>
+          ) : null}
         </div>
 
         {/* Title */}
@@ -166,11 +190,6 @@ function BookingCard({
           {title}
         </Typography>
 
-        {/* Address */}
-        <Typography variant="body2" className="text-gray-600 mb-3 line-clamp-1">
-          {address}
-        </Typography>
-
         {/* Price and Rating Row */}
         <div className="flex justify-between mb-4">
           {/* Price */}
@@ -179,26 +198,20 @@ function BookingCard({
               NGN {formatCurrency(price)}
             </Typography>
             <Typography variant="body2" className="text-gray-600">
-              /{leaseTerm}
+              {priceSuffix(propertyUseCase, leaseTerm)}
             </Typography>
           </div>
 
-          {/* Rating */}
-          <div className="flex items-center gap-2">
-            <div className="flex text-xs">{renderStars()}</div>
-            <Typography variant="body2" className="text-gray-600 text-sm">
-              ({reviewCount.toString().padStart(2, "0")})
-            </Typography>
-          </div>
+          {/* Rating — only shown once a listing actually has reviews */}
+          {reviewCount > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex text-xs">{renderStars()}</div>
+              <Typography variant="body2" className="text-gray-600 text-sm">
+                ({reviewCount.toString().padStart(2, "0")})
+              </Typography>
+            </div>
+          )}
         </div>
-
-        {/* Room Count */}
-        {roomCount && (
-          <Typography variant="body2" className="text-gray-600 mb-4">
-            <i className="fas fa-door-open mr-2"></i>
-            {roomCount} {roomCount === 1 ? "Room" : "Rooms"}
-          </Typography>
-        )}
 
         {/* View More Button */}
         <Button

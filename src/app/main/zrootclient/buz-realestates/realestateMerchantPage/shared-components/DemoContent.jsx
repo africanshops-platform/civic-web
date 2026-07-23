@@ -69,8 +69,8 @@ function DemoContent(props) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <img
                 src={
-                  estatePropertyData?.images[0]
-                    ? estatePropertyData?.images[0]?.url
+                  estatePropertyData?.listingImages?.[0]
+                    ? estatePropertyData.listingImages[0]?.url
                     : "https://placehold.co/600x400"
                 }
                 alt="Indoor pool area"
@@ -78,8 +78,8 @@ function DemoContent(props) {
               />
               <img
                 src={
-                  estatePropertyData?.images[1]
-                    ? estatePropertyData?.images[1]?.url
+                  estatePropertyData?.listingImages?.[1]
+                    ? estatePropertyData.listingImages[1]?.url
                     : "https://placehold.co/600x400"
                 }
                 alt="Luxurious lobby area"
@@ -150,7 +150,7 @@ function DemoContent(props) {
             <div className="bg-white px-6 py-4 mt-4 shadow-md">
               <h2 className="text-xl font-bold px-2">Gallery</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 px-2">
-                {estatePropertyData?.images?.map((img, index) => (
+                {estatePropertyData?.listingImages?.map((img, index) => (
                   <div
                     key={img?.public_id}
                     className="cursor-pointer transition-transform hover:scale-105"
@@ -170,7 +170,7 @@ function DemoContent(props) {
             <ImageGalleryView
               open={galleryOpen}
               onClose={() => setGalleryOpen(false)}
-              images={estatePropertyData?.images || []}
+              images={estatePropertyData?.listingImages || []}
               propertyData={{
                 title: estatePropertyData?.title,
                 shortDescription: estatePropertyData?.shortDescription,

@@ -7,10 +7,7 @@ import DemoContent from "./shared-components/DemoContent";
 import DemoSidebar from "./shared-components/DemoSidebar";
 import DemoSidebarRight from "./shared-components/DemoSidebarRight";
 import FusePageSimpleWithMargin from "@fuse/core/FusePageSimple/FusePageSimpleWithMargin";
-import useGetAllBookingProperties from "app/configs/data/server-calls/auth/userapp/a_bookings/useBookingPropertiesRepo";
 import useGetAllEstateProperties from "app/configs/data/server-calls/auth/userapp/a_estates/useEstatePropertiesRepo";
-import { useAppSelector } from "app/store/hooks";
-import { selectUser } from "src/app/auth/user/store/userSlice";
 import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import ServiceStatusLandingPage from "../../aapp-settings-from-admin/ServiceStatusLandingPage";
 
@@ -47,29 +44,32 @@ function ActiveRealEstatePage() {
     setLeftSidebarOpen(!isMobile);
     setRightSidebarOpen(!isMobile);
   }, [isMobile]);
-  const currentUser = useAppSelector(selectUser);
 
-  // Fetch booking properties with filters
+  // Fetch estate properties with filters
   const { data: estateLists, isLoading, isError } = useGetAllEstateProperties(filters);
 
-  // Handle filter changes from FilterList component
+  // Handle filter changes from FilterList component. Maps only to query
+  // params the gateway's estate-properties/get-listings route actually
+  // declares (limit, offset, minPrice, maxPrice, propertyCountry,
+  // propertyState, propertyLga, roomCount, sittingroomCount, minSqmArea,
+  // maxSqmArea, minReviews, title, propertyUseCase) — no category/
+  // bathroomCount/checkedAmenities support exists on the backend at all.
   const handleFilterChange = useCallback(
     (newFilters) => {
-      // Map FilterList filter names to API parameter names
       const apiFilters = {};
 
       // Pagination parameters
       apiFilters.limit = itemsPerPage;
       apiFilters.offset = (currentPage - 1) * itemsPerPage;
 
-      // Keyword search (maps to title or slug)
+      // Keyword search (title, contains match)
       if (newFilters.keyword) {
         apiFilters.title = newFilters.keyword;
       }
 
-      // Property type (category)
-      if (newFilters.propertyType) {
-        apiFilters.category = newFilters.propertyType;
+      // RENT vs SALE
+      if (newFilters.propertyUseCase) {
+        apiFilters.propertyUseCase = newFilters.propertyUseCase;
       }
 
       // Location filters
@@ -94,17 +94,12 @@ function ActiveRealEstatePage() {
         apiFilters.roomCount = newFilters.roomCount;
       }
 
-      // Bathroom count
-      if (newFilters.bathroomCount) {
-        apiFilters.bathroomCount = newFilters.bathroomCount;
+      // Sitting room count
+      if (newFilters.sittingroomCount) {
+        apiFilters.sittingroomCount = newFilters.sittingroomCount;
       }
 
-      // Amenities (join array into comma-separated string)
-      if (newFilters.amenities && newFilters.amenities.length > 0) {
-        apiFilters.checkedAmenities = newFilters.amenities.join(",");
-      }
-
-      // Update filters state (this will trigger useGetAllBookingProperties to refetch)
+      // Update filters state (this will trigger useGetAllEstateProperties to refetch)
       setFilters(apiFilters);
     },
     [itemsPerPage, currentPage],
@@ -174,7 +169,7 @@ function ActiveRealEstatePage() {
   const contentComponent = useMemo(
     () => (
       <DemoContent
-        products={propertyListings}
+        listings={propertyListings}
         isLoading={isLoading}
         isError={isError}
         totalItems={totalItems}
@@ -202,10 +197,11 @@ function ActiveRealEstatePage() {
     [handleFilterChange],
   );
 
-  // Memoize right sidebar content
+  // Memoize right sidebar content — property-location map, visible to
+  // guests and logged-in users alike (mirrors bookings, no auth gate).
   const rightSidebarContentComponent = useMemo(
-    () => (currentUser?.id ? <DemoSidebarRight /> : null),
-    [currentUser?.id],
+    () => <DemoSidebarRight propertyListings={propertyListings} />,
+    [propertyListings],
   );
 
   return (

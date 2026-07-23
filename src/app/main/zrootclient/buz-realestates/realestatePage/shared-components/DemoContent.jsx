@@ -1,25 +1,19 @@
-import FuseLoading from "@fuse/core/FuseLoading";
-
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-
-// import ClienttErrorPage from "../../components/ClienttErrorPage";
-import { Button, Typography, Skeleton, Card, CardContent } from "@mui/material";
-import NavLinkAdapter from "@fuse/core/NavLinkAdapter";
-import { formatCurrency } from "src/app/main/vendors-shop/PosUtils";
+import { Skeleton, Card, CardContent, Typography } from "@mui/material";
 import ClienttErrorPage from "src/app/main/zrootclient/components/ClienttErrorPage";
-import FuseSvgIcon from "@fuse/core/FuseSvgIcon";
 import BookingCard from "./BookingCard";
 import PaginationBar from "./PaginationBar";
 
 /**
- * Demo Content
+ * Demo Content — real-estate property grid, styled to match the bookings
+ * listings page (gradient background, header copy, same card/pagination
+ * treatment) since both are meant to feel like one product.
  */
 function DemoContent(props) {
   const {
     isLoading,
     isError,
-    products,
+    listings,
     totalItems,
     currentPage,
     itemsPerPage,
@@ -27,28 +21,16 @@ function DemoContent(props) {
     onItemsPerPageChange,
   } = props;
 
-  // Fallback: if totalItems is not provided by backend, estimate based on products length
-  // This assumes if we get less than itemsPerPage, we're on the last page
-  const estimatedTotal = totalItems > 0 ? totalItems : products?.length || 0;
-
-  console.log(
-    "DemoContent - totalItems:",
-    totalItems,
-    "products length:",
-    products?.length,
-    "estimatedTotal:",
-    estimatedTotal,
-  );
+  // Fallback: if totalItems is not provided by backend, estimate based on listings length
+  const estimatedTotal = totalItems > 0 ? totalItems : listings?.length || 0;
 
   if (isLoading) {
     return (
       <div className="flex-auto p-24 sm:p-40">
         <div className="flex flex-col">
-          {/* Skeleton Loader for Property Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-8">
             {[1, 2, 3, 4, 5, 6].map((index) => (
               <Card key={index} className="rounded-2xl shadow-lg overflow-hidden">
-                {/* Image Skeleton */}
                 <Skeleton
                   variant="rectangular"
                   width="100%"
@@ -56,9 +38,7 @@ function DemoContent(props) {
                   animation="wave"
                   sx={{ bgcolor: "grey.200" }}
                 />
-
                 <CardContent className="p-6">
-                  {/* Title Skeleton */}
                   <Skeleton
                     variant="text"
                     width="80%"
@@ -66,8 +46,6 @@ function DemoContent(props) {
                     animation="wave"
                     sx={{ bgcolor: "grey.200", marginBottom: 1 }}
                   />
-
-                  {/* Address Skeleton */}
                   <Skeleton
                     variant="text"
                     width="60%"
@@ -75,33 +53,6 @@ function DemoContent(props) {
                     animation="wave"
                     sx={{ bgcolor: "grey.200", marginBottom: 2 }}
                   />
-
-                  {/* Features Row Skeleton */}
-                  <div className="flex gap-4 mb-3">
-                    <Skeleton
-                      variant="rectangular"
-                      width={80}
-                      height={32}
-                      animation="wave"
-                      sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-                    />
-                    <Skeleton
-                      variant="rectangular"
-                      width={80}
-                      height={32}
-                      animation="wave"
-                      sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-                    />
-                    <Skeleton
-                      variant="rectangular"
-                      width={80}
-                      height={32}
-                      animation="wave"
-                      sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-                    />
-                  </div>
-
-                  {/* Price Skeleton */}
                   <div className="flex items-center justify-between mt-4">
                     <Skeleton
                       variant="text"
@@ -122,45 +73,6 @@ function DemoContent(props) {
               </Card>
             ))}
           </div>
-
-          {/* Pagination Skeleton */}
-          <div className="flex justify-center items-center gap-4 mt-8">
-            <Skeleton
-              variant="rectangular"
-              width={100}
-              height={40}
-              animation="wave"
-              sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-            />
-            <Skeleton
-              variant="rectangular"
-              width={40}
-              height={40}
-              animation="wave"
-              sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-            />
-            <Skeleton
-              variant="rectangular"
-              width={40}
-              height={40}
-              animation="wave"
-              sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-            />
-            <Skeleton
-              variant="rectangular"
-              width={40}
-              height={40}
-              animation="wave"
-              sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-            />
-            <Skeleton
-              variant="rectangular"
-              width={100}
-              height={40}
-              animation="wave"
-              sx={{ bgcolor: "grey.200", borderRadius: 1 }}
-            />
-          </div>
         </div>
       </div>
     );
@@ -173,50 +85,92 @@ function DemoContent(props) {
         animate={{ opacity: 1, transition: { delay: 0.1 } }}
         className="flex flex-col flex-1 items-center justify-center h-full"
       >
-        <ClienttErrorPage message={"Error occurred while retriving products"} />
+        <ClienttErrorPage message="Error occurred while retrieving properties" />
       </motion.div>
     );
   }
 
-  if (!products) {
+  if (!listings?.length > 0) {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { delay: 0.1 } }}
-        className="flex flex-col flex-1 items-center justify-center h-full"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }}
+        className="flex flex-col flex-1 items-center justify-center min-h-screen"
+        style={{
+          background: "linear-gradient(180deg, #fafaf9 0%, #f5f5f4 50%, #fef3e2 100%)",
+        }}
       >
-        <Typography color="text.secondary" variant="h5">
-          No products products
-        </Typography>
+        <div className="flex flex-col items-center justify-center max-w-2xl px-8 text-center">
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
+              color: "#1f2937",
+              marginBottom: "16px",
+              fontSize: { xs: "1.875rem", sm: "2.25rem" },
+            }}
+          >
+            No Properties Found
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "#6b7280",
+              fontSize: { xs: "1rem", sm: "1.125rem" },
+              lineHeight: 1.7,
+            }}
+          >
+            There are currently no property listings matching your search. Try adjusting your
+            filters or check back later for new listings.
+          </Typography>
+        </div>
       </motion.div>
     );
   }
 
   return (
-    <div className="flex-auto p-24 sm:p-40">
+    <div
+      className="flex-auto p-24 sm:p-40"
+      style={{
+        background: "linear-gradient(180deg, #fafaf9 0%, #f5f5f4 50%, #fef3e2 100%)",
+        minHeight: "100vh",
+      }}
+    >
       <div className="flex flex-col">
+        {/* Header Section */}
+        <div className="mb-8">
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 800, color: "#1f2937", marginBottom: "8px", fontSize: "2rem" }}
+          >
+            Available Properties
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#6b7280", fontSize: "1.125rem" }}>
+            Find your next home or investment from our curated real-estate listings
+          </Typography>
+        </div>
+
         {/* Property Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-8">
-          {products?.map((property) => (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8 bg-white/60 backdrop-blur-sm rounded-3xl shadow-lg mb-8">
+          {listings?.map((property) => (
             <BookingCard
               key={property?.id || property?._id}
               id={property?.id || property?._id}
               slug={property?.slug}
-              images={property?.images || []}
+              images={property?.listingImages || []}
               title={property?.title}
-              address={property?.address}
               price={property?.price}
               roomCount={property?.roomCount}
-              rating={property?.rating || 4.5}
-              reviewCount={property?.reviewCount || 9}
-              duration={property?.duration || "3 - 8 hours"}
-              host={property?.host || "Captain"}
-              leaseTerm={property?.leaseTerm || "ANNUM"}
+              sittingroomCount={property?.sittingroomCount}
+              rating={property?.rating || 0}
+              reviewCount={property?.numReviews || 0}
+              propertyUseCase={property?.propertyUseCase}
+              leaseTerm={property?.leaseTerm}
             />
           ))}
         </div>
 
-        {/* Pagination Bar - Always show for testing */}
+        {/* Pagination Bar */}
         <PaginationBar
           totalItems={estimatedTotal}
           currentPage={currentPage}
