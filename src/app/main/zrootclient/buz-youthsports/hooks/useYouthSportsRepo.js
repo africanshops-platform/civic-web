@@ -1,20 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { YOUTH_STATS, mockMentors, mockPrograms } from '../mock';
+import { YOUTH_STATS, mockPrograms } from '../mock';
 
-// Browse/detail (programs, tournaments, spotlights) are wired to the real
-// `youth-sports-service` gateway routes. Enroll/register-team/mentors/my-programs
-// are still mock pending a later slice — kept separate rather than one global flag
-// so wiring one doesn't silently break the others.
+// Browse/detail (programs, tournaments, spotlights) and mentorship-request are
+// wired to the real `youth-sports-service` gateway routes. Enroll/register-team/
+// my-programs are still mock pending a later slice — kept separate rather than
+// one global flag so wiring one doesn't silently break the others.
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 
 // ─── raw API layer ────────────────────────────────────────────────────────────
 const api = {
-  getPrograms:      (params) => AuthApi().get('/youth/programs', { params }),
-  getProgramDetail: (id)     => AuthApi().get(`/youth/programs/${id}`),
-  getTournaments:   (params) => AuthApi().get('/youth/tournaments', { params }),
-  getSpotlights:    (params) => AuthApi().get('/youth/spotlights', { params }),
+  getPrograms:       (params) => AuthApi().get('/youth/programs', { params }),
+  getProgramDetail:  (id)     => AuthApi().get(`/youth/programs/${id}`),
+  getTournaments:    (params) => AuthApi().get('/youth/tournaments', { params }),
+  getSpotlights:     (params) => AuthApi().get('/youth/spotlights', { params }),
+  requestMentorship: (data)   => AuthApi().post('/youth/mentorship/request', data),
 };
 
 function buildParams(obj) {
@@ -151,24 +152,22 @@ export function useTournaments(filters = {}) {
   );
 }
 
-// Mentors, my-programs, enroll, and team-registration are still mock —
-// wiring them needs KYC-guard-aware error handling and (for mentors) a product
-// redesign from a directory to a request-only form, deferred to a later slice.
-export function useMentors(filters = {}) {
-  return useQuery(
-    ['youth-mentors', filters],
-    async () => {
-      await delay(500);
-      const filtered = mockMentors.filter((m) => {
-        if (filters.category && m.category !== filters.category) return false;
-        return true;
-      });
-      return { data: { mentors: filtered } };
-    },
-    { keepPreviousData: true, staleTime: 5 * 60 * 1000 }
+// No browse/list-mentors endpoint exists on the backend — only a request-only
+// route. KYC verification is enforced by KycGuard at the route level (see
+// youthsportsPagesConfig.jsx's kycProtect wrapper), not re-checked here.
+export function useRequestMentorship() {
+  return useMutation(
+    (payload) => api.requestMentorship(payload),
+    {
+      onSuccess: () => toast.success('Mentorship request submitted! A coordinator will reach out once a match is found.'),
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Could not submit your request. Please try again.'),
+    }
   );
 }
 
+// My-programs, enroll, and team-registration are still mock — deferred to a
+// later slice, kept separate rather than one global flag so wiring one
+// doesn't silently break the others.
 export function useMyPrograms() {
   return useQuery(
     ['youth-my-programs'],

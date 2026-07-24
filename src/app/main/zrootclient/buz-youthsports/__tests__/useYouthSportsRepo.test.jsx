@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { usePrograms, useProgramDetail, useTournaments, useTalents } from '../hooks/useYouthSportsRepo';
+import { usePrograms, useProgramDetail, useTournaments, useTalents, useRequestMentorship } from '../hooks/useYouthSportsRepo';
 
 // Real backend fields (YouthProgram/SportsTournament/TalentSpotlight, per
 // apps/youthsports-service/prisma/schema.prisma) differ from what these screens
@@ -19,8 +19,8 @@ const wrapper = ({ children }) => (
   </QueryClientProvider>
 );
 
-function mockApi({ get }) {
-  AuthApi.mockReturnValue({ get });
+function mockApi({ get, post }) {
+  AuthApi.mockReturnValue({ get, post });
 }
 
 describe('usePrograms', () => {
@@ -195,5 +195,33 @@ describe('useTalents', () => {
 
     await waitFor(() => expect(get).toHaveBeenCalled());
     expect(get).toHaveBeenCalledWith('/youth/spotlights', { params: { sport: 'chess', page: 1, limit: 20 } });
+  });
+});
+
+describe('useRequestMentorship', () => {
+  it('posts the real DTO shape to /youth/mentorship/request', async () => {
+    const post = jest.fn().mockResolvedValue({ data: { id: 'm1' } });
+    mockApi({ post });
+
+    let mutate;
+    function Harness() {
+      mutate = useRequestMentorship().mutate;
+      return null;
+    }
+
+    render(<Harness />, { wrapper });
+
+    mutate({
+      sport: 'football',
+      talentDescription: 'Attacking midfielder, 3 years experience.',
+      jurisdiction: { country: 'NG', state: 'Lagos', lga: 'Ikeja' },
+    });
+
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    expect(post).toHaveBeenCalledWith('/youth/mentorship/request', {
+      sport: 'football',
+      talentDescription: 'Attacking midfielder, 3 years experience.',
+      jurisdiction: { country: 'NG', state: 'Lagos', lga: 'Ikeja' },
+    });
   });
 });
