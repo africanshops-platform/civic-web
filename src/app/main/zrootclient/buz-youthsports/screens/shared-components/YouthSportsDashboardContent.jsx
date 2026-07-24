@@ -81,12 +81,8 @@ function ProgramCard({ program }) {
 
       {/* ── Row 2: meta tags ── */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'clamp(8px, 1.4vw, 16px)', paddingLeft: 'clamp(60px, 7.8vw, 84px)' }}>
-        <span style={{ fontSize: F.body, color: '#374151' }}>📅 {program.duration}</span>
-        <span style={{ fontSize: F.body, color: '#374151' }}>👤 Ages {program.ageRange.min}–{program.ageRange.max}</span>
-        {program.isFree
-          ? <Chip label="FREE" sx={{ height: 'clamp(26px, 3vw, 34px)', fontSize: F.meta, fontWeight: 800, background: '#dcfce7', color: '#166534' }} />
-          : <span style={{ fontSize: F.body, color: '#374151' }}>₦{program.fee.toLocaleString()}</span>
-        }
+        {program.duration && <span style={{ fontSize: F.body, color: '#374151' }}>📅 {program.duration}</span>}
+        <span style={{ fontSize: F.body, color: '#374151' }}>👤 Ages {program.ageGroup}</span>
         {program.rating && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: F.body, color: '#374151' }}>
             <Star sx={{ fontSize: 'clamp(18px, 2.2vw, 26px)', color: '#f59e0b' }} />

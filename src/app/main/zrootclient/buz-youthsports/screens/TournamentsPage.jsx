@@ -8,7 +8,7 @@ import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import YouthSportsHeader from './shared-components/YouthSportsHeader';
 import YouthSportsSidebarLeft from './shared-components/YouthSportsSidebarLeft';
 import YouthSportsSidebarRight from './shared-components/YouthSportsSidebarRight';
-import { useTournaments, useRegisterForTournament } from '../hooks/useYouthSportsRepo';
+import { useTournaments } from '../hooks/useYouthSportsRepo';
 import { SPORT_ICONS } from '../mock';
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
@@ -21,10 +21,10 @@ const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
 }));
 
 const STATUS_STYLES = {
-  registration_open: { bg: '#dcfce7', color: '#166534', label: 'Registering' },
-  ongoing: { bg: '#fff7ed', color: '#9a3412', label: 'Live' },
   upcoming: { bg: '#eff6ff', color: '#1d4ed8', label: 'Upcoming' },
+  ongoing: { bg: '#fff7ed', color: '#9a3412', label: 'Live' },
   completed: { bg: '#f3f4f6', color: '#6b7280', label: 'Completed' },
+  cancelled: { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' },
 };
 
 const SX_SELECT = { borderRadius: '12px', fontSize: '1.76rem' };
@@ -40,7 +40,6 @@ function ActiveTournamentsPage() {
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
   const { data, isLoading } = useTournaments({ status: statusFilter || undefined });
-  const registerMutation = useRegisterForTournament();
   const tournaments = useMemo(() => data?.data?.tournaments ?? [], [data]);
 
   const handleLeftToggle = useCallback(() => setLeftSidebarOpen((v) => !v), []);
@@ -71,10 +70,10 @@ function ActiveTournamentsPage() {
             <InputLabel sx={SX_LABEL}>Filter by Status</InputLabel>
             <Select value={statusFilter} label="Filter by Status" onChange={(e) => setStatusFilter(e.target.value)} sx={SX_SELECT}>
               <MenuItem value="" sx={SX_ITEM}>All</MenuItem>
-              <MenuItem value="registration_open" sx={SX_ITEM}>Open for Registration</MenuItem>
-              <MenuItem value="ongoing" sx={SX_ITEM}>Live</MenuItem>
-              <MenuItem value="upcoming" sx={SX_ITEM}>Upcoming</MenuItem>
-              <MenuItem value="completed" sx={SX_ITEM}>Completed</MenuItem>
+              <MenuItem value="UPCOMING" sx={SX_ITEM}>Upcoming</MenuItem>
+              <MenuItem value="ONGOING" sx={SX_ITEM}>Live</MenuItem>
+              <MenuItem value="COMPLETED" sx={SX_ITEM}>Completed</MenuItem>
+              <MenuItem value="CANCELLED" sx={SX_ITEM}>Cancelled</MenuItem>
             </Select>
           </FormControl>
         </div>
@@ -84,7 +83,7 @@ function ActiveTournamentsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {tournaments.map((t, i) => {
             const statusStyle = STATUS_STYLES[t.status] || STATUS_STYLES.upcoming;
-            const sportIcon = SPORT_ICONS?.[t.sport] || '🏅';
+            const sportIcon = SPORT_ICONS?.[(t.sport || '').toLowerCase()] || '🏅';
             return (
               <motion.div key={t.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 style={{ padding: 28, borderRadius: 22, background: 'white', border: '1px solid #e5e7eb' }}>
@@ -97,19 +96,19 @@ function ActiveTournamentsPage() {
                       <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.96rem', color: '#111827' }}>{t.title}</h3>
                       <Chip label={statusStyle.label} sx={{ height: 36, fontSize: '1.4rem', background: statusStyle.bg, color: statusStyle.color, fontWeight: 800 }} />
                     </div>
-                    <p style={{ margin: '0 0 12px', fontSize: '1.7rem', color: '#6b7280' }}>📍 {t.venue}</p>
+                    {t.venue && <p style={{ margin: '0 0 12px', fontSize: '1.7rem', color: '#6b7280' }}>📍 {t.venue}</p>}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                       <Chip label={t.sport} sx={{ height: 34, fontSize: '1.4rem', fontWeight: 700, background: '#fff7ed', color: '#9a3412' }} />
-                      <Chip label={t.ageGroup} sx={{ height: 34, fontSize: '1.4rem', fontWeight: 700, background: '#dcfce7', color: '#166534' }} />
-                      {t.isFree ? <Chip label="FREE" sx={{ height: 34, fontSize: '1.4rem', fontWeight: 800, background: '#f0fdf4', color: '#166534' }} />
-                        : <span style={{ fontSize: '1.64rem', color: '#374151' }}>₦{t.registrationFee?.toLocaleString()}</span>}
-                      {t.teamsRegistered && <span style={{ fontSize: '1.64rem', color: '#6b7280' }}>{t.teamsRegistered} teams registered</span>}
+                      <Chip label={t.format} sx={{ height: 34, fontSize: '1.4rem', fontWeight: 700, background: '#dcfce7', color: '#166534' }} />
+                      <span style={{ fontSize: '1.64rem', color: '#6b7280' }}>{t.teamsRegistered ?? 0}/{t.maxTeams} teams registered</span>
                     </div>
                   </div>
-                  {t.status === 'registration_open' && (
-                    <Button size="medium" onClick={() => registerMutation.mutate({ tournamentId: t.id })} disabled={registerMutation.isLoading}
-                      sx={{ background: 'linear-gradient(135deg,#ea580c 0%,#dc2626 100%)', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.6rem', px: 3, py: 1.25, flexShrink: 0, '&:hover': { filter: 'brightness(0.92)' } }}>
-                      Register
+                  {/* Team registration is real-data-aware but not yet wired to the real
+                      register endpoint — deferred, same reasoning as Programs' Enrol button. */}
+                  {t.status === 'upcoming' && (
+                    <Button size="medium" disabled
+                      sx={{ fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.6rem', px: 3, py: 1.25, flexShrink: 0 }}>
+                      Registration Opening Soon
                     </Button>
                   )}
                 </div>
@@ -126,7 +125,7 @@ function ActiveTournamentsPage() {
         )}
       </motion.div>
     </div>
-  ), [tournaments, isLoading, statusFilter, registerMutation]);
+  ), [tournaments, isLoading, statusFilter]);
 
   return (
     <Root header={header} content={content}

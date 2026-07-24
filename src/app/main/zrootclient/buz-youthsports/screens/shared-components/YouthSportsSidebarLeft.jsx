@@ -3,8 +3,9 @@ import {
   FormControl, InputLabel, Select, MenuItem,
   TextField, InputAdornment, Divider, Button,
 } from '@mui/material';
-import { Search, FilterList, Clear } from '@mui/icons-material';
-import { PROGRAM_CATEGORIES } from '../../mock';
+import { FilterList, Clear, LocationOn } from '@mui/icons-material';
+
+const AGE_GROUPS = ['U15', 'U18', '18-25', 'OPEN'];
 
 /* ── Shared responsive font tokens matching YouthSportsDashboardContent ── */
 const F = {
@@ -20,7 +21,7 @@ const SX_SELECT = { borderRadius: '12px', fontSize: F.label };
 const SX_ITEM   = { fontSize: F.label };
 
 function YouthSportsSidebarLeft({ onFilterChange }) {
-  const [filters, setFilters] = useState({ category: '', status: '', search: '' });
+  const [filters, setFilters] = useState({ sport: '', ageGroup: '', lga: '' });
 
   function update(key, value) {
     const next = { ...filters, [key]: value };
@@ -29,7 +30,7 @@ function YouthSportsSidebarLeft({ onFilterChange }) {
   }
 
   function clearFilters() {
-    const empty = { category: '', status: '', search: '' };
+    const empty = { sport: '', ageGroup: '', lga: '' };
     setFilters(empty);
     onFilterChange?.(empty);
   }
@@ -57,16 +58,16 @@ function YouthSportsSidebarLeft({ onFilterChange }) {
         )}
       </div>
 
-      {/* ── Search ── */}
+      {/* ── LGA ── */}
       <TextField
         size="small"
-        placeholder="Search programmes..."
-        value={filters.search}
-        onChange={(e) => update('search', e.target.value)}
+        placeholder="Filter by LGA..."
+        value={filters.lga}
+        onChange={(e) => update('lga', e.target.value)}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Search sx={{ fontSize: F.icon, color: '#9ca3af' }} />
+              <LocationOn sx={{ fontSize: F.icon, color: '#9ca3af' }} />
             </InputAdornment>
           ),
           style: SX_INPUT,
@@ -77,38 +78,28 @@ function YouthSportsSidebarLeft({ onFilterChange }) {
 
       <Divider />
 
-      {/* ── Category select ── */}
-      <FormControl size="small" fullWidth>
-        <InputLabel sx={{ fontSize: F.label }}>Category</InputLabel>
-        <Select
-          value={filters.category}
-          label="Category"
-          onChange={(e) => update('category', e.target.value)}
-          sx={SX_SELECT}
-        >
-          <MenuItem value="" sx={SX_ITEM}>All Categories</MenuItem>
-          {PROGRAM_CATEGORIES.map((c) => (
-            <MenuItem key={c.id} value={c.id} sx={SX_ITEM}>
-              <span style={{ marginRight: 10, fontSize: F.body }}>{c.icon}</span>{c.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* ── Sport ── */}
+      <TextField
+        size="small"
+        placeholder="Filter by sport..."
+        value={filters.sport}
+        onChange={(e) => update('sport', e.target.value)}
+        InputProps={{ style: SX_INPUT }}
+        InputLabelProps={{ style: SX_INPUT }}
+        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', fontSize: F.label } }}
+      />
 
-      {/* ── Status select ── */}
+      {/* ── Age group select ── */}
       <FormControl size="small" fullWidth>
-        <InputLabel sx={{ fontSize: F.label }}>Status</InputLabel>
+        <InputLabel sx={{ fontSize: F.label }}>Age Group</InputLabel>
         <Select
-          value={filters.status}
-          label="Status"
-          onChange={(e) => update('status', e.target.value)}
+          value={filters.ageGroup}
+          label="Age Group"
+          onChange={(e) => update('ageGroup', e.target.value)}
           sx={SX_SELECT}
         >
-          <MenuItem value="" sx={SX_ITEM}>All Statuses</MenuItem>
-          <MenuItem value="open"     sx={SX_ITEM}>Open</MenuItem>
-          <MenuItem value="upcoming" sx={SX_ITEM}>Upcoming</MenuItem>
-          <MenuItem value="ongoing"  sx={SX_ITEM}>Ongoing</MenuItem>
-          <MenuItem value="closed"   sx={SX_ITEM}>Closed</MenuItem>
+          <MenuItem value="" sx={SX_ITEM}>All Ages</MenuItem>
+          {AGE_GROUPS.map((a) => <MenuItem key={a} value={a} sx={SX_ITEM}>{a}</MenuItem>)}
         </Select>
       </FormControl>
 

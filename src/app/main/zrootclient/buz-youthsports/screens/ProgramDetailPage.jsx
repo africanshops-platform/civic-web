@@ -3,13 +3,13 @@ import { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button, Chip, CircularProgress, LinearProgress } from '@mui/material';
 import { motion } from 'framer-motion';
-import { ArrowBack, Star, CalendarToday, CheckCircle } from '@mui/icons-material';
+import { ArrowBack, Star, CalendarToday } from '@mui/icons-material';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import YouthSportsHeader from './shared-components/YouthSportsHeader';
 import YouthSportsSidebarLeft from './shared-components/YouthSportsSidebarLeft';
 import YouthSportsSidebarRight from './shared-components/YouthSportsSidebarRight';
-import { useProgramDetail, useEnrollInProgram } from '../hooks/useYouthSportsRepo';
+import { useProgramDetail } from '../hooks/useYouthSportsRepo';
 import { PROGRAM_CATEGORIES } from '../mock';
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
@@ -33,12 +33,10 @@ function ActiveProgramDetailPage() {
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
-  const [enrolled, setEnrolled] = useState(false);
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
   const { data, isLoading, isError } = useProgramDetail(programId);
-  const enrollMutation = useEnrollInProgram();
 
   const handleLeftToggle = useCallback(() => setLeftSidebarOpen((v) => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
@@ -77,24 +75,6 @@ function ActiveProgramDetailPage() {
     const fillPct = program.slots > 0 ? Math.round((program.enrolledCount / program.slots) * 100) : 0;
     const spotsLeft = program.slots - program.enrolledCount;
 
-    if (enrolled) {
-      return (
-        <div className="flex-auto p-6 sm:p-8" style={{ background: 'linear-gradient(180deg,#f9fafb 0%,#fff7ed 100%)', minHeight: '100%' }}>
-          <div style={{ maxWidth: 600, margin: '60px auto', textAlign: 'center' }}>
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
-              <CheckCircle sx={{ fontSize: 96, color: '#ea580c', mb: 2 }} />
-              <h2 style={{ margin: '0 0 12px', fontWeight: 900, color: '#111827', fontSize: '3.2rem' }}>Enrolled Successfully!</h2>
-              <p style={{ color: '#6b7280', fontSize: '1.9rem', marginBottom: 28 }}>You are now enrolled in <strong>{program.title}</strong>. Check your email for confirmation.</p>
-              <Button component={Link} to="/youth/dashboard" variant="contained"
-                sx={{ background: 'linear-gradient(135deg,#ea580c 0%,#dc2626 100%)', color: 'white', fontWeight: 700, borderRadius: '14px', textTransform: 'none', px: 5, py: 2, fontSize: '1.9rem', '&:hover': { filter: 'brightness(0.92)' } }}>
-                Go to Dashboard
-              </Button>
-            </motion.div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="flex-auto p-6 sm:p-8" style={{ background: 'linear-gradient(180deg,#f9fafb 0%,#fff7ed 100%)', minHeight: '100%' }}>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -115,10 +95,9 @@ function ActiveProgramDetailPage() {
                 </div>
                 <p style={{ margin: '0 0 14px', color: '#6b7280', fontSize: '1.8rem' }}>{program.location.address}</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
-                  <span style={{ fontSize: '1.8rem', color: '#374151' }}>📅 {program.duration}</span>
-                  <span style={{ fontSize: '1.8rem', color: '#374151' }}>👤 Ages {program.ageRange.min}–{program.ageRange.max}</span>
-                  {program.isFree ? <Chip label="FREE" sx={{ height: 36, fontSize: '1.4rem', fontWeight: 800, background: '#dcfce7', color: '#166534' }} /> : <span style={{ fontSize: '1.8rem', color: '#374151' }}>₦{program.fee.toLocaleString()}</span>}
-                  {program.rating && <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Star sx={{ fontSize: 26, color: '#f59e0b' }} /><strong style={{ fontSize: '1.8rem' }}>{program.rating}</strong><span style={{ fontSize: '1.7rem', color: '#9ca3af' }}> · {program.graduatesCount} graduates</span></span>}
+                  {program.duration && <span style={{ fontSize: '1.8rem', color: '#374151' }}>📅 {program.duration}</span>}
+                  <span style={{ fontSize: '1.8rem', color: '#374151' }}>👤 Ages {program.ageGroup}</span>
+                  {program.rating && <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Star sx={{ fontSize: 26, color: '#f59e0b' }} /><strong style={{ fontSize: '1.8rem' }}>{program.rating}</strong></span>}
                 </div>
               </div>
             </div>
@@ -127,11 +106,7 @@ function ActiveProgramDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,380px),1fr))', gap: 20 }}>
             <div style={{ background: 'white', borderRadius: 22, padding: 28, border: '1px solid #e5e7eb' }}>
               <h3 style={{ margin: '0 0 14px', fontWeight: 800, color: '#111827', fontSize: '2rem' }}>About this Programme</h3>
-              <p style={{ margin: '0 0 18px', color: '#6b7280', fontSize: '1.8rem', lineHeight: 1.7 }}>{program.description}</p>
-              <h4 style={{ margin: '0 0 12px', fontWeight: 700, color: '#374151', fontSize: '1.76rem' }}>Skills You'll Gain</h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                {program.skills.map((s) => <Chip key={s} label={s} sx={{ height: 36, fontSize: '1.4rem', background: '#fff7ed', color: '#9a3412', fontWeight: 600, border: '1px solid #fed7aa' }} />)}
-              </div>
+              <p style={{ margin: 0, color: '#6b7280', fontSize: '1.8rem', lineHeight: 1.7 }}>{program.description}</p>
             </div>
 
             <div style={{ background: 'white', borderRadius: 22, padding: 28, border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -143,34 +118,28 @@ function ActiveProgramDetailPage() {
                 </div>
                 <LinearProgress variant="determinate" value={fillPct} sx={{ borderRadius: 6, height: 10, background: '#f3f4f6', '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg,#ea580c,#dc2626)', borderRadius: 6 } }} />
               </div>
-              <div style={{ padding: 16, borderRadius: 14, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <CalendarToday sx={{ fontSize: 26, color: '#ea580c' }} />
-                  <span style={{ fontWeight: 700, fontSize: '1.76rem', color: '#374151' }}>Programme Dates</span>
+              {(program.startDate || program.endDate) && (
+                <div style={{ padding: 16, borderRadius: 14, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <CalendarToday sx={{ fontSize: 26, color: '#ea580c' }} />
+                    <span style={{ fontWeight: 700, fontSize: '1.76rem', color: '#374151' }}>Programme Dates</span>
+                  </div>
+                  {program.startDate && <div style={{ fontSize: '1.7rem', color: '#6b7280' }}>Start: <strong style={{ color: '#111827' }}>{new Date(program.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></div>}
+                  {program.endDate && <div style={{ fontSize: '1.7rem', color: '#6b7280', marginTop: 6 }}>End: <strong style={{ color: '#111827' }}>{new Date(program.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></div>}
                 </div>
-                <div style={{ fontSize: '1.7rem', color: '#6b7280' }}>Start: <strong style={{ color: '#111827' }}>{new Date(program.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></div>
-                <div style={{ fontSize: '1.7rem', color: '#6b7280', marginTop: 6 }}>End: <strong style={{ color: '#111827' }}>{new Date(program.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></div>
-              </div>
-              <div style={{ fontSize: '1.64rem', color: '#6b7280', padding: '12px 16px', borderRadius: 12, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                <strong>Facilitator:</strong> {program.facilitator.name}
-              </div>
-              {program.status === 'open' && spotsLeft > 0 ? (
-                <Button onClick={() => enrollMutation.mutateAsync({ programId: program.id }).then((r) => { if (r?.data?.success) setEnrolled(true); })}
-                  disabled={enrollMutation.isLoading} variant="contained"
-                  sx={{ background: 'linear-gradient(135deg,#ea580c 0%,#dc2626 100%)', color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', py: 2, fontSize: '2rem', '&:hover': { filter: 'brightness(0.92)' } }}>
-                  {enrollMutation.isLoading ? <CircularProgress size={28} sx={{ color: 'white' }} /> : program.isFree ? 'Enrol Free' : `Enrol — ₦${program.fee.toLocaleString()}`}
-                </Button>
-              ) : (
-                <Button disabled variant="contained" sx={{ fontWeight: 800, borderRadius: '14px', textTransform: 'none', py: 2, fontSize: '2rem' }}>
-                  {program.status === 'closed' ? 'Applications Closed' : spotsLeft === 0 ? 'Fully Booked' : 'Not Available'}
-                </Button>
               )}
+              {/* Enrollment is real-data-aware but not yet wired to the real enroll endpoint —
+                  a fake success here would misrepresent a genuine program enrollment, so this
+                  stays honestly disabled until that slice lands. */}
+              <Button disabled variant="contained" sx={{ fontWeight: 800, borderRadius: '14px', textTransform: 'none', py: 2, fontSize: '2rem' }}>
+                Enrollment Opening Soon
+              </Button>
             </div>
           </div>
         </motion.div>
       </div>
     );
-  }, [data, isLoading, isError, enrolled, enrollMutation]);
+  }, [data, isLoading, isError]);
 
   return (
     <Root header={header} content={content}
