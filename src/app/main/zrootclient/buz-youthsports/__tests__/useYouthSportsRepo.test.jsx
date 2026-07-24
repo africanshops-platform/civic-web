@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { usePrograms, useProgramDetail, useTournaments, useTalents, useRequestMentorship } from '../hooks/useYouthSportsRepo';
+import { usePrograms, useProgramDetail, useTournaments, useTournamentDetail, useTalents, useRequestMentorship } from '../hooks/useYouthSportsRepo';
 
 // Real backend fields (YouthProgram/SportsTournament/TalentSpotlight, per
 // apps/youthsports-service/prisma/schema.prisma) differ from what these screens
@@ -145,6 +145,43 @@ describe('useTournaments', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('upcoming');
     expect(screen.getByTestId('teams')).toHaveTextContent('4');
     expect(screen.getByTestId('venue')).toHaveTextContent('Ikeja, Lagos');
+  });
+});
+
+describe('useTournamentDetail', () => {
+  it('normalizes the top-level tournament but leaves teams/matches untouched', async () => {
+    const get = jest.fn().mockResolvedValue({
+      data: {
+        id: 't1', name: 'Lagos Youth Championship', sport: 'football', status: 'ONGOING',
+        format: 'KNOCKOUT', maxTeams: 4, currentTeams: 4, lga: 'Ikeja', state: 'Lagos',
+        teams: [{ id: 'team1', teamName: 'Eti-Osa FC', points: 3, wins: 1, draws: 0, losses: 0, goalsFor: 2, goalsAgainst: 1, isEliminated: false }],
+        matches: [{ id: 'match1', tournamentId: 't1', homeTeamId: 'team1', awayTeamId: 'team2', round: 1, homeScore: 2, awayScore: 1, isCompleted: true }],
+      },
+    });
+    mockApi({ get });
+
+    function Harness() {
+      const { data } = useTournamentDetail('t1');
+      const t = data?.data?.tournament;
+      if (!t) return null;
+      return (
+        <div>
+          <span data-testid="title">{t.title}</span>
+          <span data-testid="status">{t.status}</span>
+          <span data-testid="team-name">{t.teams[0].teamName}</span>
+          <span data-testid="match-score">{t.matches[0].homeScore}-{t.matches[0].awayScore}</span>
+        </div>
+      );
+    }
+
+    render(<Harness />, { wrapper });
+
+    await waitFor(() => expect(screen.getByTestId('title')).toBeInTheDocument());
+    expect(screen.getByTestId('title')).toHaveTextContent('Lagos Youth Championship');
+    expect(screen.getByTestId('status')).toHaveTextContent('ongoing');
+    expect(screen.getByTestId('team-name')).toHaveTextContent('Eti-Osa FC');
+    expect(screen.getByTestId('match-score')).toHaveTextContent('2-1');
+    expect(get).toHaveBeenCalledWith('/youth/tournaments/t1');
   });
 });
 

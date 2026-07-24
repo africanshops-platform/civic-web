@@ -11,11 +11,12 @@ const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 
 // ─── raw API layer ────────────────────────────────────────────────────────────
 const api = {
-  getPrograms:       (params) => AuthApi().get('/youth/programs', { params }),
-  getProgramDetail:  (id)     => AuthApi().get(`/youth/programs/${id}`),
-  getTournaments:    (params) => AuthApi().get('/youth/tournaments', { params }),
-  getSpotlights:     (params) => AuthApi().get('/youth/spotlights', { params }),
-  requestMentorship: (data)   => AuthApi().post('/youth/mentorship/request', data),
+  getPrograms:        (params) => AuthApi().get('/youth/programs', { params }),
+  getProgramDetail:   (id)     => AuthApi().get(`/youth/programs/${id}`),
+  getTournaments:     (params) => AuthApi().get('/youth/tournaments', { params }),
+  getTournamentDetail: (id)    => AuthApi().get(`/youth/tournaments/${id}`),
+  getSpotlights:      (params) => AuthApi().get('/youth/spotlights', { params }),
+  requestMentorship:  (data)   => AuthApi().post('/youth/mentorship/request', data),
 };
 
 function buildParams(obj) {
@@ -148,6 +149,21 @@ export function useTournaments(filters = {}) {
       },
       keepPreviousData: true,
       staleTime: 2 * 60 * 1000,
+    }
+  );
+}
+
+export function useTournamentDetail(tournamentId) {
+  return useQuery(
+    ['youth-tournament', tournamentId],
+    () => api.getTournamentDetail(tournamentId),
+    {
+      enabled: Boolean(tournamentId),
+      // teams[]/matches[] field names already match what BracketTree/
+      // StandingsTable need (teamName, points, homeScore, isCompleted...) —
+      // only the top-level tournament fields need normalizeTournament.
+      select: (res) => ({ data: { tournament: normalizeTournament(res.data) } }),
+      staleTime: 60 * 1000,
     }
   );
 }

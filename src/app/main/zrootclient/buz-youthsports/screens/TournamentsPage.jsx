@@ -2,6 +2,7 @@ import { styled } from '@mui/material/styles';
 import { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { Button, Chip, CircularProgress, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { EmojiEvents } from '@mui/icons-material';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
@@ -103,14 +104,20 @@ function ActiveTournamentsPage() {
                       <span style={{ fontSize: '1.64rem', color: '#6b7280' }}>{t.teamsRegistered ?? 0}/{t.maxTeams} teams registered</span>
                     </div>
                   </div>
-                  {/* Team registration is real-data-aware but not yet wired to the real
-                      register endpoint — deferred, same reasoning as Programs' Enrol button. */}
-                  {t.status === 'upcoming' && (
-                    <Button size="medium" disabled
-                      sx={{ fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.6rem', px: 3, py: 1.25, flexShrink: 0 }}>
-                      Registration Opening Soon
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+                    <Button component={Link} to={`/youth/tournaments/${t.id}`} size="medium"
+                      sx={{ background: 'linear-gradient(135deg,#ea580c 0%,#dc2626 100%)', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.6rem', px: 3, py: 1.25, '&:hover': { filter: 'brightness(0.92)' } }}>
+                      View {t.format === 'KNOCKOUT' ? 'Bracket' : 'Standings'}
                     </Button>
-                  )}
+                    {/* Team registration is real-data-aware but not yet wired to the real
+                        register endpoint — deferred, same reasoning as Programs' Enrol button. */}
+                    {t.status === 'upcoming' && (
+                      <Button size="medium" disabled
+                        sx={{ fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.6rem', px: 3, py: 1.25 }}>
+                        Registration Opening Soon
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
