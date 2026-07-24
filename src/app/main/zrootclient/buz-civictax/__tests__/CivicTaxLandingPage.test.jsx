@@ -17,7 +17,9 @@ describe('CivicTaxLandingPage', () => {
 
   it('renders "Browse Campaigns" CTA', () => {
     render(<CivicTaxLandingPage />, { wrapper });
-    expect(screen.getByText('Browse Campaigns')).toBeInTheDocument();
+    // Two real CTAs link to /civictax/campaigns (hero + further down the page) —
+    // genuinely both there, not a bug, so assert at least one exists.
+    expect(screen.getAllByText('Browse Campaigns').length).toBeGreaterThan(0);
   });
 
   it('renders "How It Works" section', () => {

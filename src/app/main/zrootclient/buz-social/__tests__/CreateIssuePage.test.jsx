@@ -1,12 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from 'app/store/store';
 import CreateIssuePage from '../screens/CreateIssuePage';
 
 const wrapper = ({ children }) => (
-  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    <MemoryRouter>{children}</MemoryRouter>
-  </QueryClientProvider>
+  <Provider store={store}>
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter>{children}</MemoryRouter>
+    </QueryClientProvider>
+  </Provider>
 );
 
 describe('CreateIssuePage', () => {

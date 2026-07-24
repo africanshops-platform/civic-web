@@ -89,4 +89,10 @@ module.exports = {
     camelcase: "off",
     "react/jsx-pascal-case": "off",
   },
+  overrides: [
+    {
+      files: ["**/__tests__/**/*.test.[jt]s?(x)"],
+      env: { jest: true },
+    },
+  ],
 };

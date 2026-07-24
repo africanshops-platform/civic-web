@@ -12,7 +12,9 @@ const wrapper = ({ children }) => (
 describe('GovernanceLandingPage', () => {
   it('renders the hero headline', () => {
     render(<GovernanceLandingPage />, { wrapper });
-    expect(screen.getByText(/Your Vote/i)).toBeInTheDocument();
+    // "Your Vote" also appears in the unrelated "Cast Your Vote" how-it-works
+    // step further down the page — scope to the h1 to target the actual hero.
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Your Vote/i);
   });
 
   it('renders the View Elections CTA button', () => {
