@@ -30,7 +30,9 @@ export default defineConfig({
   },
   server: {
     open: true,
-    port: 3000,
+    // Distinct from customer-web/control-dashboard/shop-dashboard (all 3000)
+    // so civic-web can run alongside them during dev.
+    port: 3002,
   },
   define: {
     global: "window",
