@@ -2,7 +2,6 @@ import { memo } from 'react';
 import { Button } from '@mui/material';
 import { LocationOn, AccessTime, ArrowForward, Person } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import SeverityBadge from './SeverityBadge';
 import { INCIDENT_CATEGORIES, STATUS_CONFIG } from '../mock';
 
@@ -14,7 +13,6 @@ const F = {
 };
 
 function IncidentCard({ incident, index = 0, compact = false, onSelect }) {
-  const navigate = useNavigate();
   if (!incident) return null;
 
   const catInfo    = INCIDENT_CATEGORIES.find((c) => c.id === incident.category);
@@ -129,15 +127,17 @@ function IncidentCard({ incident, index = 0, compact = false, onSelect }) {
             }}>
               {statusInfo.label}
             </span>
-            <Button
-              size="small"
-              endIcon={<ArrowForward style={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }} />}
-              onClick={() => onSelect ? onSelect(incident) : navigate(`/security/reports/${incident.id}/view`)}
-              style={{ fontSize: F.btn }}
-              sx={{ color: '#ea580c', fontWeight: 700, textTransform: 'none', borderRadius: '10px', px: 1.5, '&:hover': { backgroundColor: '#fff7ed' } }}
-            >
-              Details
-            </Button>
+            {onSelect && (
+              <Button
+                size="small"
+                endIcon={<ArrowForward style={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }} />}
+                onClick={() => onSelect(incident)}
+                style={{ fontSize: F.btn }}
+                sx={{ color: '#ea580c', fontWeight: 700, textTransform: 'none', borderRadius: '10px', px: 1.5, '&:hover': { backgroundColor: '#fff7ed' } }}
+              >
+                Details
+              </Button>
+            )}
           </div>
         </div>
       </div>

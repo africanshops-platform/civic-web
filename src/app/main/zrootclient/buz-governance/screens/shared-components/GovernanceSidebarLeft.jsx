@@ -119,7 +119,7 @@ function GovernanceSidebarLeft({ onFilterChange }) {
       {[
         { label: 'My Voting History', path: '/governance/my-votes',               icon: '🗳️' },
         { label: 'Sign a Petition',   path: '/governance/participate',             icon: '✍️' },
-        { label: 'Live Results',      path: '/governance/elections/elec_001/live', icon: '📊' },
+        { label: 'Live Results',      path: '/governance/elections/elec_001/live/manage', icon: '📊' },
         { label: 'All Elections',     path: '/governance/elections',               icon: '🏛️' },
         { label: 'Dashboard',         path: '/governance/dashboard',               icon: '📋' },
       ].map((link) => (

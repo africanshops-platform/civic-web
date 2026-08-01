@@ -25,7 +25,7 @@ const LAYOUT = {
 const socialPagesConfig = {
   settings: LAYOUT,
   routes: kycProtect([
-    { path: 'community/feed', element: <CommunityFeedWithSidebarsPage /> },
+    { path: 'community/my-feed', element: <CommunityFeedWithSidebarsPage /> },
     { path: 'community/create-issue', element: <CreateIssuePage /> },
     { path: 'community/issues/:issueId', element: <IssueDetailPage /> },
     { path: 'community/resolved', element: <ResolvedIssuesPage /> },

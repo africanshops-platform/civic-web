@@ -51,7 +51,7 @@ function ActiveCreateIssuePage() {
   function update(key, value) { setForm((prev) => ({ ...prev, [key]: value })); }
   function handleSubmit(e) {
     e.preventDefault();
-    reportIssue({ ...form, jurisdiction }, { onSuccess: () => setTimeout(() => navigate('/community/feed'), 2200) });
+    reportIssue({ ...form, jurisdiction }, { onSuccess: () => setTimeout(() => navigate('/community/my-feed'), 2200) });
   }
 
   const isValid = form.title.trim() && form.category && form.description.trim().length > 20;
@@ -76,7 +76,7 @@ function ActiveCreateIssuePage() {
             <Typography sx={{ color: '#4b5563', lineHeight: 1.8, mb: 3, fontSize: F.body, maxWidth: 480, mx: 'auto' }}>
               Your issue has been submitted. Relevant authorities have been notified and the community can now see it.
             </Typography>
-            <Button component={Link} to="/community/feed" variant="contained"
+            <Button component={Link} to="/community/my-feed" variant="contained"
               sx={{ background: 'linear-gradient(135deg,#059669 0%,#0f766e 100%)', color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', fontSize: F.btn, px: 'clamp(14px, 2.2vw, 24px)', py: 'clamp(10px, 1.4vw, 16px)' }}>
               Back to Community Feed
             </Button>

@@ -61,7 +61,7 @@ function GovernanceHeader({ leftSidebarToggle, rightSidebarToggle, title, subtit
       <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1vw, 12px)', flexShrink: 0 }}>
         <Button
           component={Link}
-          to="/governance/elections/elec_001/live"
+          to="/governance/elections/elec_001/live/manage"
           size="medium"
           startIcon={<BarChart sx={{ fontSize: 'clamp(20px, 2.4vw, 28px)' }} />}
           sx={{
