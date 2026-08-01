@@ -16,7 +16,6 @@ import { useAppSelector } from "app/store/hooks";
 import LogoHome from "app/theme-layouts/shared-components/LogoHome";
 import { selectUser } from "src/app/auth/user/store/userSlice";
 import CartToggleButton from "app/theme-layouts/shared-components/quickPanel/CartToggleButton";
-import LanHubSwitcher from "app/theme-layouts/shared-components/LanHubSwitcher";
 import { useRouteData } from "src/app/main/zrootclient/useRouteData";
 import CivicHubSwitcher from "app/theme-layouts/shared-components/CivicHubSwitcher";
 // import AdjustFontSize from "../../shared-components/AdjustFontSize";
@@ -96,7 +95,6 @@ function ToolbarLayout1(props) {
             {/* <LinkPanelButton /> */}
 
             <CivicHubSwitcher />
-            <LanHubSwitcher />
             {/* <LanguageSwitcher /> */}
 
             {/* <AdjustFontSize /> */}

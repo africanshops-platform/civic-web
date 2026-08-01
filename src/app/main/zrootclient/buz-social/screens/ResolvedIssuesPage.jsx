@@ -70,7 +70,7 @@ function ActiveResolvedIssuesPage() {
           </div>
         )}
         <div style={{ marginTop: 'clamp(20px, 3vw, 36px)', textAlign: 'center' }}>
-          <Button component={Link} to="/community/feed" variant="outlined" endIcon={<ArrowForward sx={{ fontSize: 'clamp(16px, 2vw, 20px)' }} />}
+          <Button component={Link} to="/community/my-feed" variant="outlined" endIcon={<ArrowForward sx={{ fontSize: 'clamp(16px, 2vw, 20px)' }} />}
             sx={{ borderColor: '#059669', color: '#059669', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn, px: 'clamp(12px, 2vw, 20px)', py: 'clamp(8px, 1.2vw, 12px)' }}>
             Back to Active Issues
           </Button>
