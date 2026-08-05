@@ -14,8 +14,6 @@ const emptyInitialState = navigationAdapter.getInitialState([]);
 const initialState = navigationAdapter.upsertMany(
 	emptyInitialState,
 	FuseNavigationHelper.flattenNavigation(navigationConfig)
-
-	// FuseNavigationHelper.flattenNavigation(estatesNavigationConfig)
 );
 
 // console.log("merchantDataInNAVSLice", merchantData?.data)

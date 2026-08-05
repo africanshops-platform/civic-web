@@ -95,7 +95,7 @@ function ActiveMyEngagementPage() {
                 sx={{ background: 'linear-gradient(135deg,#059669 0%,#0f766e 100%)', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn, px: 'clamp(12px, 2vw, 20px)', py: 'clamp(8px, 1.2vw, 12px)' }}>
                 Report an Issue
               </Button>
-              <Button component={Link} to="/community/feed" variant="outlined"
+              <Button component={Link} to="/community/my-feed" variant="outlined"
                 sx={{ borderColor: '#059669', color: '#059669', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn, px: 'clamp(12px, 2vw, 20px)', py: 'clamp(8px, 1.2vw, 12px)' }}>
                 Browse Feed
               </Button>

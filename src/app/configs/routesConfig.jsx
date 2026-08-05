@@ -5,6 +5,7 @@ import settingsConfig from "app/configs/settingsConfig";
 import SignInConfig from "../main/sign-in/SignInConfig";
 import SignUpConfig from "../main/sign-up/SignUpConfig";
 import Error404Page from "../main/404/Error404Page";
+import CivicLandingPage from "../main/landing/CivicLandingPage";
 import authRoleExamplesConfigs from "../main/auth/authRoleExamplesConfigs";
 
 /***Authentication-based-config starts*/
@@ -127,13 +128,13 @@ const routes = [
     element: <KycManagePage />,
   },
 
-  // TODO: no dedicated civic-web landing page exists yet (the old "/" was the
-  // marketplace's ModernLandingPage, which lived in vendors-shop and was removed
-  // as part of the customer/civic split). Redirecting to sign-in as a safe
-  // placeholder until a real civic landing page is built.
+  // Real civic-web front door (built 2026-08-01 — see Platform-Delivery-Tracker.md's
+  // "Web Platform — Next 5" item 1). Was `<Navigate to="sign-in" />` as a placeholder
+  // since the customer/civic split, since the old "/" belonged to the marketplace's
+  // ModernLandingPage and was removed along with it.
   {
     path: "/",
-    element: <Navigate to="sign-in" />,
+    element: <CivicLandingPage />,
   },
 
   {
