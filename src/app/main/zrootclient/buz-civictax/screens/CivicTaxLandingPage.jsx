@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowForward, CheckCircle } from '@mui/icons-material';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import CampaignCard from '../components/CampaignCard';
 import { mockCampaigns, CAMPAIGN_STATS, CAMPAIGN_CATEGORIES } from '../mock';
 
@@ -94,6 +95,7 @@ function StepCard({ step, title, desc, delay }) {
 
 /* ── main component ── */
 export default function CivicTaxLandingPage() {
+  const { isAuthenticated } = useCivicWebAuth();
   const featured = mockCampaigns.filter((c) => c.status === 'active').slice(0, 3);
 
   return (
@@ -140,10 +142,10 @@ export default function CivicTaxLandingPage() {
                   sx={{ backgroundColor: 'white', color: '#ea580c', fontWeight: 800, borderRadius: '16px', textTransform: 'none', px: { xs: 3.5, sm: 5 }, py: { xs: 1.75, sm: 2.25 }, boxShadow: '0 20px 48px rgba(0,0,0,0.22)', '&:hover': { backgroundColor: '#fff7ed', transform: 'translateY(-3px)' } }}>
                   Browse Campaigns
                 </Button>
-                <Button component={Link} to="/sign-in" variant="outlined" size="large"
+                <Button component={Link} to={isAuthenticated ? '/civictax/my-contributions' : '/sign-in'} variant="outlined" size="large"
                   style={{ fontSize: F.btn }}
                   sx={{ borderColor: 'rgba(255,255,255,0.65)', color: 'white', fontWeight: 700, borderRadius: '16px', textTransform: 'none', px: { xs: 3.5, sm: 5 }, py: { xs: 1.75, sm: 2.25 }, backdropFilter: 'blur(12px)', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.12)' } }}>
-                  Sign In
+                  {isAuthenticated ? 'My Contributions' : 'Sign In'}
                 </Button>
               </motion.div>
 
