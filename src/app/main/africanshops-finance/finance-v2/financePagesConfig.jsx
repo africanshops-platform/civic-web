@@ -14,6 +14,7 @@ const FinanceMarketsContent = lazy(() => import('./screens/FinanceMarketsContent
 const FinanceSettingsContent = lazy(() => import('./screens/FinanceSettingsContent'));
 const FinanceFundAccountContent = lazy(() => import('./screens/FinanceFundAccountContent'));
 const FinanceReceiveMoneyContent = lazy(() => import('./screens/FinanceReceiveMoneyContent'));
+const FinanceKycContent = lazy(() => import('./screens/FinanceKycContent'));
 
 const LAYOUT = {
   layout: {
@@ -48,6 +49,7 @@ const financePagesConfig = {
         { path: 'settings', element: <FinanceSettingsContent /> },
         { path: 'fund-account', element: <FinanceFundAccountContent /> },
         { path: 'receive-money', element: <FinanceReceiveMoneyContent /> },
+        { path: 'kyc', element: <FinanceKycContent /> },
       ],
     },
   ],
