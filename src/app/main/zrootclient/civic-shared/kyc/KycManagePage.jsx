@@ -10,9 +10,9 @@ export default function KycManagePage() {
       <Box sx={{
         position: 'fixed', inset: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(135deg, #050d18 0%, #0a1929 40%, #0b2416 100%)',
+        bgcolor: 'background.default',
       }}>
-        <CircularProgress sx={{ color: '#4ade80' }} />
+        <CircularProgress color="secondary" />
       </Box>
     );
   }
