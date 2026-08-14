@@ -2,6 +2,7 @@ import { Button } from "@mui/material";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowForward } from "@mui/icons-material";
+import useCivicWebAuth from "src/app/hooks/useCivicWebAuth";
 
 /**
  * CivicLandingPage — the real "/" front door for civic-web.
@@ -152,6 +153,8 @@ function VerticalCard({ emoji, title, to, desc, delay, muted }) {
 }
 
 function CivicLandingPage() {
+  const { isAuthenticated } = useCivicWebAuth();
+
   return (
     <div style={{ width: "100%", background: WARM_BG }}>
       {/* ───────────────────────── Hero ───────────────────────── */}
@@ -248,23 +251,25 @@ function CivicLandingPage() {
             >
               Browse civic campaigns
             </Button>
-            <Button
-              component={Link}
-              to="/sign-in"
-              variant="outlined"
-              size="large"
-              sx={{
-                borderColor: "rgba(255,255,255,0.6)",
-                color: "white",
-                fontWeight: 700,
-                px: 4,
-                py: 1.5,
-                borderRadius: "12px",
-                "&:hover": { borderColor: "white", background: "rgba(255,255,255,0.08)" },
-              }}
-            >
-              Sign in
-            </Button>
+            {!isAuthenticated && (
+              <Button
+                component={Link}
+                to="/sign-in"
+                variant="outlined"
+                size="large"
+                sx={{
+                  borderColor: "rgba(255,255,255,0.6)",
+                  color: "white",
+                  fontWeight: 700,
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: "12px",
+                  "&:hover": { borderColor: "white", background: "rgba(255,255,255,0.08)" },
+                }}
+              >
+                Sign in
+              </Button>
+            )}
           </motion.div>
         </div>
       </div>

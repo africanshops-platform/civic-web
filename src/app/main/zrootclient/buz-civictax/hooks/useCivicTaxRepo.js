@@ -13,6 +13,8 @@ const api = {
   getMyObligations:    (params) => AuthApi().get('/civic/tax/obligations/mine', { params }),
   payObligation:       (data)   => AuthApi().post('/civic/tax/obligations/pay', data),
   getObligationHistory:(params) => AuthApi().get('/civic/tax/obligations/history', { params }),
+  getMySplitSummary:   ()       => AuthApi().get('/civic/tax/my-split-summary'),
+  updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -241,6 +243,35 @@ export function useObligationHistory(page = 1, limit = 20) {
       },
       keepPreviousData: true,
       staleTime: 2 * 60 * 1000,
+    }
+  );
+}
+
+// ─── My LGA split (home-origin / dwelling) ────────────────────────────────────
+
+export function useMySplitSummary() {
+  return useQuery(
+    ['civictax-my-split-summary'],
+    () => api.getMySplitSummary(),
+    {
+      select: (res) => ({ data: res.data }),
+      staleTime: 60 * 1000,
+    }
+  );
+}
+
+export function useUpdateCivicSplit() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => api.updateCivicSplit(payload),
+    {
+      onSuccess: () => {
+        toast.success('Your civic-tax split has been updated.');
+        queryClient.invalidateQueries(['civictax-my-split-summary']);
+      },
+      onError: (err) => {
+        toast.error(err?.response?.data?.message ?? 'Could not update your split. Please try again.');
+      },
     }
   );
 }

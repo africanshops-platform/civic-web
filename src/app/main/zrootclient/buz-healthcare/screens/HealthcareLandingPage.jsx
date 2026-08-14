@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowForward, CheckCircle } from '@mui/icons-material';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { mockHealthAlerts, FACILITY_TYPES, HEALTHCARE_STATS } from '../mock';
 
 const GREEN_GRADIENT = 'linear-gradient(135deg, #16a34a 0%, #0d9488 50%, #0f766e 100%)';
@@ -35,6 +36,7 @@ const PLATFORM_STATS = [
 ];
 
 export default function HealthcareLandingPage() {
+  const { isAuthenticated } = useCivicWebAuth();
   const activeAlerts = mockHealthAlerts.filter((a) => a.active && a.severity === 'critical').slice(0, 2);
 
   return (
@@ -87,7 +89,7 @@ export default function HealthcareLandingPage() {
                   sx={{ backgroundColor: 'white', color: '#16a34a', fontWeight: 800, borderRadius: '16px', textTransform: 'none', px: { xs: 4, sm: 6 }, py: { xs: 2, sm: 2.5 }, fontSize: 'clamp(2rem, 3.6vw, 2.4rem)', boxShadow: '0 20px 48px rgba(0,0,0,0.22)', '&:hover': { backgroundColor: '#f0fdf4', transform: 'translateY(-3px)' } }}>
                   Find a Facility
                 </Button>
-                <Button component={Link} to="/sign-in" variant="outlined" size="large"
+                <Button component={Link} to={isAuthenticated ? '/healthcare/book' : '/sign-in'} variant="outlined" size="large"
                   sx={{ borderColor: 'rgba(255,255,255,0.65)', color: 'white', fontWeight: 700, borderRadius: '16px', textTransform: 'none', px: { xs: 4, sm: 6 }, py: { xs: 2, sm: 2.5 }, fontSize: 'clamp(2rem, 3.6vw, 2.4rem)', backdropFilter: 'blur(12px)', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.12)' } }}>
                   Book Appointment
                 </Button>
