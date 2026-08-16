@@ -82,7 +82,7 @@ function CivicHubSwitcher() {
           <ListItemText primary="Community Feeds" />
         </MenuItem>
 
-        <MenuItem component={NavLinkAdapter} to="/youth">
+        <MenuItem component={NavLinkAdapter} to="/youth-v2">
           <ListItemIcon className="min-w-40">
             <FuseSvgIcon>heroicons-outline:briefcase</FuseSvgIcon>
           </ListItemIcon>

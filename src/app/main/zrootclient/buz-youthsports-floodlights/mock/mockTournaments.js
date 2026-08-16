@@ -72,5 +72,5 @@ export const mockTournaments = [
 
 export const SPORT_ICONS = {
   football: '⚽', basketball: '🏀', chess: '♟️', athletics: '🏃', swimming: '🏊',
-  hackathon: '💻', volleyball: '🏐', table_tennis: '🏓',
+  hackathon: '💻', volleyball: '🏐', table_tennis: '🏓', 'playstation 5 fifa': '🎮',
 };
