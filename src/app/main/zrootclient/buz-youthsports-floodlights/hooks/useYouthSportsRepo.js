@@ -7,7 +7,7 @@ import { YOUTH_STATS, mockPrograms } from '../mock';
 // wired to the real `youth-sports-service` gateway routes. Enroll/register-team/
 // my-programs are still mock pending a later slice — kept separate rather than
 // one global flag so wiring one doesn't silently break the others.
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
+const delay = (ms = 600) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 // ─── raw API layer ────────────────────────────────────────────────────────────
 const api = {
@@ -224,7 +224,7 @@ export function useEnrollInProgram() {
 export function useRegisterForTournament() {
   const queryClient = useQueryClient();
   return useMutation(
-    async (_payload) => {
+    async () => {
       await delay(1200);
       return {
         data: {

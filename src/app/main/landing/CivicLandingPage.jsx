@@ -59,7 +59,7 @@ const LIVE_VERTICALS = [
   {
     emoji: "🏅",
     title: "Youth Programmes",
-    to: "/youth",
+    to: "/youth-v2",
     desc: "Government-backed programmes, national tournaments, and mentorship — from first sign-up to the pitch or the boardroom.",
   },
 ];

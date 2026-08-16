@@ -33,8 +33,8 @@ import socialPagesConfig from "../main/zrootclient/buz-social/socialPagesConfig"
 import socialPublicPagesConfig from "../main/zrootclient/buz-social/socialPublicPagesConfig";
 import healthcarePagesConfig from "../main/zrootclient/buz-healthcare/healthcarePagesConfig";
 import healthcarePublicPagesConfig from "../main/zrootclient/buz-healthcare/healthcarePublicPagesConfig";
-import youthsportsPagesConfig from "../main/zrootclient/buz-youthsports/youthsportsPagesConfig";
-import youthsportsPublicPagesConfig from "../main/zrootclient/buz-youthsports/youthsportsPublicPagesConfig";
+import youthsportsFloodlightsPagesConfig from "../main/zrootclient/buz-youthsports-floodlights/youthsportsFloodlightsPagesConfig";
+import youthsportsFloodlightsPublicPagesConfig from "../main/zrootclient/buz-youthsports-floodlights/youthsportsFloodlightsPublicPagesConfig";
 
 const routeConfigs = [
   /***
@@ -80,7 +80,7 @@ const routeConfigs = [
   governancePagesConfig,
   socialPagesConfig,
   healthcarePagesConfig,
-  youthsportsPagesConfig,
+  youthsportsFloodlightsPagesConfig,
   /****
    * #########################################################################################
    * Africanshops CIVIC-PLATFORM Authenticated Routes end Here
@@ -105,7 +105,7 @@ const routes = [
   ...governancePublicPagesConfig,
   ...socialPublicPagesConfig,
   ...healthcarePublicPagesConfig,
-  ...youthsportsPublicPagesConfig,
+  ...youthsportsFloodlightsPublicPagesConfig,
   /****
    * ##############################################################
    * CIVIC PLATFORM — Public routes end
