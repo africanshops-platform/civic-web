@@ -80,9 +80,14 @@ function BracketView({ tournament }) {
   );
 }
 
-function FixtureRow({ match, home, away }) {
+function FixtureRow({ match, home, away, tournamentId }) {
+  const navigate = useNavigate();
   return (
-    <div className="fl2-row fl2-between" style={{ padding: '13px 4px', borderTop: '1px solid var(--line)' }}>
+    <div
+      className="fl2-row fl2-between fl2-clickable"
+      style={{ padding: '13px 4px', borderTop: '1px solid var(--line)', cursor: 'pointer' }}
+      onClick={() => navigate(`/youth-v2/tournaments/${tournamentId}/matches/${match.id}`)}
+    >
       <div style={{ minWidth: 0, flex: 1 }}><TeamIdentity team={home} /></div>
       <div className="fl2-row" style={{ gap: 8, flexShrink: 0 }}>
         {match.isCompleted ? <Pill variant="muted">FT</Pill> : <Pill variant="gold">Upcoming</Pill>}
@@ -151,7 +156,7 @@ function LeagueView({ tournament }) {
               <div className="fl2-row" style={{ gap: 10 }}><Pill variant="muted">Round {r}</Pill><hr className="fl2-rule" style={{ flex: 1 }} /></div>
               <div className="fl2-card-flush" style={{ padding: '2px 16px' }}>
                 {matches.filter((m) => m.round === r).map((m) => (
-                  <FixtureRow key={m.id} match={m} home={teamById(m.homeTeamId)} away={teamById(m.awayTeamId)} />
+                  <FixtureRow key={m.id} match={m} home={teamById(m.homeTeamId)} away={teamById(m.awayTeamId)} tournamentId={tournament.id} />
                 ))}
               </div>
             </div>

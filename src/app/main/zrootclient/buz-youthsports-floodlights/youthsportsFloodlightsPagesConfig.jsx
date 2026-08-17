@@ -3,6 +3,7 @@ import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 
 const TournamentsScreen = lazy(() => import('./screens/TournamentsScreen'));
 const TournamentDetailScreen = lazy(() => import('./screens/TournamentDetailScreen'));
+const MatchCenterScreen = lazy(() => import('./screens/MatchCenterScreen'));
 const TalentHuntScreen = lazy(() => import('./screens/TalentHuntScreen'));
 const ClubScreen = lazy(() => import('./screens/ClubScreen'));
 const PlayerScreen = lazy(() => import('./screens/PlayerScreen'));
@@ -31,6 +32,7 @@ const youthsportsFloodlightsPagesConfig = {
   routes: kycProtect([
     { path: 'youth-v2/tournaments', element: <TournamentsScreen /> },
     { path: 'youth-v2/tournaments/:tournamentId', element: <TournamentDetailScreen /> },
+    { path: 'youth-v2/tournaments/:tournamentId/matches/:matchId', element: <MatchCenterScreen /> },
     { path: 'youth-v2/talents', element: <TalentHuntScreen /> },
     { path: 'youth-v2/clubs/:clubMerchantId', element: <ClubScreen /> },
     // No standalone GET /youth/players/:id exists on the backend — only
