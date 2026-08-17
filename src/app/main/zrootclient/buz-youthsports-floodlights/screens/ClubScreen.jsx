@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import FloodlightsPage from './shared/FloodlightsPage';
@@ -55,12 +55,17 @@ const RESULT_COLOR = { W: 'var(--pitch)', L: 'var(--card-red)', D: 'var(--ink-mu
 const RESULT_LABEL = { W: 'WIN', L: 'LOSS', D: 'DRAW' };
 const RESULT_PILL_VARIANT = { W: 'pos', L: 'live', D: 'muted' };
 
-function ClubFixtureCard({ match, home, away, myTeamId }) {
+function ClubFixtureCard({ match, home, away, myTeamId, tournamentId }) {
   const isHome = match.homeTeamId === myTeamId;
   const result = resultForClub(match, myTeamId);
+  const navigate = useNavigate();
 
   return (
-    <div className="fl2-card fl2-stack" style={{ gap: 12 }}>
+    <div
+      className="fl2-card fl2-stack fl2-clickable"
+      style={{ gap: 12, cursor: tournamentId ? 'pointer' : 'default' }}
+      onClick={tournamentId ? () => navigate(`/youth-v2/tournaments/${tournamentId}/matches/${match.id}`) : undefined}
+    >
       <div className="fl2-row fl2-between">
         <span className="fl2-eyebrow">Round {match.round}</span>
         {match.isCompleted
@@ -157,7 +162,7 @@ export default function ClubScreen() {
               <div className="fl2-section-title"><h2 style={{ fontSize: '1.7rem' }}>Next up</h2></div>
               <div className="fl2-stack" style={{ gap: 10 }}>
                 {clubMatches.filter((m) => !m.isCompleted).slice(0, 2).map((m) => (
-                  <ClubFixtureCard key={m.id} match={m} home={teamById(m.homeTeamId)} away={teamById(m.awayTeamId)} myTeamId={team?.id} />
+                  <ClubFixtureCard key={m.id} match={m} home={teamById(m.homeTeamId)} away={teamById(m.awayTeamId)} myTeamId={team?.id} tournamentId={tournamentId} />
                 ))}
                 {clubMatches.filter((m) => !m.isCompleted).length === 0 && <p className="fl2-small fl2-muted">No fixtures scheduled yet.</p>}
               </div>
@@ -190,7 +195,7 @@ export default function ClubScreen() {
       {tab === 'fixtures' && (
         <div className="fl2-stack" style={{ gap: 10 }}>
           {[...clubMatches].sort((a, b) => a.round - b.round).map((m) => (
-            <ClubFixtureCard key={m.id} match={m} home={teamById(m.homeTeamId)} away={teamById(m.awayTeamId)} myTeamId={team?.id} />
+            <ClubFixtureCard key={m.id} match={m} home={teamById(m.homeTeamId)} away={teamById(m.awayTeamId)} myTeamId={team?.id} tournamentId={tournamentId} />
           ))}
           {clubMatches.length === 0 && <p className="fl2-small fl2-muted">No fixtures for this club yet.</p>}
         </div>
