@@ -79,7 +79,12 @@ export function useIncidentDetail(incidentId) {
     () => api.getIncidentDetail(incidentId),
     {
       enabled: Boolean(incidentId),
-      select: (res) => ({ data: { incident: res.data } }),
+      // normalizeIncident lowercases severity/status/category and nests
+      // location the same way the list/mine hooks do, keeping this page
+      // consistent with IncidentCard's expectations. `actions` passes
+      // through unnormalized (real fields: action/note/performedBy/
+      // createdAt) since it's only consumed here, not by IncidentCard.
+      select: (res) => ({ data: { incident: normalizeIncident(res.data) } }),
       staleTime: 20 * 1000,
     }
   );

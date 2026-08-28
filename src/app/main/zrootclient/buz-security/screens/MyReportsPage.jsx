@@ -122,7 +122,8 @@ function ActiveMyReportsPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px,2.5vw,22px)' }}>
               {reports.map((report, i) => (
-                <IncidentCard key={report.id} incident={report} index={i} />
+                <IncidentCard key={report.id} incident={report} index={i}
+                  onSelect={(incident) => navigate(`/security/incidents/${incident.id}`)} />
               ))}
             </div>
           )}
