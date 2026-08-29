@@ -8,6 +8,7 @@ import { Link, useLocation } from 'react-router-dom';
 const TABS = [
   { label: 'Hub', to: '/youth-v2', match: (p) => p === '/youth-v2' },
   { label: 'Tournaments', to: '/youth-v2/tournaments', match: (p) => p.startsWith('/youth-v2/tournaments') },
+  { label: 'Auditions', to: '/youth-v2/auditions', match: (p) => p.startsWith('/youth-v2/auditions') || p === '/youth-v2/my-auditions' },
   { label: 'Talent Hunt', to: '/youth-v2/talents', match: (p) => p.startsWith('/youth-v2/talents') },
   { label: 'Transfer Market', to: '/youth-v2/market', match: (p) => p.startsWith('/youth-v2/market') },
   { label: 'Programmes', to: '/youth-v2/programs', match: (p) => p.startsWith('/youth-v2/programs') },
