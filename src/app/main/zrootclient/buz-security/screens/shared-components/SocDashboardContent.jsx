@@ -1,7 +1,8 @@
 import { memo, useState, useCallback } from 'react';
-import { Chip } from '@mui/material';
-import { List, Map } from '@mui/icons-material';
+import { Chip, Button } from '@mui/material';
+import { List, Map, ArrowForward } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { CivicLoadingSkeleton, ClienttErrorPage } from '../../../civic-shared';
 import IncidentMap from '../../components/IncidentMap';
 import IncidentCard from '../../components/IncidentCard';
@@ -19,6 +20,7 @@ const NIGERIA_CENTER = [9.082, 8.6753];
 
 
 function SocDashboardContent({ incidents, isLoading, isError, stats }) {
+  const navigate = useNavigate();
   const [view, setView]                         = useState('map');
   const [selectedIncident, setSelectedIncident] = useState(null);
   const s = stats || SECURITY_STATS;
@@ -122,6 +124,12 @@ function SocDashboardContent({ incidents, isLoading, isError, stats }) {
                   style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 'clamp(1.3rem, 2vw, 1.6rem)', lineHeight: 1 }}>✕</button>
               </div>
               <IncidentCard incident={selectedIncident} index={0} />
+              <Button fullWidth endIcon={<ArrowForward style={{ fontSize: 'clamp(14px,1.8vw,18px)' }} />}
+                onClick={() => navigate(`/security/incidents/${selectedIncident.id}`)}
+                style={{ fontSize: F.btn, marginTop: 'clamp(12px, 1.8vw, 18px)' }}
+                sx={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', py: 1.2, '&:hover': { background: 'linear-gradient(135deg,#b91c1c,#7f1d1d)' } }}>
+                View Full Details
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
