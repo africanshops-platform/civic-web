@@ -144,10 +144,12 @@ export function useReportIncident() {
   return useMutation(
     (payload) =>
       api.reportIncident({
-        title:           payload.title || `${payload.category} incident`,
-        description:     payload.description ?? '',
+        // title left undefined when not provided -- soc-service auto-generates
+        // a nicely-cased one from category (fast-report path: category + GPS only)
+        title:           payload.title || undefined,
+        description:     payload.description || undefined,
         category:        payload.category,
-        locationAddress: payload.locationAddress,
+        locationAddress: payload.locationAddress || undefined,
         coordinates:     payload.coordinates ?? undefined,
         jurisdiction:    payload.jurisdiction,
       }),

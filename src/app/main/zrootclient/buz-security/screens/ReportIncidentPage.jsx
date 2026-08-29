@@ -48,6 +48,10 @@ const Root = styled(FusePageSimpleWithMargin)(() => ({
 const REPORT_CATEGORIES = [
   { id: 'THEFT',             label: 'Theft / Robbery',   icon: '🔫', color: '#dc2626', bg: '#450a0a' },
   { id: 'ASSAULT',           label: 'Assault',           icon: '🥊', color: '#f87171', bg: '#3f0a0a' },
+  { id: 'KIDNAPPING',        label: 'Kidnapping',        icon: '🚨', color: '#a78bfa', bg: '#1e123f' },
+  { id: 'TERRORISM',         label: 'Terrorism / Siege', icon: '💥', color: '#ef4444', bg: '#3f0d0d' },
+  { id: 'BANDITRY',          label: 'Banditry',          icon: '⚔️', color: '#d97706', bg: '#2b1a00' },
+  { id: 'COMMUNAL_CLASH',    label: 'Communal Clash',    icon: '👥', color: '#eab308', bg: '#2b2400' },
   { id: 'FIRE',              label: 'Fire Outbreak',     icon: '🔥', color: '#f97316', bg: '#1c0f00' },
   { id: 'FLOOD',             label: 'Flood',             icon: '🌊', color: '#38bdf8', bg: '#082032' },
   { id: 'ACCIDENT',          label: 'Road Accident',     icon: '🚗', color: '#60a5fa', bg: '#0a1a3a' },

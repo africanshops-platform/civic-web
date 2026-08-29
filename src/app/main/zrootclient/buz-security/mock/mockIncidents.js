@@ -133,10 +133,15 @@ export const mockIncidents = [
 
 // ids match soc-service's real IncidentCategory enum, lowercased by
 // useSecurityRepo's normalizeIncident (THEFT/ASSAULT/FIRE/FLOOD/ACCIDENT/
-// MEDICAL_EMERGENCY/CIVIL_UNREST/OTHER) -- not a placeholder taxonomy.
+// MEDICAL_EMERGENCY/CIVIL_UNREST/KIDNAPPING/TERRORISM/BANDITRY/
+// COMMUNAL_CLASH/OTHER) -- not a placeholder taxonomy.
 export const INCIDENT_CATEGORIES = [
   { id: 'theft', label: 'Theft / Robbery', icon: '🔫', color: '#dc2626', bg: '#fee2e2' },
   { id: 'assault', label: 'Assault', icon: '🥊', color: '#b91c1c', bg: '#fee2e2' },
+  { id: 'kidnapping', label: 'Kidnapping', icon: '🚨', color: '#7c3aed', bg: '#ede9fe' },
+  { id: 'terrorism', label: 'Terrorism / Siege', icon: '💥', color: '#7f1d1d', bg: '#fee2e2' },
+  { id: 'banditry', label: 'Banditry', icon: '⚔️', color: '#b45309', bg: '#fef3c7' },
+  { id: 'communal_clash', label: 'Communal Clash', icon: '👥', color: '#a16207', bg: '#fef9c3' },
   { id: 'fire', label: 'Fire Outbreak', icon: '🔥', color: '#ea580c', bg: '#fff7ed' },
   { id: 'flood', label: 'Flood', icon: '🌊', color: '#0284c7', bg: '#e0f2fe' },
   { id: 'accident', label: 'Road Accident', icon: '🚗', color: '#2563eb', bg: '#dbeafe' },
