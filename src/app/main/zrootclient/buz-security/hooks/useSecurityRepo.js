@@ -50,7 +50,20 @@ function normalizeIncident(i) {
 export function useIncidents(filters = {}) {
   const { severity, category, status, stateId, lgaId, page = 1, limit = 20 } = filters;
   const { page: p, limit: l } = paginate(page, limit);
-  const params = { ...buildParams({ lga: lgaId, state: stateId, severity, category, status }), page: p, limit: l };
+  // soc-service's ListIncidentsDto passes category/status/severity straight into a
+  // Prisma `where` with no case transform, so the real enum values (uppercase) are
+  // required here even though normalizeIncident lowercases them for display matching.
+  const params = {
+    ...buildParams({
+      lga: lgaId,
+      state: stateId,
+      severity: severity ? severity.toUpperCase() : undefined,
+      category: category ? category.toUpperCase() : undefined,
+      status:   status   ? status.toUpperCase()   : undefined,
+    }),
+    page: p,
+    limit: l,
+  };
 
   return useQuery(
     ['security-incidents', filters],
