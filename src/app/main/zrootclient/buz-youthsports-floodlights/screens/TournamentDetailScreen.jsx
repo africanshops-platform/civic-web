@@ -4,7 +4,7 @@ import { Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { FormDots, Pill, TeamName, TeamIdentity, computeForm } from './shared/flHelpers';
-import { useTournamentDetail, useEnrollInTournament } from '../hooks/useFloodlightsRepo';
+import { useTournamentDetail, useEnrollInTournament, useMyTournamentEnrollments } from '../hooks/useFloodlightsRepo';
 import { SPORT_ICONS } from '../mock';
 
 // Phase 7 of the club-recruitment pipeline (2026-08-30) — direct individual
@@ -14,8 +14,15 @@ import { SPORT_ICONS } from '../mock';
 // yet (that's a separate, not-yet-built slice), so this button only ever
 // appears for SINGLE — it doesn't gate/replace anything pre-existing.
 function EnrollPanel({ tournament }) {
-  const [enrolled, setEnrolled] = useState(false);
+  const [justEnrolled, setJustEnrolled] = useState(false);
   const enrollMutation = useEnrollInTournament();
+  // Multi-account retest finding (2026-08-30): the button must reflect a
+  // pre-existing enrollment from a prior visit/session, not just this
+  // component's own click history — otherwise a returning, already-enrolled
+  // citizen sees a clickable "Enroll" that just 409s.
+  const { data: myEnrollments } = useMyTournamentEnrollments();
+  const alreadyEnrolled = (myEnrollments?.data?.data ?? []).some((e) => e.tournamentId === tournament.id);
+  const enrolled = justEnrolled || alreadyEnrolled;
 
   if (tournament.participationMode !== 'SINGLE') return null;
 
@@ -38,7 +45,7 @@ function EnrollPanel({ tournament }) {
       <Button
         variant="contained"
         disabled={enrolled || closed || full || enrollMutation.isLoading}
-        onClick={() => enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setEnrolled(true) })}
+        onClick={() => enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setJustEnrolled(true) })}
         sx={{ textTransform: 'none', fontWeight: 700 }}
       >
         {buttonLabel}
