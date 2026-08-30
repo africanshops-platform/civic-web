@@ -17,6 +17,12 @@ const api = {
   getTournamentDetail: (id)    => AuthApi().get(`/youth/tournaments/${id}`),
   getSpotlights:      (params) => AuthApi().get('/youth/spotlights', { params }),
   requestMentorship:  (data)   => AuthApi().post('/youth/mentorship/request', data),
+  // Phase 7 of the club-recruitment pipeline (2026-08-30) — real, not mock,
+  // unlike useEnrollInProgram/useRegisterForTournament below (those cover a
+  // different, still-deferred slice; this is the newly-shipped
+  // participationMode: SINGLE direct-enrollment endpoint).
+  enrollInTournament:       (data)   => AuthApi().post('/youth/tournaments/enroll', data),
+  getMyTournamentEnrollments: (params) => AuthApi().get('/youth/tournaments/mine', { params }),
 };
 
 function buildParams(obj) {
@@ -218,6 +224,33 @@ export function useEnrollInProgram() {
       },
       onError: () => toast.error('Could not enroll. Please try again.'),
     }
+  );
+}
+
+// Real endpoint — direct individual enrollment for a participationMode:
+// SINGLE tournament (Phase 7, 2026-08-30). TEAM-mode tournaments reject this
+// with a 409 server-side; the screen only renders the button for SINGLE.
+export function useEnrollInTournament() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => api.enrollInTournament(payload),
+    {
+      onSuccess: () => {
+        toast.success('You are enrolled! Good luck.');
+        queryClient.invalidateQueries(['youth-tournament']);
+        queryClient.invalidateQueries(['youth-tournament-my-enrollments']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Could not enroll. Please try again.'),
+    }
+  );
+}
+
+export function useMyTournamentEnrollments(filters = {}) {
+  const { page = 1, limit = 20 } = filters;
+  return useQuery(
+    ['youth-tournament-my-enrollments', filters],
+    () => api.getMyTournamentEnrollments({ page, limit }),
+    { select: (res) => ({ data: res.data }), staleTime: 60 * 1000 }
   );
 }
 
