@@ -75,7 +75,7 @@ function IncidentMapLeaflet({
           const sev = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.low;
           const isSelected = selectedId === incident.id;
           const catInfo = INCIDENT_CATEGORIES.find((c) => c.id === incident.category);
-          const statusInfo = STATUS_CONFIG[incident.status] || STATUS_CONFIG.active;
+          const statusInfo = STATUS_CONFIG[incident.status] || STATUS_CONFIG.reported;
 
           return (
             <CircleMarker

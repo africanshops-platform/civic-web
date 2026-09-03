@@ -16,7 +16,7 @@ function IncidentCard({ incident, index = 0, compact = false, onSelect }) {
   if (!incident) return null;
 
   const catInfo    = INCIDENT_CATEGORIES.find((c) => c.id === incident.category);
-  const statusInfo = STATUS_CONFIG[incident.status] || STATUS_CONFIG.active;
+  const statusInfo = STATUS_CONFIG[incident.status] || STATUS_CONFIG.reported;
 
   const timeAgo = (() => {
     const diff = Math.floor((new Date() - new Date(incident.reportedAt)) / 60000);
