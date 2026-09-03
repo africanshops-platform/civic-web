@@ -1,19 +1,19 @@
-import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
-import { toast } from 'react-toastify';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { Avatar, Pill } from './shared/flHelpers';
-import { usePlayers } from '../hooks/useFloodlightsRepo';
+import { usePlayers, useIsWatchingPlayer, useWatchPlayer, useUnwatchPlayer } from '../hooks/useFloodlightsRepo';
 
 // The artifact's own watchlist was client-only state (state.watchlist, a
-// plain Set, never persisted to a backend) — ported here as-is via
-// useState, not upgraded into a fake "real" feature.
+// plain Set, never persisted to a backend) — now a real PlayerWatchlist
+// record (youthsports-service), scoped to the logged-in platform user.
 export default function PlayerScreen() {
   const { clubMerchantId, playerId } = useParams();
   const { data, isLoading } = usePlayers(clubMerchantId);
-  const [watching, setWatching] = useState(false);
+  const { isWatching } = useIsWatchingPlayer(playerId);
+  const watchMutation = useWatchPlayer();
+  const unwatchMutation = useUnwatchPlayer();
 
   const player = data?.data?.players?.find((p) => p.id === playerId);
 
@@ -46,12 +46,10 @@ export default function PlayerScreen() {
             <button
               type="button"
               className="fl2-btn fl2-btn-outline fl2-btn-sm"
-              onClick={() => {
-                setWatching((w) => !w);
-                toast.success(watching ? 'Removed from watchlist' : 'Added to watchlist');
-              }}
+              disabled={watchMutation.isLoading || unwatchMutation.isLoading}
+              onClick={() => (isWatching ? unwatchMutation.mutate(playerId) : watchMutation.mutate(playerId))}
             >
-              {watching ? '★ On watchlist' : '☆ Watchlist'}
+              {isWatching ? '★ On watchlist' : '☆ Watchlist'}
             </button>
           </div>
 

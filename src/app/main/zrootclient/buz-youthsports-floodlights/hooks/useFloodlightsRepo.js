@@ -1,4 +1,5 @@
-import { useQuery } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 
 // v2 pages reuse every already-real hook from the v1 module untouched —
@@ -18,6 +19,9 @@ const api = {
   getPlayers:       (clubMerchantId) => AuthApi().get('/youth/players', { params: { clubMerchantId } }),
   getMatchStats:    (matchId) => AuthApi().get(`/youth/matches/${matchId}/stats`),
   getMerchantPreview: (id) => AuthApi().get(`/auth-merchant/get-merchant/${id}/preview`),
+  getMyWatchlist:   () => AuthApi().get('/youth/players/watchlist/mine'),
+  watchPlayer:      (playerId) => AuthApi().put(`/youth/players/${playerId}/watch`),
+  unwatchPlayer:    (playerId) => AuthApi().delete(`/youth/players/${playerId}/watch`),
 };
 
 export function useLeagues(filters = {}) {
@@ -90,6 +94,55 @@ export function useMatchStats(matchId) {
       enabled: Boolean(matchId),
       select: (res) => ({ data: res.data }),
       staleTime: 60 * 1000,
+    }
+  );
+}
+
+// Real Talent Hunt / player-profile watchlist (2026-09-03) — previously
+// client-only useState with no backend at all. One query drives both "is
+// this player on my watchlist" (membership check) and a future dedicated
+// "my watchlist" listing, so the two never drift out of sync.
+export function useMyWatchlist() {
+  return useQuery(
+    ['youth-watchlist-mine'],
+    () => api.getMyWatchlist(),
+    {
+      select: (res) => ({ data: { entries: res.data?.data ?? res.data ?? [] } }),
+      staleTime: 30 * 1000,
+    }
+  );
+}
+
+export function useIsWatchingPlayer(playerId) {
+  const { data, isLoading } = useMyWatchlist();
+  const entries = data?.data?.entries ?? [];
+  return { isWatching: entries.some((e) => e.playerId === playerId), isLoading };
+}
+
+export function useWatchPlayer() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (playerId) => api.watchPlayer(playerId),
+    {
+      onSuccess: () => {
+        toast.success('Added to watchlist');
+        queryClient.invalidateQueries(['youth-watchlist-mine']);
+      },
+      onError: () => toast.error('Could not update your watchlist. Please try again.'),
+    }
+  );
+}
+
+export function useUnwatchPlayer() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (playerId) => api.unwatchPlayer(playerId),
+    {
+      onSuccess: () => {
+        toast.success('Removed from watchlist');
+        queryClient.invalidateQueries(['youth-watchlist-mine']);
+      },
+      onError: () => toast.error('Could not update your watchlist. Please try again.'),
     }
   );
 }
