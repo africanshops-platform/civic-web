@@ -172,6 +172,15 @@ const FooterAfricanshops = () => {
             >
               Privacy Policy
             </Link>
+            {/* Careers lives on the marketplace app (civic-web has no admin
+                dashboard behind it to review applications against), same
+                real login/apply flow as every other AfricanShops account. */}
+            <a
+              href={`${import.meta.env.VITE_AFSHO_USERSPORTAL_URL}/careers`}
+              className="text-gray-400 hover:text-orange-500 text-sm transition-colors duration-300"
+            >
+              Careers
+            </a>
           </div>
 
           {/* Payment Methods */}
