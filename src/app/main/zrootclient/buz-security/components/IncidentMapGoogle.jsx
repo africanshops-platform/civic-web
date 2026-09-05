@@ -124,7 +124,7 @@ function IncidentMapGoogle({
           {selectedIncident && (() => {
             const sev = SEVERITY_CONFIG[selectedIncident.severity] || SEVERITY_CONFIG.low;
             const catInfo = INCIDENT_CATEGORIES.find((c) => c.id === selectedIncident.category);
-            const statusInfo = STATUS_CONFIG[selectedIncident.status] || STATUS_CONFIG.active;
+            const statusInfo = STATUS_CONFIG[selectedIncident.status] || STATUS_CONFIG.reported;
             return (
               <InfoWindow
                 position={{ lat: selectedIncident.location.lat, lng: selectedIncident.location.lng }}

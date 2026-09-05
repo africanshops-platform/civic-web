@@ -50,7 +50,20 @@ function normalizeIncident(i) {
 export function useIncidents(filters = {}) {
   const { severity, category, status, stateId, lgaId, page = 1, limit = 20 } = filters;
   const { page: p, limit: l } = paginate(page, limit);
-  const params = { ...buildParams({ lga: lgaId, state: stateId, severity, category, status }), page: p, limit: l };
+  // soc-service's ListIncidentsDto passes category/status/severity straight into a
+  // Prisma `where` with no case transform, so the real enum values (uppercase) are
+  // required here even though normalizeIncident lowercases them for display matching.
+  const params = {
+    ...buildParams({
+      lga: lgaId,
+      state: stateId,
+      severity: severity ? severity.toUpperCase() : undefined,
+      category: category ? category.toUpperCase() : undefined,
+      status:   status   ? status.toUpperCase()   : undefined,
+    }),
+    page: p,
+    limit: l,
+  };
 
   return useQuery(
     ['security-incidents', filters],
@@ -79,7 +92,12 @@ export function useIncidentDetail(incidentId) {
     () => api.getIncidentDetail(incidentId),
     {
       enabled: Boolean(incidentId),
-      select: (res) => ({ data: { incident: res.data } }),
+      // normalizeIncident lowercases severity/status/category and nests
+      // location the same way the list/mine hooks do, keeping this page
+      // consistent with IncidentCard's expectations. `actions` passes
+      // through unnormalized (real fields: action/note/performedBy/
+      // createdAt) since it's only consumed here, not by IncidentCard.
+      select: (res) => ({ data: { incident: normalizeIncident(res.data) } }),
       staleTime: 20 * 1000,
     }
   );
@@ -126,10 +144,12 @@ export function useReportIncident() {
   return useMutation(
     (payload) =>
       api.reportIncident({
-        title:           payload.title || `${payload.category} incident`,
-        description:     payload.description ?? '',
+        // title left undefined when not provided -- soc-service auto-generates
+        // a nicely-cased one from category (fast-report path: category + GPS only)
+        title:           payload.title || undefined,
+        description:     payload.description || undefined,
         category:        payload.category,
-        locationAddress: payload.locationAddress,
+        locationAddress: payload.locationAddress || undefined,
         coordinates:     payload.coordinates ?? undefined,
         jurisdiction:    payload.jurisdiction,
       }),

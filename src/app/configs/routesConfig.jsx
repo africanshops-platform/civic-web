@@ -2,11 +2,13 @@ import FuseUtils from "@fuse/utils";
 import FuseLoading from "@fuse/core/FuseLoading";
 import { Navigate } from "react-router-dom";
 import settingsConfig from "app/configs/settingsConfig";
+import { LEGAL_DOCUMENT_KEYS } from "../constants/legalDocumentKeys";
 import SignInConfig from "../main/sign-in/SignInConfig";
 import SignUpConfig from "../main/sign-up/SignUpConfig";
 import Error404Page from "../main/404/Error404Page";
 import CivicLandingPage from "../main/landing/CivicLandingPage";
 import authRoleExamplesConfigs from "../main/auth/authRoleExamplesConfigs";
+import LegalDocumentPage from "../main/zrootclient/civic-shared/legal/LegalDocumentPage";
 
 /***Authentication-based-config starts*/
 import SignAcceptInviteConfig from "../main/sign-accept-invite/SignAcceptInviteConfig";
@@ -33,8 +35,8 @@ import socialPagesConfig from "../main/zrootclient/buz-social/socialPagesConfig"
 import socialPublicPagesConfig from "../main/zrootclient/buz-social/socialPublicPagesConfig";
 import healthcarePagesConfig from "../main/zrootclient/buz-healthcare/healthcarePagesConfig";
 import healthcarePublicPagesConfig from "../main/zrootclient/buz-healthcare/healthcarePublicPagesConfig";
-import youthsportsPagesConfig from "../main/zrootclient/buz-youthsports/youthsportsPagesConfig";
-import youthsportsPublicPagesConfig from "../main/zrootclient/buz-youthsports/youthsportsPublicPagesConfig";
+import youthsportsFloodlightsPagesConfig from "../main/zrootclient/buz-youthsports-floodlights/youthsportsFloodlightsPagesConfig";
+import youthsportsFloodlightsPublicPagesConfig from "../main/zrootclient/buz-youthsports-floodlights/youthsportsFloodlightsPublicPagesConfig";
 
 const routeConfigs = [
   /***
@@ -80,7 +82,7 @@ const routeConfigs = [
   governancePagesConfig,
   socialPagesConfig,
   healthcarePagesConfig,
-  youthsportsPagesConfig,
+  youthsportsFloodlightsPagesConfig,
   /****
    * #########################################################################################
    * Africanshops CIVIC-PLATFORM Authenticated Routes end Here
@@ -105,7 +107,7 @@ const routes = [
   ...governancePublicPagesConfig,
   ...socialPublicPagesConfig,
   ...healthcarePublicPagesConfig,
-  ...youthsportsPublicPagesConfig,
+  ...youthsportsFloodlightsPublicPagesConfig,
   /****
    * ##############################################################
    * CIVIC PLATFORM — Public routes end
@@ -135,6 +137,20 @@ const routes = [
   {
     path: "/",
     element: <CivicLandingPage />,
+  },
+
+  // Legal/Advocacy — both pages render through the same shared
+  // LegalDocumentPage, fetching by the canonical key backed by
+  // corporate-cms-service (africanshops-microservices PR #149/#150). Public,
+  // no auth. The footer (FooterAfricanshops.jsx) has linked to /privacy and
+  // /terms for a while with no route behind either — this closes that gap.
+  {
+    path: "/privacy",
+    element: <LegalDocumentPage documentKey={LEGAL_DOCUMENT_KEYS.PRIVACY_POLICY} eyebrow="Privacy" />,
+  },
+  {
+    path: "/terms",
+    element: <LegalDocumentPage documentKey={LEGAL_DOCUMENT_KEYS.TERMS_AND_CONDITIONS} eyebrow="Legal" />,
   },
 
   {
