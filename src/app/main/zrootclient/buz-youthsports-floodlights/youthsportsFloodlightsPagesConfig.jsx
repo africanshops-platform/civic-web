@@ -10,6 +10,8 @@ const PlayerScreen = lazy(() => import('./screens/PlayerScreen'));
 const MarketScreen = lazy(() => import('./screens/MarketScreen'));
 const ProgramDetailScreen = lazy(() => import('./screens/ProgramDetailScreen'));
 const MentorsScreen = lazy(() => import('./screens/MentorsScreen'));
+const AuditionDetailScreen = lazy(() => import('./screens/AuditionDetailScreen'));
+const MyAuditionApplicationsScreen = lazy(() => import('./screens/MyAuditionApplicationsScreen'));
 
 const LAYOUT = {
   layout: {
@@ -42,6 +44,8 @@ const youthsportsFloodlightsPagesConfig = {
     { path: 'youth-v2/market', element: <MarketScreen /> },
     { path: 'youth-v2/programs/:programId', element: <ProgramDetailScreen /> },
     { path: 'youth-v2/mentors', element: <MentorsScreen /> },
+    { path: 'youth-v2/auditions/:auditionId', element: <AuditionDetailScreen /> },
+    { path: 'youth-v2/my-auditions', element: <MyAuditionApplicationsScreen /> },
   ]),
 };
 
