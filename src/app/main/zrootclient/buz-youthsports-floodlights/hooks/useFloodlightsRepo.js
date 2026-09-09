@@ -8,6 +8,7 @@ export {
   useYouthStats, usePrograms, useProgramDetail, useTalents,
   useTournaments, useTournamentDetail, useRequestMentorship,
   useEnrollInTournament, useMyTournamentEnrollments,
+  useMyPrograms, useEnrollInProgram, useRegisterForTournament,
 } from './useYouthSportsRepo';
 
 // ─── Newly-real endpoints (League/Player-roster/match-stats, shipped to
