@@ -17,7 +17,12 @@ const api = {
 
 // ─── hooks ────────────────────────────────────────────────────────────────────
 
-export function useGetKycStatus() {
+// `options` lets a caller override react-query options (e.g. `enabled`, to
+// skip the call entirely for an anonymous visitor — added for
+// OpportunityDetailScreen.jsx, which needs KYC status only once a user is
+// logged in). Every existing call site passes no arguments, so this stays
+// fully backward-compatible.
+export function useGetKycStatus(options = {}) {
   return useQuery(KYC_STATUS_KEY, api.getStatus, {
     staleTime: 5 * 60 * 1000,
     cacheTime: 30 * 60 * 1000,
@@ -27,6 +32,7 @@ export function useGetKycStatus() {
       return failureCount < 1;
     },
     select: (res) => res.data,
+    ...options,
   });
 }
 

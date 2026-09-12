@@ -10,6 +10,12 @@ export {
   useEnrollInTournament, useMyTournamentEnrollments,
 } from './useYouthSportsRepo';
 
+export {
+  useAuditions, useAuditionDetail, useMyAuditionApplications, useApplyToAudition,
+  useStaffPositions, useStaffPositionDetail, useMyStaffPositionApplications, useApplyToStaffPosition,
+  STAFF_ROLES,
+} from './useOpportunitiesRepo';
+
 // ─── Newly-real endpoints (League/Player-roster/match-stats, shipped to
 // `test` 2026-08-15/16 — see league.controller.ts, youthsports-client.
 // controller.ts) that the v1 module never wired up. ──────────────────────

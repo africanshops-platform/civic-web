@@ -11,6 +11,10 @@ const TABS = [
   { label: 'Talent Hunt', to: '/youth-v2/talents', match: (p) => p.startsWith('/youth-v2/talents') },
   { label: 'Transfer Market', to: '/youth-v2/market', match: (p) => p.startsWith('/youth-v2/market') },
   { label: 'Programmes', to: '/youth-v2/programs', match: (p) => p.startsWith('/youth-v2/programs') },
+  // Auditions + staff positions (2026-09-12) — one combined tab rather than
+  // two, since they're structurally identical apply-to-a-club pipelines
+  // (see OpportunitiesScreen.jsx) and the strip was already at 6 tabs.
+  { label: 'Opportunities', to: '/youth-v2/opportunities', match: (p) => p.startsWith('/youth-v2/opportunities') },
   { label: 'Find a Mentor', to: '/youth-v2/mentors', match: (p) => p.startsWith('/youth-v2/mentors') },
 ];
 
