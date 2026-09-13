@@ -12,6 +12,10 @@ const TABS = [
   { label: 'Talent Hunt', to: '/youth-v2/talents', match: (p) => p.startsWith('/youth-v2/talents') },
   { label: 'Transfer Market', to: '/youth-v2/market', match: (p) => p.startsWith('/youth-v2/market') },
   { label: 'Programmes', to: '/youth-v2/programs', match: (p) => p.startsWith('/youth-v2/programs') },
+  // Staff positions (Feature A, 2026-09-12) — sibling recruitment pipeline
+  // to Auditions above, own tab since Auditions already has its own real,
+  // shipped screens (kept untouched by this addition).
+  { label: 'Staff Positions', to: '/youth-v2/staff-positions', match: (p) => p.startsWith('/youth-v2/staff-positions') },
   { label: 'Find a Mentor', to: '/youth-v2/mentors', match: (p) => p.startsWith('/youth-v2/mentors') },
 ];
 

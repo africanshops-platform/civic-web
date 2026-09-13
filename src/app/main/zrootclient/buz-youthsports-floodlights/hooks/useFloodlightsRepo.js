@@ -10,6 +10,14 @@ export {
   useEnrollInTournament, useMyTournamentEnrollments,
 } from './useYouthSportsRepo';
 
+// Staff positions (Feature A, 2026-09-12) — auditions above are this file's
+// own real, already-live hooks; staff positions live in their own file
+// (same backend shape, kept separate to avoid a large diff on this file).
+export {
+  useStaffPositions, useStaffPositionDetail, useMyStaffPositionApplications, useApplyToStaffPosition,
+  STAFF_ROLES,
+} from './useStaffPositionsRepo';
+
 // ─── Newly-real endpoints (League/Player-roster/match-stats, shipped to
 // `test` 2026-08-15/16 — see league.controller.ts, youthsports-client.
 // controller.ts) that the v1 module never wired up. ──────────────────────
