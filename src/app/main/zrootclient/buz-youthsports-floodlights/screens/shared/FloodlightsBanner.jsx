@@ -8,13 +8,14 @@ import { Link, useLocation } from 'react-router-dom';
 const TABS = [
   { label: 'Hub', to: '/youth-v2', match: (p) => p === '/youth-v2' },
   { label: 'Tournaments', to: '/youth-v2/tournaments', match: (p) => p.startsWith('/youth-v2/tournaments') },
+  { label: 'Auditions', to: '/youth-v2/auditions', match: (p) => p.startsWith('/youth-v2/auditions') || p === '/youth-v2/my-auditions' },
   { label: 'Talent Hunt', to: '/youth-v2/talents', match: (p) => p.startsWith('/youth-v2/talents') },
   { label: 'Transfer Market', to: '/youth-v2/market', match: (p) => p.startsWith('/youth-v2/market') },
   { label: 'Programmes', to: '/youth-v2/programs', match: (p) => p.startsWith('/youth-v2/programs') },
-  // Auditions + staff positions (2026-09-12) — one combined tab rather than
-  // two, since they're structurally identical apply-to-a-club pipelines
-  // (see OpportunitiesScreen.jsx) and the strip was already at 6 tabs.
-  { label: 'Opportunities', to: '/youth-v2/opportunities', match: (p) => p.startsWith('/youth-v2/opportunities') },
+  // Staff positions (Feature A, 2026-09-12) — sibling recruitment pipeline
+  // to Auditions above, own tab since Auditions already has its own real,
+  // shipped screens (kept untouched by this addition).
+  { label: 'Staff Positions', to: '/youth-v2/staff-positions', match: (p) => p.startsWith('/youth-v2/staff-positions') },
   { label: 'Find a Mentor', to: '/youth-v2/mentors', match: (p) => p.startsWith('/youth-v2/mentors') },
 ];
 

@@ -10,11 +10,13 @@ export {
   useEnrollInTournament, useMyTournamentEnrollments,
 } from './useYouthSportsRepo';
 
+// Staff positions (Feature A, 2026-09-12) — auditions above are this file's
+// own real, already-live hooks; staff positions live in their own file
+// (same backend shape, kept separate to avoid a large diff on this file).
 export {
-  useAuditions, useAuditionDetail, useMyAuditionApplications, useApplyToAudition,
   useStaffPositions, useStaffPositionDetail, useMyStaffPositionApplications, useApplyToStaffPosition,
   STAFF_ROLES,
-} from './useOpportunitiesRepo';
+} from './useStaffPositionsRepo';
 
 // ─── Newly-real endpoints (League/Player-roster/match-stats, shipped to
 // `test` 2026-08-15/16 — see league.controller.ts, youthsports-client.
@@ -28,6 +30,10 @@ const api = {
   getMyWatchlist:   () => AuthApi().get('/youth/players/watchlist/mine'),
   watchPlayer:      (playerId) => AuthApi().put(`/youth/players/${playerId}/watch`),
   unwatchPlayer:    (playerId) => AuthApi().delete(`/youth/players/${playerId}/watch`),
+  getAuditions:       (params) => AuthApi().get('/youth/auditions', { params }),
+  getAuditionDetail:  (id)     => AuthApi().get(`/youth/auditions/${id}`),
+  applyToAudition:    (data)   => AuthApi().post('/youth/auditions/apply', data),
+  getMyAuditionApplications: () => AuthApi().get('/youth/auditions/applications/mine'),
 };
 
 export function useLeagues(filters = {}) {
@@ -119,6 +125,26 @@ export function useMyWatchlist() {
   );
 }
 
+// ── Club auditions — Phase 4 of the club-recruitment pipeline (2026-08-29).
+// Citizens browse APPROVED auditions and apply to one; the club then
+// reviews the application (see project_youth_sports_clubs_architecture
+// memory). Real, already-live backend routes — no mock fallback needed.
+
+export function useAuditions(filters = {}) {
+  const { sport, country, state, lga, page = 1, limit = 20 } = filters;
+  const params = buildParams({ sport, country, state, lga, page, limit });
+
+  return useQuery(
+    ['youth-auditions', filters],
+    () => api.getAuditions(params),
+    {
+      select: (res) => ({ data: { auditions: res.data?.data ?? [], total: res.data?.total ?? 0 } }),
+      keepPreviousData: true,
+      staleTime: 60 * 1000,
+    }
+  );
+}
+
 export function useIsWatchingPlayer(playerId) {
   const { data, isLoading } = useMyWatchlist();
   const entries = data?.data?.entries ?? [];
@@ -139,6 +165,32 @@ export function useWatchPlayer() {
   );
 }
 
+export function useAuditionDetail(auditionId) {
+  return useQuery(
+    ['youth-audition', auditionId],
+    () => api.getAuditionDetail(auditionId),
+    {
+      enabled: Boolean(auditionId),
+      select: (res) => ({ data: { audition: res.data } }),
+      staleTime: 60 * 1000,
+    }
+  );
+}
+
+export function useApplyToAudition() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => api.applyToAudition(payload),
+    {
+      onSuccess: () => {
+        toast.success('Application submitted — the club will review it and reach out if you\'re recruited.');
+        queryClient.invalidateQueries(['youth-my-audition-applications']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Could not submit your application. Please try again.'),
+    }
+  );
+}
+
 export function useUnwatchPlayer() {
   const queryClient = useQueryClient();
   return useMutation(
@@ -150,5 +202,22 @@ export function useUnwatchPlayer() {
       },
       onError: () => toast.error('Could not update your watchlist. Please try again.'),
     }
+  );
+}
+
+export function useMyAuditionApplications() {
+  return useQuery(
+    ['youth-my-audition-applications'],
+    () => api.getMyAuditionApplications(),
+    {
+      select: (res) => ({ data: { applications: res.data ?? [] } }),
+      staleTime: 60 * 1000,
+    }
+  );
+}
+
+function buildParams(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v != null && v !== '')
   );
 }
