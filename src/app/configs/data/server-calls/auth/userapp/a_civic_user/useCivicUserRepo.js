@@ -14,9 +14,15 @@ export function getIsCivicUser() {
   }
 }
 
-/** Upgrades the user to civic tier, then reloads so the new JWT is picked up. */
+/**
+ * Upgrades the user to civic tier, then reloads so the new JWT is picked up.
+ * Backend contract is POST /auth-user/civic/upgrade with a real body
+ * (UpgradeToCivicUserDto: dwelling + home-origin country/state/LGA, plus
+ * optional tax-split percentages) — this used to call GET with no body at
+ * all, which 404'd every single time regardless of backend readiness.
+ */
 export function useUpgradeToCivicUser() {
-  return useMutation(() => AuthApi().get('/auth-user/civic/upgrade'), {
+  return useMutation((dto) => AuthApi().post('/auth-user/civic/upgrade', dto), {
     onSuccess: () => window.location.reload(),
   });
 }

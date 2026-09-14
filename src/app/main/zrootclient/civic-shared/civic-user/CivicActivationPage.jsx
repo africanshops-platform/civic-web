@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, CircularProgress, Tooltip, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Divider, Slider, Tooltip, Typography } from '@mui/material';
 import AccountBalanceIcon  from '@mui/icons-material/AccountBalance';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ArrowForwardIcon    from '@mui/icons-material/ArrowForward';
@@ -14,6 +14,7 @@ import SportsIcon          from '@mui/icons-material/Sports';
 import VerifiedUserIcon    from '@mui/icons-material/VerifiedUser';
 import FaceIcon            from '@mui/icons-material/Face';
 import { useUpgradeToCivicUser } from 'app/configs/data/server-calls/auth/userapp/a_civic_user/useCivicUserRepo';
+import LgaCascadePicker from '../LgaCascadePicker';
 
 const F = {
   brand:  'clamp(1.76rem, 2.6vw, 2.2rem)',
@@ -37,19 +38,31 @@ const MODULES = [
 export default function CivicActivationPage({ kycData = {}, onManageBiometrics }) {
   const { mutate, isLoading, isSuccess, isError, error } = useUpgradeToCivicUser();
   const [upgraded, setUpgraded] = useState(false);
+  const [homeOrigin, setHomeOrigin] = useState({});
+  const [dwelling, setDwelling] = useState({});
+  const [dwellingPercent, setDwellingPercent] = useState(40);
 
   const faceVerified    = kycData?.faceVerified        === true;
   const biometricReg    = kycData?.biometricRegistered === true;
   const bothBiometrics  = faceVerified && biometricReg;
   const oneBiometric    = faceVerified || biometricReg;
+  const jurisdictionReady = !!(homeOrigin.lgaId && dwelling.lgaId);
 
   function handleUpgrade() {
-    mutate(undefined, {
-      onSuccess: () => setUpgraded(true),
-    });
+    mutate(
+      {
+        homeOriginCountryId: homeOrigin.countryId,
+        homeOriginStateId: homeOrigin.stateId,
+        homeOriginLgaId: homeOrigin.lgaId,
+        dwellingCountryId: dwelling.countryId,
+        dwellingStateId: dwelling.stateId,
+        dwellingLgaId: dwelling.lgaId,
+        taxSplitHomeOrigin: 100 - dwellingPercent,
+        taxSplitDwelling: dwellingPercent,
+      },
+      { onSuccess: () => setUpgraded(true) },
+    );
   }
-
-  const is404 = error?.response?.status === 404;
 
   return (
     <Box sx={{
@@ -279,13 +292,56 @@ export default function CivicActivationPage({ kycData = {}, onManageBiometrics }
             ))}
           </Box>
 
+          {/* ── Home origin / dwelling ──────────────────────────── */}
+          <Typography sx={{ fontSize: F.label, letterSpacing: 0.6, color: 'rgba(255,255,255,0.35)', fontWeight: 600, mb: 1.5 }}>
+            WHERE YOU&apos;RE FROM &amp; WHERE YOU LIVE
+          </Typography>
+          <Box sx={{
+            p: 2.5, borderRadius: 2.5, mb: 3,
+            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+            '& .MuiFormLabel-root, & .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' },
+            '& .MuiInputBase-root': { color: '#fff' },
+            '& .font-bold': { color: 'rgba(255,255,255,0.75)' },
+          }}>
+            <Typography sx={{ fontSize: F.body, color: 'rgba(255,255,255,0.5)', mb: 2 }}>
+              Your civic contributions are split between the LGA you're originally from and the LGA
+              you currently live in.
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <LgaCascadePicker label="🏡 Home Origin" onChange={setHomeOrigin} />
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+              <LgaCascadePicker label="🏙️ Dwelling" onChange={setDwelling} />
+            </Box>
+            {jurisdictionReady && (
+              <Box sx={{ mt: 2.5 }}>
+                <Typography sx={{ fontSize: F.body, color: 'rgba(255,255,255,0.6)', mb: 1 }}>
+                  Split — Dwelling gets {dwellingPercent}%, Home Origin gets {100 - dwellingPercent}%
+                </Typography>
+                <Slider
+                  value={dwellingPercent}
+                  onChange={(_e, v) => setDwellingPercent(v)}
+                  min={30}
+                  max={70}
+                  step={5}
+                  marks={[{ value: 30, label: '30%' }, { value: 50, label: '50%' }, { value: 70, label: '70%' }]}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(v) => `${v}% Dwelling`}
+                />
+                <Typography sx={{ fontSize: F.badge, color: 'rgba(255,255,255,0.35)', mt: 0.5 }}>
+                  Each LGA keeps between 30% and 70%. You can change this later from your civic profile.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
           {/* ── Progress checklist ──────────────────────────────── */}
           <Box sx={{ p: 2.5, borderRadius: 2.5, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
             {[
               { done: true,  text: 'Identity document submitted' },
               { done: oneBiometric, text: oneBiometric ? `Biometric verified (${bothBiometrics ? 'face + fingerprint' : faceVerified ? 'face scan' : 'fingerprint'})` : 'Biometric verification pending' },
               { done: true,  text: 'KYC approved by compliance team' },
-              { done: false, text: 'Activate Civic User profile', active: true },
+              { done: jurisdictionReady, text: jurisdictionReady ? 'Home origin & dwelling LGA selected' : 'Select your home origin & dwelling LGA' },
+              { done: false, text: 'Activate Civic User profile', active: jurisdictionReady },
             ].map(({ done, text, active }) => (
               <Box key={text} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.75 }}>
                 <Box sx={{
@@ -319,9 +375,7 @@ export default function CivicActivationPage({ kycData = {}, onManageBiometrics }
             }}>
               <ErrorOutlineIcon sx={{ fontSize: 18, color: '#f87171', flexShrink: 0, mt: 0.25 }} />
               <Typography sx={{ fontSize: F.body, color: '#fca5a5', lineHeight: 1.6 }}>
-                {is404
-                  ? 'Civic upgrade service is not yet live. Please check back shortly or contact support.'
-                  : (error?.response?.data?.message ?? 'Upgrade failed. Please try again.')}
+                {error?.response?.data?.message ?? 'Upgrade failed. Please try again.'}
               </Typography>
             </Box>
           )}
@@ -342,14 +396,14 @@ export default function CivicActivationPage({ kycData = {}, onManageBiometrics }
 
           {/* CTA */}
           <Tooltip
-            title={is404 ? 'Civic upgrade is coming soon — check back shortly' : ''}
+            title={!jurisdictionReady ? 'Select your home origin and dwelling LGA above first' : ''}
             placement="top" arrow
           >
             <span style={{ display: 'block' }}>
               <Button
                 fullWidth
                 variant="contained"
-                disabled={isLoading || upgraded || is404}
+                disabled={isLoading || upgraded || !jurisdictionReady}
                 onClick={handleUpgrade}
                 endIcon={isLoading
                   ? <CircularProgress size={18} sx={{ color: 'rgba(255,255,255,0.6)' }} />
@@ -357,14 +411,14 @@ export default function CivicActivationPage({ kycData = {}, onManageBiometrics }
                 }
                 sx={{
                   py: 2, borderRadius: 3, fontWeight: 800, fontSize: F.btn,
-                  background: (isLoading || upgraded || is404)
+                  background: (isLoading || upgraded || !jurisdictionReady)
                     ? 'rgba(255,255,255,0.07)'
                     : 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #16a34a 100%)',
-                  color: (isLoading || upgraded || is404) ? 'rgba(255,255,255,0.25)' : '#fff',
+                  color: (isLoading || upgraded || !jurisdictionReady) ? 'rgba(255,255,255,0.25)' : '#fff',
                   textTransform: 'none', letterSpacing: 0.5,
-                  boxShadow: (isLoading || upgraded || is404) ? 'none' : '0 8px 32px rgba(29,78,216,0.35)',
+                  boxShadow: (isLoading || upgraded || !jurisdictionReady) ? 'none' : '0 8px 32px rgba(29,78,216,0.35)',
                   transition: 'all 0.3s ease',
-                  '&:hover': (isLoading || upgraded || is404) ? {} : {
+                  '&:hover': (isLoading || upgraded || !jurisdictionReady) ? {} : {
                     boxShadow: '0 12px 40px rgba(29,78,216,0.5)',
                     transform: 'translateY(-1px)',
                   },
