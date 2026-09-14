@@ -47,7 +47,7 @@ function ActiveCampaignsBrowsePage() {
     <CivicTaxHeader
       leftSidebarToggle={handleLeftToggle}
       rightSidebarToggle={handleRightToggle}
-      title="Civic Tax Campaigns"
+      title="Civic Subscriptions Campaigns"
       subtitle="Choose a campaign. Make an impact."
       showContributeBtn
     />
@@ -103,7 +103,7 @@ function CampaignsBrowseWithSidebarsPage() {
       ActiveComponent={MemoizedActiveCampaignsBrowsePage}
       isLoading={isLoading}
       isError={isError}
-      serviceName="Civic Tax"
+      serviceName="Civic Subscriptions"
     />
   );
 }

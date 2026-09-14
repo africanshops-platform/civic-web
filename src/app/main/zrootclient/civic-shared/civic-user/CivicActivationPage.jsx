@@ -27,7 +27,7 @@ const F = {
 };
 
 const MODULES = [
-  { icon: AccountBalanceIcon,  label: 'Civic Tax',      color: '#a78bfa', desc: 'Pay & track community taxes' },
+  { icon: AccountBalanceIcon,  label: 'Civic Subscriptions',      color: '#a78bfa', desc: 'Pay & track community subscriptions' },
   { icon: GavelIcon,           label: 'Governance',     color: '#60a5fa', desc: 'Vote in digital elections'   },
   { icon: SecurityIcon,        label: 'Security SOC',   color: '#f87171', desc: 'Report & monitor incidents'  },
   { icon: PeopleIcon,          label: 'Community',      color: '#34d399', desc: 'Engage in civic discourse'   },

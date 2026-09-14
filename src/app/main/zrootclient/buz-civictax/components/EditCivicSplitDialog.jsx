@@ -33,7 +33,7 @@ export default function EditCivicSplitDialog({ open, onClose, summary, onSave, i
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Update Your Civic Tax Split</DialogTitle>
+      <DialogTitle>Update Your Civic Subscriptions Split</DialogTitle>
       <DialogContent className="flex flex-col gap-16 pt-8">
         <LgaCascadePicker label="🏡 Home Origin" initial={summary?.homeOrigin} onChange={setHomeOrigin} />
         <Divider />
