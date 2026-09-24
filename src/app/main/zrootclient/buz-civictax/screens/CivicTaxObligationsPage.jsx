@@ -281,7 +281,7 @@ function ActiveCivicTaxObligationsPage() {
 
   const header = useMemo(() => (
     <CivicTaxHeader leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Civic Tax Obligations" subtitle="Pay taxes. Unlock governance. Shape your LGA." showContributeBtn={false} />
+      title="Civic Subscriptions Obligations" subtitle="Pay your subscription. Unlock governance. Shape your LGA." showContributeBtn={false} />
   ), [handleLeftToggle, handleRightToggle]);
 
   const content = useMemo(() => (
@@ -312,7 +312,7 @@ function ActiveCivicTaxObligationsPage() {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: 'clamp(5px,0.8vw,8px) clamp(14px,2vw,20px)', marginBottom: 12, border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(10px)' }}>
                 <AccountBalance style={{ color: '#fde047', fontSize: 'clamp(14px, 1.8vw, 18px)' }} />
-                <span style={{ color: 'white', fontWeight: 700, fontSize: F.meta }}>Compulsory Civic Tax Profile</span>
+                <span style={{ color: 'white', fontWeight: 700, fontSize: F.meta }}>Compulsory Civic Subscriptions Profile</span>
               </div>
               <div style={{ fontWeight: 900, fontSize: F.sectionH, color: 'white', lineHeight: 1.1 }}>Your Tax Identity</div>
               <div style={{ fontSize: F.body, color: 'rgba(255,255,255,0.85)', marginTop: 6 }}>

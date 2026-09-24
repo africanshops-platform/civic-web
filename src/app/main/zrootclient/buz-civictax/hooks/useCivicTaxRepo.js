@@ -4,16 +4,16 @@ import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 
 // ─── raw API layer ────────────────────────────────────────────────────────────
 const api = {
-  getCampaigns:        (params) => AuthApi().get('/civic/tax/campaigns', { params }),
-  getCampaignDetail:   (id)     => AuthApi().get(`/civic/tax/campaigns/${id}`),
-  getMyContributions:  (params) => AuthApi().get('/civic/tax/contributions/mine', { params }),
-  getContribReceipt:   (id)     => AuthApi().get(`/civic/tax/contributions/${id}`),
-  getLgaProjects:      (params) => AuthApi().get('/civic/tax/projects', { params }),
-  contribute:          (data)   => AuthApi().post(`/civic/tax/campaigns/${data.campaignId}/contribute`, data),
-  getMyObligations:    (params) => AuthApi().get('/civic/tax/obligations/mine', { params }),
-  payObligation:       (data)   => AuthApi().post('/civic/tax/obligations/pay', data),
-  getObligationHistory:(params) => AuthApi().get('/civic/tax/obligations/history', { params }),
-  getMySplitSummary:   ()       => AuthApi().get('/civic/tax/my-split-summary'),
+  getCampaigns:        (params) => AuthApi().get('/civic/subscriptions/campaigns', { params }),
+  getCampaignDetail:   (id)     => AuthApi().get(`/civic/subscriptions/campaigns/${id}`),
+  getMyContributions:  (params) => AuthApi().get('/civic/subscriptions/contributions/mine', { params }),
+  getContribReceipt:   (id)     => AuthApi().get(`/civic/subscriptions/contributions/${id}`),
+  getLgaProjects:      (params) => AuthApi().get('/civic/subscriptions/projects', { params }),
+  contribute:          (data)   => AuthApi().post(`/civic/subscriptions/campaigns/${data.campaignId}/contribute`, data),
+  getMyObligations:    (params) => AuthApi().get('/civic/subscriptions/obligations/mine', { params }),
+  payObligation:       (data)   => AuthApi().post('/civic/subscriptions/obligations/pay', data),
+  getObligationHistory:(params) => AuthApi().get('/civic/subscriptions/obligations/history', { params }),
+  getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
 };
 
