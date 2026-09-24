@@ -69,6 +69,13 @@ function IncidentMapLeaflet({
       >
         <MapResizer />
         <TileLayer url={tile.url} attribution={tile.attribution} />
+        {/* Esri splits the dark canvas into a base fill layer and a separate
+            roads/borders/labels overlay -- CARTO's dark_all bundled both into
+            one tile, so the base alone read as noticeably flatter/less legible
+            (founder feedback 2026-09-24). This restores that detail. */}
+        {dark && (
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
+        )}
         <PulseLayer incidents={visibleIncidents} />
 
         {visibleIncidents.map((incident) => {
