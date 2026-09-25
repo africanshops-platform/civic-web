@@ -6,6 +6,7 @@ export const KYC_STATUS_KEY = ['kyc-status'];
 // ─── raw API calls ────────────────────────────────────────────────────────────
 const api = {
   getStatus:           ()  => AuthApi().get('/auth-user/kyc/status'),
+  giveConsent:         (b) => AuthApi().post('/auth-user/kyc/consent', b ?? {}),
   submitFace:          (b) => AuthApi().post('/auth-user/kyc/face', b),
   submitDocument:      (b) => AuthApi().post('/auth-user/kyc/document', b),
   verifyFace:          (b) => AuthApi().post('/auth-user/kyc/face/verify', b),
@@ -36,6 +37,13 @@ function useKycMutation(fn) {
     onSuccess: () => qc.invalidateQueries(KYC_STATUS_KEY),
   });
 }
+
+// NDPA-required consent, must succeed before any face/document/WebAuthn
+// capture call — auth-service's requireConsent() (kyc.service.ts) hard-403s
+// every one of those otherwise. Discovered 2026-09-25: nothing anywhere in
+// this app (or civic-mobile) ever called this endpoint, so every real
+// submission attempt has been failing with 403 until this fix.
+export const useGiveConsent           = () => useKycMutation(api.giveConsent);
 
 export const useSubmitFace            = () => useKycMutation(api.submitFace);
 export const useSubmitDocument        = () => useKycMutation(api.submitDocument);
