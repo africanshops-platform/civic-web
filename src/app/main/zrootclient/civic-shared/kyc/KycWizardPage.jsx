@@ -1,13 +1,57 @@
 import { useEffect } from 'react';
 import FusePageSimple from '@fuse/core/FusePageSimple';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
-import { Box, Button, Chip, Paper, Typography } from '@mui/material';
+import { Box, Button, Chip, CircularProgress, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import { toast } from 'react-toastify';
 import KycFaceCard from './steps/KycFaceCard';
 import KycDocumentCard from './steps/KycDocumentCard';
 import KycWebAuthnCard from './steps/KycWebAuthnCard';
+import { useGiveConsent } from 'app/configs/data/server-calls/auth/userapp/a_kyc/useKycRepo';
+
+const CONSENT_VERSION = '2026-09-25';
+
+// Gates the three capture cards below it — auth-service's requireConsent()
+// hard-403s submitFace/submitDocument/webauthn register+verify until this
+// endpoint has been called once (see useKycRepo.js's useGiveConsent for the
+// full story: this was never called from anywhere, so every real capture
+// attempt has been failing). useGiveConsent's onSuccess already invalidates
+// the KYC status query, so the parent's kycData prop updates and this gate
+// unmounts itself — no local state or callback needed here.
+function KycConsentGate() {
+	const giveConsent = useGiveConsent();
+
+	async function handleAgree() {
+		try {
+			await giveConsent.mutateAsync({ consentVersion: CONSENT_VERSION });
+		} catch (err) {
+			toast.error(err?.response?.data?.message || 'Could not record consent. Please try again.');
+		}
+	}
+
+	return (
+		<Paper className="rounded-2xl p-24 flex flex-col gap-16">
+			<Typography className="font-semibold text-18">Biometric &amp; Document Processing Consent</Typography>
+			<Typography color="text.secondary">
+				To verify your identity we need to process a face-recognition descriptor, a photo of a
+				government-issued ID, and (optionally) a device biometric credential. This data is encrypted
+				at rest, never sold, and used only for identity verification and account-security purposes.
+				You can request deletion of this data at any time by contacting support.
+			</Typography>
+			<Button
+				variant="contained"
+				color="secondary"
+				onClick={handleAgree}
+				disabled={giveConsent.isLoading}
+				sx={{ alignSelf: 'flex-start' }}
+			>
+				{giveConsent.isLoading ? <CircularProgress size={20} color="inherit" /> : 'I Agree & Continue'}
+			</Button>
+		</Paper>
+	);
+}
 
 // Without this, dropping an image file anywhere on the page outside the exact
 // bounds of KycDocumentCard's dropzone falls through to the browser's default
@@ -95,6 +139,7 @@ export default function KycWizardPage({ kycData, onBack }) {
 	const documentType = kycData?.documentType ?? null;
 	const biometricRegistered = kycData?.biometricRegistered === true;
 	const enrolledDevices = kycData?.enrolledDevices ?? [];
+	const consentGiven = kycData?.consentGiven === true;
 
 	return (
 		<Box
@@ -187,7 +232,9 @@ export default function KycWizardPage({ kycData, onBack }) {
 							</Paper>
 						)}
 
-						{!isVerified && (
+						{!isVerified && !consentGiven && <KycConsentGate />}
+
+						{!isVerified && consentGiven && (
 							<>
 								<DocumentSection
 									title="Face Recognition"
