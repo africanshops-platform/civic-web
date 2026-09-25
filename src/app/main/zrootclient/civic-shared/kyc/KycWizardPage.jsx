@@ -215,7 +215,7 @@ export default function KycWizardPage({ kycData, onBack }) {
 		>
 			<Root
 				header={
-					<div className="flex flex-1 w-full flex-col py-8 sm:py-16 px-16 md:px-24">
+					<div className="flex flex-1 w-full flex-col pt-24 sm:pt-32 pb-8 sm:pb-16 px-16 md:px-24">
 						{onBack && (
 							<Button
 								onClick={onBack}
@@ -256,7 +256,7 @@ export default function KycWizardPage({ kycData, onBack }) {
 				}
 				content={
 					<div
-						className="w-full p-16 md:p-24 flex flex-col gap-16"
+						className="w-full mx-auto p-16 md:p-24 flex flex-col gap-16"
 						style={{ maxWidth: 640 }}
 					>
 						{isVerified && (
