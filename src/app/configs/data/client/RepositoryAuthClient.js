@@ -15,7 +15,11 @@ function drainQueue(error, token = null) {
 	refreshQueue = [];
 }
 
-async function doTokenRefresh() {
+// Exported so callers that just changed the user's own userTypes server-side
+// (e.g. useUpgradeToCivicUser) can force a fresh token before reloading —
+// see that call site's comment for why a bare page reload alone never picks
+// up a role change (it only re-reads whatever's already in localStorage).
+export async function doTokenRefresh() {
 	const stored = localStorage.getItem(jwtAuthConfig.refreshTokenStorageKey);
 	if (!stored) throw new Error('No refresh token stored');
 
