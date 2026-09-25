@@ -5,6 +5,8 @@ import { Box, Button, Chip, CircularProgress, Paper, Typography } from '@mui/mat
 import { styled } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { toast } from 'react-toastify';
 import KycFaceCard from './steps/KycFaceCard';
 import KycDocumentCard from './steps/KycDocumentCard';
@@ -32,23 +34,83 @@ function KycConsentGate() {
 	}
 
 	return (
-		<Paper className="rounded-2xl p-24 flex flex-col gap-16">
-			<Typography className="font-semibold text-18">Biometric &amp; Document Processing Consent</Typography>
-			<Typography color="text.secondary">
-				To verify your identity we need to process a face-recognition descriptor, a photo of a
-				government-issued ID, and (optionally) a device biometric credential. This data is encrypted
-				at rest, never sold, and used only for identity verification and account-security purposes.
-				You can request deletion of this data at any time by contacting support.
-			</Typography>
-			<Button
-				variant="contained"
-				color="secondary"
-				onClick={handleAgree}
-				disabled={giveConsent.isLoading}
-				sx={{ alignSelf: 'flex-start' }}
+		<Paper
+			className="rounded-2xl overflow-hidden"
+			sx={{ border: '1px solid', borderColor: 'divider' }}
+		>
+			<Box
+				sx={{
+					px: 3,
+					py: 2.5,
+					display: 'flex',
+					alignItems: 'center',
+					gap: 2,
+					background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)'
+				}}
 			>
-				{giveConsent.isLoading ? <CircularProgress size={20} color="inherit" /> : 'I Agree & Continue'}
-			</Button>
+				<Box
+					sx={{
+						width: 44,
+						height: 44,
+						borderRadius: '12px',
+						bgcolor: 'rgba(255,255,255,0.18)',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						flexShrink: 0
+					}}
+				>
+					<ShieldOutlinedIcon sx={{ color: '#fff', fontSize: 24 }} />
+				</Box>
+				<Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>
+					Biometric &amp; Document Processing Consent
+				</Typography>
+			</Box>
+
+			<Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+				<Typography sx={{ color: '#1f2937', fontSize: 15, lineHeight: 1.7 }}>
+					To verify your identity we need to process a face-recognition descriptor, a photo of a
+					government-issued ID, and (optionally) a device biometric credential.
+				</Typography>
+
+				<Box
+					sx={{
+						display: 'flex',
+						alignItems: 'flex-start',
+						gap: 1.5,
+						p: 2,
+						borderRadius: '12px',
+						bgcolor: 'rgba(29,78,216,0.06)',
+						border: '1px solid rgba(29,78,216,0.15)'
+					}}
+				>
+					<LockOutlinedIcon sx={{ color: '#1d4ed8', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
+					<Typography sx={{ color: '#374151', fontSize: 13.5, lineHeight: 1.7 }}>
+						This data is <strong>encrypted at rest</strong>, <strong>never sold</strong>, and used only
+						for identity verification and account security. You can request deletion at any time by
+						contacting support.
+					</Typography>
+				</Box>
+
+				<Button
+					variant="contained"
+					onClick={handleAgree}
+					disabled={giveConsent.isLoading}
+					sx={{
+						alignSelf: 'flex-start',
+						px: 3,
+						py: 1.2,
+						borderRadius: '12px',
+						fontWeight: 700,
+						textTransform: 'none',
+						background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+						boxShadow: '0 4px 14px rgba(29,78,216,0.35)',
+						'&:hover': { background: 'linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)' }
+					}}
+				>
+					{giveConsent.isLoading ? <CircularProgress size={20} color="inherit" /> : 'I Agree & Continue'}
+				</Button>
+			</Box>
 		</Paper>
 	);
 }
