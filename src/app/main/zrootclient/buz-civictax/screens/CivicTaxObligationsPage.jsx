@@ -14,7 +14,7 @@ import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSide
 import EditCivicSplitDialog from '../components/EditCivicSplitDialog';
 import {
   useMyObligations, usePayObligation, useObligationHistory,
-  useMySplitSummary, useUpdateCivicSplit,
+  useMySplitSummary, useUpdateCivicSplit, useCivicSubscriptionsReadiness,
 } from '../hooks/useCivicTaxRepo';
 import { CivicLoadingSkeleton, CivicPaginationBar } from '../../civic-shared';
 
@@ -96,7 +96,7 @@ function ComplianceRing({ score }) {
   );
 }
 
-function TaxObligationCard({ obligation, onPay, isPaying }) {
+function TaxObligationCard({ obligation, onPay, isPaying, paymentSystemDown }) {
   const [confirming, setConfirming] = useState(false);
   const cfg = STATUS_CONFIG[obligation.uiStatus] || STATUS_CONFIG.upcoming;
   const StatusIcon = cfg.icon;
@@ -170,8 +170,9 @@ function TaxObligationCard({ obligation, onPay, isPaying }) {
           </div>
           {canPay && !confirming && (
             <Button variant="contained" onClick={() => setConfirming(true)}
+              disabled={paymentSystemDown}
               style={{ fontSize: F.btn }}
-              sx={{ background: obligation.uiStatus === 'overdue' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 'clamp(14px, 2.2vw, 24px)', py: 'clamp(10px, 1.4vw, 14px)', boxShadow: obligation.uiStatus === 'overdue' ? '0 6px 18px rgba(220,38,38,0.4)' : '0 6px 18px rgba(234,88,12,0.4)', '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' } }}>
+              sx={{ background: obligation.uiStatus === 'overdue' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 'clamp(14px, 2.2vw, 24px)', py: 'clamp(10px, 1.4vw, 14px)', boxShadow: obligation.uiStatus === 'overdue' ? '0 6px 18px rgba(220,38,38,0.4)' : '0 6px 18px rgba(234,88,12,0.4)', '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' }, '&:disabled': { background: '#e5e7eb', color: '#9ca3af', boxShadow: 'none' } }}>
               {obligation.uiStatus === 'overdue' ? '⚠️ Pay Now' : 'Pay Now'}
             </Button>
           )}
@@ -180,7 +181,7 @@ function TaxObligationCard({ obligation, onPay, isPaying }) {
               <span style={{ fontSize: F.meta, color: '#4b5563', fontWeight: 600 }}>
                 Confirm ₦{obligation.remainingNaira.toLocaleString()} payment?
               </span>
-              <Button variant="contained" size="small" disabled={isPaying}
+              <Button variant="contained" size="small" disabled={isPaying || paymentSystemDown}
                 onClick={() => { onPay({ obligationId: obligation.id, remainingKobo: obligation.remainingKobo }); setConfirming(false); }}
                 sx={{ background: ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '10px', textTransform: 'none', minWidth: 80 }}>
                 {isPaying ? <CircularProgress size={16} color="inherit" /> : 'Confirm'}
@@ -189,6 +190,11 @@ function TaxObligationCard({ obligation, onPay, isPaying }) {
                 sx={{ borderColor: '#fdba74', color: '#ea580c', borderRadius: '10px', textTransform: 'none' }}>
                 Cancel
               </Button>
+            </div>
+          )}
+          {canPay && paymentSystemDown && (
+            <div style={{ width: '100%', fontSize: F.meta, color: '#dc2626', fontWeight: 600 }}>
+              We can't confirm payment services are ready right now. Please try again shortly.
             </div>
           )}
           {obligation.uiStatus === 'upcoming' && (
@@ -253,6 +259,8 @@ function ActiveCivicTaxObligationsPage() {
   const { data: oblData,  isLoading: oblLoading  } = useMyObligations(oblPage);
   const { data: histData, isLoading: histLoading } = useObligationHistory(histPage);
   const { mutate: payObligation, isLoading: isPaying } = usePayObligation();
+  const readiness = useCivicSubscriptionsReadiness();
+  const paymentSystemDown = readiness.data?.healthy === false;
   const { data: splitData, isLoading: splitLoading } = useMySplitSummary();
   const { mutate: updateSplit, isLoading: isSavingSplit } = useUpdateCivicSplit();
 
@@ -459,7 +467,7 @@ function ActiveCivicTaxObligationsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vw, 20px)' }}>
             {obligations.map((obl) => (
-              <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={isPaying} />
+              <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={isPaying} paymentSystemDown={paymentSystemDown} />
             ))}
           </div>
         )}
@@ -494,6 +502,7 @@ function ActiveCivicTaxObligationsPage() {
   ), [
     editingSplit, summary, splitLoading, splitConfigured, isSavingSplit, updateSplit,
     overdueCount, totalOwed, obligations, history, oblLoading, histLoading, isPaying, payObligation, oblPagination, histPagination,
+    paymentSystemDown,
   ]);
 
   const leftSidebar  = useMemo(() => <CampaignsBrowseSidebarLeft />, []);
