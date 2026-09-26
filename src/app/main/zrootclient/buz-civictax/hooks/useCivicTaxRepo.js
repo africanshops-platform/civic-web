@@ -15,6 +15,7 @@ const api = {
   getObligationHistory:(params) => AuthApi().get('/civic/subscriptions/obligations/history', { params }),
   getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
+  getCheckoutReadiness:()       => AuthApi().get('/checkout-readiness/civic-subscriptions'),
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -135,6 +136,23 @@ export function useLgaProjects(filters = {}) {
       staleTime: 2 * 60 * 1000,
     }
   );
+}
+
+/**
+ * Pre-flight check: are civictax-service + fintech-service up? Call right
+ * before enabling "Contribute"/"Pay Now" on a campaign contribution or
+ * subscription obligation payment — the gateway caches its answer for
+ * ~10s, so a short refetch interval here still mostly hits cache.
+ */
+export function useCivicSubscriptionsReadiness(enabled = true) {
+  return useQuery(['civictax-checkout-readiness'], () => api.getCheckoutReadiness(), {
+    enabled,
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+    retry: 1,
+    staleTime: 5000,
+    select: (res) => res?.data,
+  });
 }
 
 export function useContributeToCampaign() {
