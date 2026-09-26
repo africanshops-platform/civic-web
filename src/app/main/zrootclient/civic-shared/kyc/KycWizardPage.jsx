@@ -215,7 +215,7 @@ export default function KycWizardPage({ kycData, onBack }) {
 		>
 			<Root
 				header={
-					<div className="flex flex-1 w-full flex-col pt-24 sm:pt-32 pb-8 sm:pb-16 px-16 md:px-24">
+					<div className="flex flex-1 w-full flex-col py-8 sm:py-16 px-16 md:px-24">
 						{onBack && (
 							<Button
 								onClick={onBack}
@@ -225,7 +225,12 @@ export default function KycWizardPage({ kycData, onBack }) {
 								Back to Civic Activation
 							</Button>
 						)}
-						<div className="flex items-center gap-12">
+						{/* Explicit px, not a Tailwind class or rem value — this app's
+						    root font-size is 10px (not the usual 16px), which makes
+						    rem-based spacing utilities land at unpredictable real
+						    pixel sizes here. A plain px margin sidesteps that
+						    entirely and reliably clears the toolbar above it. */}
+						<div className="flex items-center gap-12" style={{ marginTop: '56px' }}>
 							<Box
 								sx={{
 									width: 44,
