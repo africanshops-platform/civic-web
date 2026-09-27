@@ -5,7 +5,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { toast } from 'react-toastify';
-import { uploadDocumentImage, useSubmitDocument } from 'app/configs/data/server-calls/auth/userapp/a_kyc/useKycRepo';
+import { uploadIdentityDocumentImage, useSubmitDocument } from 'app/configs/data/server-calls/auth/userapp/a_kyc/useKycRepo';
 
 const DOC_TYPES = [
 	{ value: 'NIN', label: 'NIN', sublabel: 'National Identity', icon: '🪪', placeholder: 'e.g. 12345678901' },
@@ -56,8 +56,9 @@ function DocumentSubmittedSummary({ documentType, onUpdate }) {
 /**
  * Identity Document card body. Shows a compact submitted summary when
  * `completed` is true, otherwise the document-type/number/photo form.
- * Behavior is preserved from the old KycDocumentStep — only layout/theme
- * changed. API call (uploadDocumentImage → submitDocument) is unchanged.
+ * Upload now relays through the backend (uploadIdentityDocumentImage,
+ * 2026-09-27) instead of a direct-to-Cloudinary unsigned-preset upload —
+ * see useKycRepo.js for why.
  */
 export default function KycDocumentCard({ completed = false, documentType = null }) {
 	// When already completed, start in "view" mode (summary); user can switch to edit form
@@ -119,13 +120,14 @@ export default function KycDocumentCard({ completed = false, documentType = null
 
 		const t = setInterval(() => setUploadProgress((p) => (p < 82 ? p + 11 : p)), 300);
 		try {
-			const imageUrl = await uploadDocumentImage(file);
+			const { url: imageUrl, publicId } = await uploadIdentityDocumentImage(file);
 			setUploadProgress(100);
 			clearInterval(t);
 			await submitDocument.mutateAsync({
 				documentType: docType,
 				documentNumber: docNumber.trim().toUpperCase(),
 				documentImageUrl: imageUrl,
+				documentPublicId: publicId,
 				legalName: legalName.trim()
 			});
 			setShowForm(false);
