@@ -54,7 +54,33 @@ export const useGetWebAuthnRegOptions = () => useMutation(api.webauthnRegOptions
 export const useGetWebAuthnAuthOptions= () => useMutation(api.webauthnAuthOptions);
 export const useVerifyWebAuthnAuth    = () => useMutation(api.webauthnAuthVerify);
 
-// ─── Cloudinary document image upload ────────────────────────────────────────
+// ─── Identity-KYC document upload (relayed through the backend, 2026-09-27) ──
+// Distinct from uploadDocumentImage below, which FinanceKycContent.jsx still
+// uses for the separate wallet-KYC flow (fintech-service) -- CLAUDE.md keeps
+// identity KYC and wallet KYC architecturally independent, so this fix stays
+// scoped to identity KYC only, not applied to that other, unrelated upload.
+// Relays through the same gateway endpoint civic-mobile already uses,
+// uploaded server-side as Cloudinary type:"authenticated" (never a
+// permanently-public URL) instead of this app's old direct-to-Cloudinary
+// unsigned-preset upload. Returns { url, publicId } -- url is not directly
+// viewable (signing happens server-side on admin review), publicId is what
+// actually gets submitted alongside documentImageUrl.
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function uploadIdentityDocumentImage(file) {
+  const base64 = await fileToBase64(file);
+  const res = await AuthApi().post('/auth-user/kyc/document/upload-attachment', { base64 });
+  return { url: res.data.url, publicId: res.data.publicId };
+}
+
+// ─── Cloudinary document image upload (wallet-KYC only — see above) ──────────
 export async function uploadDocumentImage(file) {
   const cloudName    = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
