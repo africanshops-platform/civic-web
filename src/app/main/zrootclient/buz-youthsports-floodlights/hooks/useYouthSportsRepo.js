@@ -1,26 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { YOUTH_STATS, mockPrograms } from '../mock';
+import { YOUTH_STATS } from '../mock';
 
-// Browse/detail (programs, tournaments, spotlights) and mentorship-request are
-// wired to the real `youth-sports-service` gateway routes. Enroll/register-team/
-// my-programs are still mock pending a later slice — kept separate rather than
-// one global flag so wiring one doesn't silently break the others.
+// Browse/detail (programs, tournaments, spotlights), mentorship-request, and
+// (as of 2026-09-09) enroll/my-programs/register-team are all wired to the
+// real `youth-sports-service` gateway routes — see civic-mobile's
+// useYouthSports.ts/youthSports.api.ts for the proven endpoint shapes this
+// mirrors.
 const delay = (ms = 600) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 // ─── raw API layer ────────────────────────────────────────────────────────────
 const api = {
   getPrograms:        (params) => AuthApi().get('/youth/programs', { params }),
   getProgramDetail:   (id)     => AuthApi().get(`/youth/programs/${id}`),
+  getMyPrograms:      (params) => AuthApi().get('/youth/programs/mine', { params }),
+  enrollInProgram:    (data)   => AuthApi().post('/youth/programs/enroll', data),
   getTournaments:     (params) => AuthApi().get('/youth/tournaments', { params }),
   getTournamentDetail: (id)    => AuthApi().get(`/youth/tournaments/${id}`),
+  registerTeam:       (data)   => AuthApi().post('/youth/tournaments/register-team', data),
   getSpotlights:      (params) => AuthApi().get('/youth/spotlights', { params }),
   requestMentorship:  (data)   => AuthApi().post('/youth/mentorship/request', data),
-  // Phase 7 of the club-recruitment pipeline (2026-08-30) — real, not mock,
-  // unlike useEnrollInProgram/useRegisterForTournament below (those cover a
-  // different, still-deferred slice; this is the newly-shipped
-  // participationMode: SINGLE direct-enrollment endpoint).
+  // Phase 7 of the club-recruitment pipeline (2026-08-30) — the
+  // participationMode: SINGLE direct-enrollment endpoint.
   enrollInTournament:       (data)   => AuthApi().post('/youth/tournaments/enroll', data),
   getMyTournamentEnrollments: (params) => AuthApi().get('/youth/tournaments/mine', { params }),
 };
@@ -70,6 +72,15 @@ function normalizeTournament(t) {
     teamsRegistered: t.currentTeams,
     status: (t.status ?? '').toLowerCase(),
   };
+}
+
+// ProgramEnrollment from the real backend is flat ({id, programId, userId,
+// guardianId, enrolledAt, isActive, program}) — no progress/nextSession/
+// completed/saved bucketing exists server-side, so the previous mock's
+// {enrolled, completed, saved} shape was UI-only fiction. Any future
+// consumer of useMyPrograms works off this real shape instead.
+function normalizeEnrollment(e) {
+  return { ...e, program: e.program ? normalizeProgram(e.program) : e.program };
 }
 
 function normalizeSpotlight(s) {
@@ -187,42 +198,33 @@ export function useRequestMentorship() {
   );
 }
 
-// My-programs, enroll, and team-registration are still mock — deferred to a
-// later slice, kept separate rather than one global flag so wiring one
-// doesn't silently break the others.
-export function useMyPrograms() {
+export function useMyPrograms(filters = {}) {
+  const { page = 1, limit = 20 } = filters;
   return useQuery(
-    ['youth-my-programs'],
-    async () => {
-      await delay(500);
-      return {
-        data: {
-          enrolled: [{ ...mockPrograms[0], progress: 65, nextSession: '2026-06-10T09:00:00Z' }],
-          completed: [],
-          saved: [mockPrograms[1]],
-        },
-      };
-    },
-    { staleTime: 2 * 60 * 1000 }
+    ['youth-my-programs', filters],
+    () => api.getMyPrograms({ page, limit }),
+    {
+      select: (res) => {
+        const d = res.data;
+        return { data: { enrollments: (d.data ?? []).map(normalizeEnrollment), total: d.total ?? 0 } };
+      },
+      staleTime: 2 * 60 * 1000,
+    }
   );
 }
 
 export function useEnrollInProgram() {
   const queryClient = useQueryClient();
   return useMutation(
-    async (payload) => {
-      await delay(1200);
-      return { data: { success: true, message: 'Enrolled successfully! Check your email for details.', programId: payload.programId } };
-    },
+    (payload) => api.enrollInProgram(payload),
     {
-      onSuccess: (data) => {
-        if (data?.data?.success) {
-          toast.success(data.data.message);
-          queryClient.invalidateQueries(['youth-programs']);
-          queryClient.invalidateQueries(['youth-my-programs']);
-        }
+      onSuccess: (res, payload) => {
+        toast.success('Enrolled successfully! Check your email for details.');
+        queryClient.invalidateQueries(['youth-programs']);
+        queryClient.invalidateQueries(['youth-program', payload.programId]);
+        queryClient.invalidateQueries(['youth-my-programs']);
       },
-      onError: () => toast.error('Could not enroll. Please try again.'),
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Could not enroll. Please try again.'),
     }
   );
 }
@@ -254,25 +256,24 @@ export function useMyTournamentEnrollments(filters = {}) {
   );
 }
 
+// Real endpoint (matches civic-mobile's registerTeam/RegisterTeamDto shape:
+// {tournamentId, teamName, playerIds, coachId?}). No citizen-facing
+// TEAM-mode registration UI exists on TournamentDetailScreen yet — see that
+// screen's own EnrollPanel comment, which explicitly calls this "a separate,
+// not-yet-built slice" distinct from the SINGLE-mode enroll button. Wiring
+// the hook to the real API here means that UI has a working mutation to
+// call whenever it's built, without needing another mock-removal pass.
 export function useRegisterForTournament() {
   const queryClient = useQueryClient();
   return useMutation(
-    async () => {
-      await delay(1200);
-      return {
-        data: {
-          success: true,
-          registrationCode: `TRN-${new Date().getFullYear()}-${Math.floor(Math.random() * 900000 + 100000)}`,
-          message: 'Registration successful! Confirmation sent to your email.',
-        },
-      };
-    },
+    (payload) => api.registerTeam(payload),
     {
-      onSuccess: (data) => {
-        if (data?.data?.success) toast.success(data.data.message);
+      onSuccess: (res, payload) => {
+        toast.success('Registration successful! Confirmation sent to your email.');
         queryClient.invalidateQueries(['youth-tournaments']);
+        queryClient.invalidateQueries(['youth-tournament', payload.tournamentId]);
       },
-      onError: () => toast.error('Registration failed. Please try again.'),
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Registration failed. Please try again.'),
     }
   );
 }

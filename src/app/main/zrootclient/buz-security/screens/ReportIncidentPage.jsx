@@ -141,9 +141,14 @@ const LocationPickerMap = memo(function LocationPickerMap({ pinCoords, onPick })
     >
       <MapResizer />
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+        attribution='Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
+      {/* Esri splits the dark canvas into a base fill layer and a separate
+          roads/borders/labels overlay -- CARTO's dark_all bundled both into
+          one tile, so the base alone read as noticeably flatter/less legible
+          (founder feedback 2026-09-24). This restores that detail. */}
+      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
       <MapClickHandler onPick={onPick} />
       <MapPanner coords={pinCoords} />
       {pinCoords && (

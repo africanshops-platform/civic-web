@@ -1,13 +1,119 @@
 import { useEffect } from 'react';
 import FusePageSimple from '@fuse/core/FusePageSimple';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
-import { Box, Button, Chip, Paper, Typography } from '@mui/material';
+import { Box, Button, Chip, CircularProgress, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { toast } from 'react-toastify';
 import KycFaceCard from './steps/KycFaceCard';
 import KycDocumentCard from './steps/KycDocumentCard';
 import KycWebAuthnCard from './steps/KycWebAuthnCard';
+import { useGiveConsent } from 'app/configs/data/server-calls/auth/userapp/a_kyc/useKycRepo';
+
+const CONSENT_VERSION = '2026-09-25';
+
+// Gates the three capture cards below it — auth-service's requireConsent()
+// hard-403s submitFace/submitDocument/webauthn register+verify until this
+// endpoint has been called once (see useKycRepo.js's useGiveConsent for the
+// full story: this was never called from anywhere, so every real capture
+// attempt has been failing). useGiveConsent's onSuccess already invalidates
+// the KYC status query, so the parent's kycData prop updates and this gate
+// unmounts itself — no local state or callback needed here.
+function KycConsentGate() {
+	const giveConsent = useGiveConsent();
+
+	async function handleAgree() {
+		try {
+			await giveConsent.mutateAsync({ consentVersion: CONSENT_VERSION });
+		} catch (err) {
+			toast.error(err?.response?.data?.message || 'Could not record consent. Please try again.');
+		}
+	}
+
+	return (
+		<Paper
+			className="rounded-2xl overflow-hidden"
+			sx={{ border: '1px solid', borderColor: 'divider' }}
+		>
+			<Box
+				sx={{
+					px: 3,
+					py: 2.5,
+					display: 'flex',
+					alignItems: 'center',
+					gap: 2,
+					background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)'
+				}}
+			>
+				<Box
+					sx={{
+						width: 44,
+						height: 44,
+						borderRadius: '12px',
+						bgcolor: 'rgba(255,255,255,0.18)',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						flexShrink: 0
+					}}
+				>
+					<ShieldOutlinedIcon sx={{ color: '#fff', fontSize: 24 }} />
+				</Box>
+				<Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>
+					Biometric &amp; Document Processing Consent
+				</Typography>
+			</Box>
+
+			<Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+				<Typography sx={{ color: '#1f2937', fontSize: 15, lineHeight: 1.7 }}>
+					To verify your identity we need to process a face-recognition descriptor, a photo of a
+					government-issued ID, and (optionally) a device biometric credential.
+				</Typography>
+
+				<Box
+					sx={{
+						display: 'flex',
+						alignItems: 'flex-start',
+						gap: 1.5,
+						p: 2,
+						borderRadius: '12px',
+						bgcolor: 'rgba(29,78,216,0.06)',
+						border: '1px solid rgba(29,78,216,0.15)'
+					}}
+				>
+					<LockOutlinedIcon sx={{ color: '#1d4ed8', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
+					<Typography sx={{ color: '#374151', fontSize: 13.5, lineHeight: 1.7 }}>
+						This data is <strong>encrypted at rest</strong>, <strong>never sold</strong>, and used only
+						for identity verification and account security. You can request deletion at any time by
+						contacting support.
+					</Typography>
+				</Box>
+
+				<Button
+					variant="contained"
+					onClick={handleAgree}
+					disabled={giveConsent.isLoading}
+					sx={{
+						alignSelf: 'flex-start',
+						px: 3,
+						py: 1.2,
+						borderRadius: '12px',
+						fontWeight: 700,
+						textTransform: 'none',
+						background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+						boxShadow: '0 4px 14px rgba(29,78,216,0.35)',
+						'&:hover': { background: 'linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)' }
+					}}
+				>
+					{giveConsent.isLoading ? <CircularProgress size={20} color="inherit" /> : 'I Agree & Continue'}
+				</Button>
+			</Box>
+		</Paper>
+	);
+}
 
 // Without this, dropping an image file anywhere on the page outside the exact
 // bounds of KycDocumentCard's dropzone falls through to the browser's default
@@ -95,6 +201,7 @@ export default function KycWizardPage({ kycData, onBack }) {
 	const documentType = kycData?.documentType ?? null;
 	const biometricRegistered = kycData?.biometricRegistered === true;
 	const enrolledDevices = kycData?.enrolledDevices ?? [];
+	const consentGiven = kycData?.consentGiven === true;
 
 	return (
 		<Box
@@ -118,7 +225,12 @@ export default function KycWizardPage({ kycData, onBack }) {
 								Back to Civic Activation
 							</Button>
 						)}
-						<div className="flex items-center gap-12">
+						{/* Explicit px, not a Tailwind class or rem value — this app's
+						    root font-size is 10px (not the usual 16px), which makes
+						    rem-based spacing utilities land at unpredictable real
+						    pixel sizes here. A plain px margin sidesteps that
+						    entirely and reliably clears the toolbar above it. */}
+						<div className="flex items-center gap-12" style={{ marginTop: '56px' }}>
 							<Box
 								sx={{
 									width: 44,
@@ -149,7 +261,7 @@ export default function KycWizardPage({ kycData, onBack }) {
 				}
 				content={
 					<div
-						className="w-full p-16 md:p-24 flex flex-col gap-16"
+						className="w-full mx-auto p-16 md:p-24 flex flex-col gap-16"
 						style={{ maxWidth: 640 }}
 					>
 						{isVerified && (
@@ -187,7 +299,9 @@ export default function KycWizardPage({ kycData, onBack }) {
 							</Paper>
 						)}
 
-						{!isVerified && (
+						{!isVerified && !consentGiven && <KycConsentGate />}
+
+						{!isVerified && consentGiven && (
 							<>
 								<DocumentSection
 									title="Face Recognition"

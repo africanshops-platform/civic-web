@@ -130,7 +130,7 @@ export default function CivicTaxLandingPage() {
 
               <motion.div {...fadeUp(0.34)}>
                 <p style={{ color: 'rgba(255,255,255,0.93)', lineHeight: 1.82, margin: '0 0 36px', maxWidth: 580, fontSize: F.body }}>
-                  The Voluntary Civic Tax system lets every Nigerian contribute to verified,
+                  The Voluntary Civic Subscriptions system lets every Nigerian contribute to verified,
                   transparent community projects — from security to agriculture — right down to their LGA.{' '}
                   <strong style={{ color: '#fde047' }}>Every naira is tracked. Every project is accountable.</strong>
                 </p>

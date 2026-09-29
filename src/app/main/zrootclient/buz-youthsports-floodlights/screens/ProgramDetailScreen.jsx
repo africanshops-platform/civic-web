@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button, CircularProgress } from '@mui/material';
 import { ArrowBack, CalendarToday } from '@mui/icons-material';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { Pill } from './shared/flHelpers';
-import { useProgramDetail } from '../hooks/useFloodlightsRepo';
+import { useProgramDetail, useEnrollInProgram, useMyPrograms } from '../hooks/useFloodlightsRepo';
 import { PROGRAM_CATEGORIES } from '../mock';
 
 const STATUS_VARIANT = { open: 'pos', upcoming: 'gold', ongoing: 'live', closed: 'muted' };
@@ -12,6 +13,16 @@ export default function ProgramDetailScreen() {
   const { programId } = useParams();
   const { data, isLoading, isError } = useProgramDetail(programId);
   const program = data?.data?.program;
+  const [justEnrolled, setJustEnrolled] = useState(false);
+  const enrollMutation = useEnrollInProgram();
+  // Mirrors TournamentDetailScreen's EnrollPanel pattern: a returning,
+  // already-enrolled citizen must see "Enrolled", not a clickable button
+  // that just 409s on a second click.
+  const { data: myPrograms } = useMyPrograms();
+  const alreadyEnrolled = (myPrograms?.data?.enrollments ?? []).some(
+    (e) => e.programId === programId && e.isActive
+  );
+  const enrolled = justEnrolled || alreadyEnrolled;
 
   return (
     <FloodlightsPage>
@@ -76,11 +87,26 @@ export default function ProgramDetailScreen() {
                   </div>
                 )}
 
-                {/* Enrollment is real-data-aware but not yet wired to the real
-                    enroll endpoint — a fake success here would misrepresent a
-                    genuine enrollment, so this stays honestly disabled, same
-                    as the v1 page it replaces. */}
-                <button type="button" disabled className="fl2-btn fl2-btn-gold fl2-btn-block">Enrollment Opening Soon</button>
+                {(() => {
+                  const full = spotsLeft <= 0;
+                  const closed = program.status !== 'open';
+                  const disabled = enrolled || full || closed || enrollMutation.isLoading;
+                  let label = 'Enroll now';
+                  if (enrolled) label = 'Enrolled';
+                  else if (enrollMutation.isLoading) label = 'Enrolling…';
+                  else if (full) label = 'Programme full';
+                  else if (closed) label = 'Enrollment closed';
+                  return (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      className="fl2-btn fl2-btn-gold fl2-btn-block"
+                      onClick={() => enrollMutation.mutate({ programId }, { onSuccess: () => setJustEnrolled(true) })}
+                    >
+                      {label}
+                    </button>
+                  );
+                })()}
               </div>
             </div>
           </>

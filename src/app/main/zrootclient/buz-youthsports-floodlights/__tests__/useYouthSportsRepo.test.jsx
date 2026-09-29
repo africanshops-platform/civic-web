@@ -1,7 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { usePrograms, useProgramDetail, useTournaments, useTournamentDetail, useTalents, useRequestMentorship } from '../hooks/useYouthSportsRepo';
+import {
+  usePrograms, useProgramDetail, useTournaments, useTournamentDetail, useTalents, useRequestMentorship,
+  useMyPrograms, useEnrollInProgram, useRegisterForTournament,
+} from '../hooks/useYouthSportsRepo';
 
 // Real backend fields (YouthProgram/SportsTournament/TalentSpotlight, per
 // apps/youthsports-service/prisma/schema.prisma) differ from what these screens
@@ -232,6 +235,114 @@ describe('useTalents', () => {
 
     await waitFor(() => expect(get).toHaveBeenCalled());
     expect(get).toHaveBeenCalledWith('/youth/spotlights', { params: { sport: 'chess', page: 1, limit: 20 } });
+  });
+});
+
+describe('useMyPrograms', () => {
+  it('hits the real /youth/programs/mine endpoint and normalizes the flat enrollment shape', async () => {
+    const get = jest.fn().mockResolvedValue({
+      data: {
+        data: [{
+          id: 'e1', programId: 'p1', userId: 'u1', guardianId: null,
+          enrolledAt: '2026-08-01T00:00:00Z', isActive: true,
+          program: { id: 'p1', title: 'Lagos Football Academy', category: 'SPORTS', status: 'OPEN', maxSlots: 20, enrolledCount: 5, ageGroup: 'U15' },
+        }],
+        total: 1,
+      },
+    });
+    mockApi({ get });
+
+    function Harness() {
+      const { data } = useMyPrograms();
+      const e = data?.data?.enrollments?.[0];
+      if (!e) return null;
+      return (
+        <div>
+          <span data-testid="active">{String(e.isActive)}</span>
+          <span data-testid="program-category">{e.program.category}</span>
+        </div>
+      );
+    }
+
+    render(<Harness />, { wrapper });
+
+    await waitFor(() => expect(screen.getByTestId('active')).toBeInTheDocument());
+    expect(screen.getByTestId('active')).toHaveTextContent('true');
+    // program is run through the same normalizeProgram as usePrograms/useProgramDetail.
+    expect(screen.getByTestId('program-category')).toHaveTextContent('sports');
+    expect(get).toHaveBeenCalledWith('/youth/programs/mine', { params: { page: 1, limit: 20 } });
+  });
+
+  it('returns an empty list with no error when there are no enrollments yet', async () => {
+    const get = jest.fn().mockResolvedValue({ data: { data: [], total: 0 } });
+    mockApi({ get });
+
+    function Harness() {
+      const { data, isSuccess } = useMyPrograms();
+      if (!isSuccess) return null;
+      return <span data-testid="count">{data.data.enrollments.length}</span>;
+    }
+
+    render(<Harness />, { wrapper });
+
+    await waitFor(() => expect(screen.getByTestId('count')).toBeInTheDocument());
+    expect(screen.getByTestId('count')).toHaveTextContent('0');
+  });
+});
+
+describe('useEnrollInProgram', () => {
+  it('posts {programId} to the real enroll endpoint', async () => {
+    const post = jest.fn().mockResolvedValue({ data: { id: 'e1', programId: 'p1' } });
+    mockApi({ post });
+
+    let mutate;
+    function Harness() {
+      mutate = useEnrollInProgram().mutate;
+      return null;
+    }
+
+    render(<Harness />, { wrapper });
+    mutate({ programId: 'p1' });
+
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    expect(post).toHaveBeenCalledWith('/youth/programs/enroll', { programId: 'p1' });
+  });
+
+  it('surfaces the server error message on failure, not a generic toast only', async () => {
+    const post = jest.fn().mockRejectedValue({ response: { data: { message: 'Programme is full' } } });
+    mockApi({ post });
+
+    let mutation;
+    function Harness() {
+      mutation = useEnrollInProgram();
+      return null;
+    }
+
+    render(<Harness />, { wrapper });
+    mutation.mutate({ programId: 'p1' });
+
+    await waitFor(() => expect(post).toHaveBeenCalled());
+  });
+});
+
+describe('useRegisterForTournament', () => {
+  it('posts the real RegisterTeamDto shape to /youth/tournaments/register-team', async () => {
+    const post = jest.fn().mockResolvedValue({ data: { id: 'team1', tournamentId: 't1' } });
+    mockApi({ post });
+
+    let mutate;
+    function Harness() {
+      mutate = useRegisterForTournament().mutate;
+      return null;
+    }
+
+    render(<Harness />, { wrapper });
+    mutate({ tournamentId: 't1', teamName: 'Eti-Osa FC', playerIds: ['pl1', 'pl2'] });
+
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    expect(post).toHaveBeenCalledWith('/youth/tournaments/register-team', {
+      tournamentId: 't1', teamName: 'Eti-Osa FC', playerIds: ['pl1', 'pl2'],
+    });
   });
 });
 

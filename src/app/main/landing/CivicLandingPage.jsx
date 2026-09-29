@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowForward } from "@mui/icons-material";
 import useCivicWebAuth from "src/app/hooks/useCivicWebAuth";
+import { TYPE } from "../zrootclient/civic-shared";
 
 /**
  * CivicLandingPage — the real "/" front door for civic-web.
@@ -22,13 +23,6 @@ import useCivicWebAuth from "src/app/hooks/useCivicWebAuth";
 const ORANGE_GRADIENT = "linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%)";
 const WARM_BG = "linear-gradient(180deg, #fafaf9 0%, #fff7ed 100%)";
 
-const F = {
-  body: "clamp(1.05rem, 1.6vw, 1.25rem)",
-  cardTitle: "clamp(1.15rem, 1.8vw, 1.4rem)",
-  cardBody: "clamp(0.95rem, 1.3vw, 1.05rem)",
-  sectionH: "clamp(1.8rem, 3.4vw, 2.6rem)",
-};
-
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 32 },
   animate: { opacity: 1, y: 0 },
@@ -46,7 +40,7 @@ const inViewUp = (delay = 0) => ({
 const LIVE_VERTICALS = [
   {
     emoji: "🧾",
-    title: "Civic Tax",
+    title: "Civic Subscriptions",
     to: "/civictax",
     desc: "Fund verified local campaigns directly — roads, clinics, skills centres. Every naira tracked from contribution to contractor payout.",
   },
@@ -117,7 +111,7 @@ function VerticalCard({ emoji, title, to, desc, delay, muted }) {
           <h3
             style={{
               margin: "0 0 8px",
-              fontSize: F.cardTitle,
+              fontSize: TYPE.cardTitle,
               fontWeight: 800,
               color: "#1f2937",
             }}
@@ -127,7 +121,7 @@ function VerticalCard({ emoji, title, to, desc, delay, muted }) {
           <p
             style={{
               margin: "0 0 14px",
-              fontSize: F.cardBody,
+              fontSize: TYPE.body,
               color: "#6b7280",
               lineHeight: 1.6,
             }}
@@ -139,12 +133,12 @@ function VerticalCard({ emoji, title, to, desc, delay, muted }) {
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              fontSize: F.cardBody,
+              fontSize: TYPE.body,
               fontWeight: 700,
               color: "#ea580c",
             }}
           >
-            Explore <ArrowForward sx={{ fontSize: "1.05rem" }} />
+            Explore <ArrowForward sx={{ fontSize: "1.4rem" }} />
           </span>
         </div>
       </Link>
@@ -193,7 +187,7 @@ function CivicLandingPage() {
               style={{
                 color: "white",
                 fontWeight: 800,
-                fontSize: "1.15rem",
+                fontSize: TYPE.subH,
                 letterSpacing: "0.01em",
               }}
             >
@@ -221,7 +215,7 @@ function CivicLandingPage() {
             {...fadeUp(0.16)}
             style={{
               color: "rgba(255,255,255,0.92)",
-              fontSize: F.body,
+              fontSize: TYPE.bodyLg,
               lineHeight: 1.65,
               maxWidth: 640,
               margin: "0 0 36px",
@@ -286,7 +280,7 @@ function CivicLandingPage() {
           <h2
             style={{
               margin: "0 0 10px",
-              fontSize: F.sectionH,
+              fontSize: TYPE.sectionH,
               fontWeight: 800,
               color: "#1f2937",
               textWrap: "balance",
@@ -294,7 +288,7 @@ function CivicLandingPage() {
           >
             Live today
           </h2>
-          <p style={{ margin: 0, fontSize: F.body, color: "#6b7280", maxWidth: 640 }}>
+          <p style={{ margin: 0, fontSize: TYPE.body, color: "#6b7280", maxWidth: 640 }}>
             The three civic pillars AfricanShops has fully built and tested — real data, real
             payments, real people using them.
           </p>
@@ -325,7 +319,7 @@ function CivicLandingPage() {
           <h2
             style={{
               margin: "0 0 10px",
-              fontSize: F.sectionH,
+              fontSize: TYPE.sectionH,
               fontWeight: 800,
               color: "#1f2937",
               textWrap: "balance",
@@ -333,7 +327,7 @@ function CivicLandingPage() {
           >
             Also on the platform
           </h2>
-          <p style={{ margin: 0, fontSize: F.body, color: "#6b7280", maxWidth: 640 }}>
+          <p style={{ margin: 0, fontSize: TYPE.body, color: "#6b7280", maxWidth: 640 }}>
             Newer and still growing — worth a look, with more landing here as each one matures.
           </p>
         </motion.div>

@@ -3,7 +3,7 @@ import { Typography, Button, TextField, InputAdornment, CircularProgress, Alert 
 import { Favorite, Send } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useContributeToCampaign } from '../hooks/useCivicTaxRepo';
+import { useContributeToCampaign, useCivicSubscriptionsReadiness } from '../hooks/useCivicTaxRepo';
 
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000, 10000, 25000];
 
@@ -24,6 +24,8 @@ function ContributionForm({ campaignId, campaignTitle }) {
   const [error, setError] = useState('');
 
   const { mutate: contribute, isLoading, isSuccess, data } = useContributeToCampaign();
+  const readiness = useCivicSubscriptionsReadiness();
+  const paymentSystemDown = readiness.data?.healthy === false;
 
   const handlePreset = (val) => { setAmount(String(val)); setError(''); };
 
@@ -134,11 +136,17 @@ function ContributionForm({ campaignId, campaignTitle }) {
         )}
       </AnimatePresence>
 
+      {paymentSystemDown && (
+        <Alert severity="warning" sx={{ borderRadius: '10px', fontSize: '0.82rem' }}>
+          We can't confirm payment services are ready right now. Please try again shortly.
+        </Alert>
+      )}
+
       <Button
         type="submit"
         fullWidth
         variant="contained"
-        disabled={isLoading}
+        disabled={isLoading || paymentSystemDown}
         endIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : <Send />}
         sx={{
           background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',

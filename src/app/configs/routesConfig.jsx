@@ -25,6 +25,8 @@ import userProfileAppConfig from "../main/zrootclient/profile/userProfileAppConf
 
 /***Civic Platform Module Configs */
 import KycManagePage from "../main/zrootclient/civic-shared/kyc/KycManagePage";
+import KycFaceCaptureBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycFaceCaptureBridgePage";
+import KycWebAuthnBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycWebAuthnBridgePage";
 import civicTaxPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPagesConfig";
 import civicTaxPublicPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPublicPagesConfig";
 import securityPagesConfig from "../main/zrootclient/buz-security/securityPagesConfig";
@@ -128,6 +130,44 @@ const routes = [
       },
     },
     element: <KycManagePage />,
+  },
+
+  // Mobile-WebView bridge pages (2026-09-25) — never opened directly by a
+  // person; loaded inside react-native-webview by the mobile apps so
+  // face-api.js/WebAuthn can run in a real browser context. Fully bare (no
+  // app chrome) and deliberately NOT wrapped in this app's own auth guard —
+  // the WebView has no access to civic-web's own login session and
+  // authenticates purely via a token the mobile host injects directly into
+  // the page (see KycFaceCaptureBridgePage.jsx for the bridge contract).
+  {
+    path: "/kyc-bridge/face-capture",
+    settings: {
+      layout: {
+        config: {
+          navbar: { display: false },
+          toolbar: { display: false },
+          footer: { display: false },
+          leftSidePanel: { display: false },
+          rightSidePanel: { display: false },
+        },
+      },
+    },
+    element: <KycFaceCaptureBridgePage />,
+  },
+  {
+    path: "/kyc-bridge/webauthn-register",
+    settings: {
+      layout: {
+        config: {
+          navbar: { display: false },
+          toolbar: { display: false },
+          footer: { display: false },
+          leftSidePanel: { display: false },
+          rightSidePanel: { display: false },
+        },
+      },
+    },
+    element: <KycWebAuthnBridgePage />,
   },
 
   // Real civic-web front door (built 2026-08-01 — see Platform-Delivery-Tracker.md's

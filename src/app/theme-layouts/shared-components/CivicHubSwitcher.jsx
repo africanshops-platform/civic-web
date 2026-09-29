@@ -65,7 +65,7 @@ function CivicHubSwitcher() {
           <ListItemIcon className="min-w-40">
             <FuseSvgIcon>heroicons-outline:book-open</FuseSvgIcon>
           </ListItemIcon>
-          <ListItemText primary="Civic Tax" />
+          <ListItemText primary="Civic Subscriptions" />
         </MenuItem>
 
         <MenuItem component={NavLinkAdapter} to="/security/map">

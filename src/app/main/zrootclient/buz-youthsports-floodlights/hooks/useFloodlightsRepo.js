@@ -8,6 +8,7 @@ export {
   useYouthStats, usePrograms, useProgramDetail, useTalents,
   useTournaments, useTournamentDetail, useRequestMentorship,
   useEnrollInTournament, useMyTournamentEnrollments,
+  useMyPrograms, useEnrollInProgram, useRegisterForTournament,
 } from './useYouthSportsRepo';
 
 // Staff positions (Feature A, 2026-09-12) — auditions above are this file's
