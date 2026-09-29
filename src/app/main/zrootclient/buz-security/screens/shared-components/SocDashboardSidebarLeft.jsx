@@ -13,11 +13,16 @@ const F = {
   subH: 'clamp(1.4rem, 2.2vw, 1.8rem)',
 };
 
+// values match soc-service's real IncidentStatus enum (lowercase here for
+// local highlight-matching; useIncidents uppercases before calling the API)
 const STATUS_OPTIONS = [
-  { value: '',           label: 'All'        },
-  { value: 'active',     label: 'Active'     },
-  { value: 'responding', label: 'Responding' },
-  { value: 'resolved',   label: 'Resolved'   },
+  { value: '',             label: 'All'          },
+  { value: 'reported',     label: 'Reported'     },
+  { value: 'acknowledged', label: 'Acknowledged' },
+  { value: 'assigned',     label: 'Assigned'     },
+  { value: 'in_response',  label: 'In Response'  },
+  { value: 'resolved',     label: 'Resolved'     },
+  { value: 'closed',       label: 'Closed'       },
 ];
 
 const NAV_LINKS = [

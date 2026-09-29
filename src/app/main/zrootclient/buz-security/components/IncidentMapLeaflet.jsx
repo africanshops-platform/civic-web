@@ -15,7 +15,7 @@ function MapResizer() {
 const NIGERIA_CENTER = [9.082, 8.6753];
 const TILES = {
   standard: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
-  dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' },
+  dark: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
 };
 
 function PulseLayer({ incidents }) {
@@ -69,13 +69,20 @@ function IncidentMapLeaflet({
       >
         <MapResizer />
         <TileLayer url={tile.url} attribution={tile.attribution} />
+        {/* Esri splits the dark canvas into a base fill layer and a separate
+            roads/borders/labels overlay -- CARTO's dark_all bundled both into
+            one tile, so the base alone read as noticeably flatter/less legible
+            (founder feedback 2026-09-24). This restores that detail. */}
+        {dark && (
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
+        )}
         <PulseLayer incidents={visibleIncidents} />
 
         {visibleIncidents.map((incident) => {
           const sev = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.low;
           const isSelected = selectedId === incident.id;
           const catInfo = INCIDENT_CATEGORIES.find((c) => c.id === incident.category);
-          const statusInfo = STATUS_CONFIG[incident.status] || STATUS_CONFIG.active;
+          const statusInfo = STATUS_CONFIG[incident.status] || STATUS_CONFIG.reported;
 
           return (
             <CircleMarker

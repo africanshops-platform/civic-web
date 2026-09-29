@@ -48,7 +48,7 @@ export const getNewUserAccountToken = () => {
 // export const getShopUserJWTCredentialsStorage  = () => {
 // 	//  let userCredentail
 
-// 		  const {userCredentials} = Cookie.get('jwt_auth_credentials') ? JSON.parse(Cookie.get('jwt_auth_credentials')) : ''
+// 		  const {userCredentials} = Cookie.get('civic_jwt_auth_credentials') ? JSON.parse(Cookie.get('civic_jwt_auth_credentials')) : ''
 // 		  console.log("UserCookie", userCredentials)
 //           if(userCredentials){
 // 			// return userCredentail = userCredentials

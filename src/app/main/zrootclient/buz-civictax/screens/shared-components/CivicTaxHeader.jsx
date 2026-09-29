@@ -37,7 +37,7 @@ function CivicTaxHeader({ leftSidebarToggle, rightSidebarToggle, title, subtitle
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ fontWeight: 900, fontSize: F.subH, color: '#1f2937', lineHeight: 1.2 }}>
-                  {title || 'Civic Tax'}
+                  {title || 'Civic Subscriptions'}
                 </div>
                 <Chip label="BETA" size="small"
                   style={{ fontSize: F.meta }}

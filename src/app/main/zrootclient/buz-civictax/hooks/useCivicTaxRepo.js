@@ -4,15 +4,18 @@ import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 
 // ─── raw API layer ────────────────────────────────────────────────────────────
 const api = {
-  getCampaigns:        (params) => AuthApi().get('/civic/tax/campaigns', { params }),
-  getCampaignDetail:   (id)     => AuthApi().get(`/civic/tax/campaigns/${id}`),
-  getMyContributions:  (params) => AuthApi().get('/civic/tax/contributions/mine', { params }),
-  getContribReceipt:   (id)     => AuthApi().get(`/civic/tax/contributions/${id}`),
-  getLgaProjects:      (params) => AuthApi().get('/civic/tax/projects', { params }),
-  contribute:          (data)   => AuthApi().post(`/civic/tax/campaigns/${data.campaignId}/contribute`, data),
-  getMyObligations:    (params) => AuthApi().get('/civic/tax/obligations/mine', { params }),
-  payObligation:       (data)   => AuthApi().post('/civic/tax/obligations/pay', data),
-  getObligationHistory:(params) => AuthApi().get('/civic/tax/obligations/history', { params }),
+  getCampaigns:        (params) => AuthApi().get('/civic/subscriptions/campaigns', { params }),
+  getCampaignDetail:   (id)     => AuthApi().get(`/civic/subscriptions/campaigns/${id}`),
+  getMyContributions:  (params) => AuthApi().get('/civic/subscriptions/contributions/mine', { params }),
+  getContribReceipt:   (id)     => AuthApi().get(`/civic/subscriptions/contributions/${id}`),
+  getLgaProjects:      (params) => AuthApi().get('/civic/subscriptions/projects', { params }),
+  contribute:          (data)   => AuthApi().post(`/civic/subscriptions/campaigns/${data.campaignId}/contribute`, data),
+  getMyObligations:    (params) => AuthApi().get('/civic/subscriptions/obligations/mine', { params }),
+  payObligation:       (data)   => AuthApi().post('/civic/subscriptions/obligations/pay', data),
+  getObligationHistory:(params) => AuthApi().get('/civic/subscriptions/obligations/history', { params }),
+  getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
+  updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
+  getCheckoutReadiness:()       => AuthApi().get('/checkout-readiness/civic-subscriptions'),
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -135,6 +138,23 @@ export function useLgaProjects(filters = {}) {
   );
 }
 
+/**
+ * Pre-flight check: are civictax-service + fintech-service up? Call right
+ * before enabling "Contribute"/"Pay Now" on a campaign contribution or
+ * subscription obligation payment — the gateway caches its answer for
+ * ~10s, so a short refetch interval here still mostly hits cache.
+ */
+export function useCivicSubscriptionsReadiness(enabled = true) {
+  return useQuery(['civictax-checkout-readiness'], () => api.getCheckoutReadiness(), {
+    enabled,
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+    retry: 1,
+    staleTime: 5000,
+    select: (res) => res?.data,
+  });
+}
+
 export function useContributeToCampaign() {
   const queryClient = useQueryClient();
   return useMutation(
@@ -241,6 +261,35 @@ export function useObligationHistory(page = 1, limit = 20) {
       },
       keepPreviousData: true,
       staleTime: 2 * 60 * 1000,
+    }
+  );
+}
+
+// ─── My LGA split (home-origin / dwelling) ────────────────────────────────────
+
+export function useMySplitSummary() {
+  return useQuery(
+    ['civictax-my-split-summary'],
+    () => api.getMySplitSummary(),
+    {
+      select: (res) => ({ data: res.data }),
+      staleTime: 60 * 1000,
+    }
+  );
+}
+
+export function useUpdateCivicSplit() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => api.updateCivicSplit(payload),
+    {
+      onSuccess: () => {
+        toast.success('Your civic-tax split has been updated.');
+        queryClient.invalidateQueries(['civictax-my-split-summary']);
+      },
+      onError: (err) => {
+        toast.error(err?.response?.data?.message ?? 'Could not update your split. Please try again.');
+      },
     }
   );
 }

@@ -85,7 +85,7 @@ function ActiveElectionOversightPage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 'clamp(20px,2.8vw,32px)' }}>
             <div>
               <Button
-                component={Link} to={`/governance/elections/${electionId}/live`}
+                component={Link} to={`/governance/elections/${electionId}/live/manage`}
                 startIcon={<ArrowBack sx={{ fontSize: F.icon }} />}
                 sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 600, mb: 1, px: 0, fontSize: F.body }}
               >

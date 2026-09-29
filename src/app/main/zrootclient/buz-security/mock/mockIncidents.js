@@ -131,13 +131,22 @@ export const mockIncidents = [
   },
 ];
 
+// ids match soc-service's real IncidentCategory enum, lowercased by
+// useSecurityRepo's normalizeIncident (THEFT/ASSAULT/FIRE/FLOOD/ACCIDENT/
+// MEDICAL_EMERGENCY/CIVIL_UNREST/KIDNAPPING/TERRORISM/BANDITRY/
+// COMMUNAL_CLASH/OTHER) -- not a placeholder taxonomy.
 export const INCIDENT_CATEGORIES = [
-  { id: 'armed_robbery', label: 'Armed Robbery', icon: '🔫', color: '#dc2626', bg: '#fee2e2' },
-  { id: 'civil_unrest', label: 'Civil Unrest', icon: '📢', color: '#d97706', bg: '#fef3c7' },
+  { id: 'theft', label: 'Theft / Robbery', icon: '🔫', color: '#dc2626', bg: '#fee2e2' },
+  { id: 'assault', label: 'Assault', icon: '🥊', color: '#b91c1c', bg: '#fee2e2' },
   { id: 'kidnapping', label: 'Kidnapping', icon: '🚨', color: '#7c3aed', bg: '#ede9fe' },
+  { id: 'terrorism', label: 'Terrorism / Siege', icon: '💥', color: '#7f1d1d', bg: '#fee2e2' },
+  { id: 'banditry', label: 'Banditry', icon: '⚔️', color: '#b45309', bg: '#fef3c7' },
+  { id: 'communal_clash', label: 'Communal Clash', icon: '👥', color: '#a16207', bg: '#fef9c3' },
   { id: 'fire', label: 'Fire Outbreak', icon: '🔥', color: '#ea580c', bg: '#fff7ed' },
+  { id: 'flood', label: 'Flood', icon: '🌊', color: '#0284c7', bg: '#e0f2fe' },
   { id: 'accident', label: 'Road Accident', icon: '🚗', color: '#2563eb', bg: '#dbeafe' },
-  { id: 'theft', label: 'Theft', icon: '🧤', color: '#0891b2', bg: '#cffafe' },
+  { id: 'medical_emergency', label: 'Medical Emergency', icon: '🚑', color: '#16a34a', bg: '#dcfce7' },
+  { id: 'civil_unrest', label: 'Civil Unrest', icon: '📢', color: '#d97706', bg: '#fef3c7' },
   { id: 'other', label: 'Other', icon: '⚠️', color: '#6b7280', bg: '#f3f4f6' },
 ];
 
@@ -148,12 +157,16 @@ export const SEVERITY_CONFIG = {
   critical: { label: 'Critical', color: '#7f1d1d', bg: '#fee2e2', ring: '#ef4444', size: 16, pulse: true },
 };
 
+// keys match soc-service's real IncidentStatus enum, lowercased by
+// normalizeIncident (REPORTED/ACKNOWLEDGED/ASSIGNED/IN_RESPONSE/RESOLVED/
+// CLOSED) -- not a placeholder taxonomy.
 export const STATUS_CONFIG = {
-  active: { label: 'Active', color: '#dc2626', bg: '#fee2e2' },
   reported: { label: 'Reported', color: '#2563eb', bg: '#dbeafe' },
-  responding: { label: 'Responding', color: '#d97706', bg: '#fef3c7' },
+  acknowledged: { label: 'Acknowledged', color: '#d97706', bg: '#fef3c7' },
+  assigned: { label: 'Assigned', color: '#7c3aed', bg: '#ede9fe' },
+  in_response: { label: 'In Response', color: '#ea580c', bg: '#fff7ed' },
   resolved: { label: 'Resolved', color: '#16a34a', bg: '#dcfce7' },
-  false_alarm: { label: 'False Alarm', color: '#6b7280', bg: '#f3f4f6' },
+  closed: { label: 'Closed', color: '#6b7280', bg: '#f3f4f6' },
 };
 
 export const SECURITY_STATS = {

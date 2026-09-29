@@ -125,7 +125,7 @@ function ElectionCard({ election, index }) {
       <div style={{ display: 'flex', gap: 'clamp(8px, 1.2vw, 14px)', flexWrap: 'wrap' }}>
         {election.status === 'ongoing' && (
           <Button
-            component={Link} to={`/governance/elections/${election.id}/live`}
+            component={Link} to={`/governance/elections/${election.id}/live/manage`}
             size="medium" variant="contained" endIcon={<ArrowForward />}
             sx={{ background: '#dc2626', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn }}
           >
@@ -143,7 +143,7 @@ function ElectionCard({ election, index }) {
         )}
         {election.status === 'completed' && (
           <Button
-            component={Link} to={`/governance/elections/${election.id}/live`}
+            component={Link} to={`/governance/elections/${election.id}/live/manage`}
             size="medium" variant="outlined" endIcon={<ArrowForward />}
             sx={{ borderColor: '#16a34a', color: '#16a34a', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn }}
           >

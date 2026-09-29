@@ -2,10 +2,8 @@ import { useState, useMemo } from 'react';
 import { Typography, Button, Chip, Fab } from '@mui/material';
 import { Shield, Add } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAppSelector } from "app/store/hooks";
-// import Logo from "app/theme-layouts/shared-components/Logo";
-import { selectUser } from "src/app/auth/user/store/userSlice";
 import { Link } from 'react-router-dom';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import IncidentMap from '../components/IncidentMap';
 import IncidentCard from '../components/IncidentCard';
 import { mockIncidents, INCIDENT_CATEGORIES, SECURITY_STATS } from '../mock';
@@ -27,7 +25,7 @@ const F = {
 };
 
 export default function SecurityMapPublicPage() {
-   const user = useAppSelector(selectUser);
+  const { isAuthenticated } = useCivicWebAuth();
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [activeFilter,     setActiveFilter]     = useState('');
 
@@ -78,7 +76,7 @@ export default function SecurityMapPublicPage() {
           </motion.div>
         </div>
 
-        <Button component={Link} to="/sign-in" variant="contained"
+        <Button component={Link} to={isAuthenticated ? '/security/soc/dashboard' : '/sign-in'} variant="contained"
           sx={{
             background: 'linear-gradient(135deg,#dc2626,#991b1b)',
             color: 'white', fontWeight: 700, borderRadius: '14px',
@@ -87,7 +85,7 @@ export default function SecurityMapPublicPage() {
             boxShadow: '0 6px 18px rgba(220,38,38,0.38)',
             '&:hover': { background: 'linear-gradient(135deg,#b91c1c,#7f1d1d)', transform: 'translateY(-1px)' },
           }}>
-          Sign In for Full Access
+          {isAuthenticated ? 'Go to SOC Dashboard' : 'Sign In for Full Access'}
         </Button>
       </div>
 
@@ -133,7 +131,7 @@ export default function SecurityMapPublicPage() {
           zoom={6}
           dark
           height="100%"
-          publicView
+          publicView={!isAuthenticated}
           onIncidentClick={setSelectedIncident}
         />
 
@@ -161,7 +159,7 @@ export default function SecurityMapPublicPage() {
         {/* Report FAB */}
         <div style={{ position: 'absolute', bottom: 'clamp(20px,3vw,32px)', right: 'clamp(20px,3vw,32px)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}>
-            <Fab component={Link} to="/sign-in" size="large"
+            <Fab component={Link} to={isAuthenticated ? '/security/report-incident' : '/sign-in'} size="large"
               sx={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', color: 'white', width: 'clamp(52px,6vw,68px)', height: 'clamp(52px,6vw,68px)', boxShadow: '0 10px 28px rgba(220,38,38,0.55)', '&:hover': { background: 'linear-gradient(135deg,#b91c1c,#7f1d1d)' } }}>
               <Add sx={{ fontSize: 'clamp(1.5rem,2.5vw,2rem)' }} />
             </Fab>
@@ -205,7 +203,7 @@ export default function SecurityMapPublicPage() {
                 background: 'rgba(234,88,12,0.12)',
                 border: '1px solid rgba(234,88,12,0.3)',
               }}>
-                {user?.email ? (
+                {isAuthenticated ? (
                  <Button component={Link} to="/security/soc/dashboard" fullWidth variant="contained"
                       sx={{
                         mt: 2, background: 'linear-gradient(135deg,#dc2626,#991b1b)',

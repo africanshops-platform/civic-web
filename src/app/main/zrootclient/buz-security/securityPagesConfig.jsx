@@ -4,6 +4,7 @@ import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 const SocDashboardWithSidebarsPage = lazy(() => import('./screens/SocDashboardWithSidebarsPage'));
 const ReportIncidentPage = lazy(() => import('./screens/ReportIncidentPage'));
 const MyReportsPage = lazy(() => import('./screens/MyReportsPage'));
+const IncidentDetailPage = lazy(() => import('./screens/IncidentDetailPage'));
 
 const LAYOUT = {
   layout: {
@@ -23,6 +24,7 @@ const securityPagesConfig = {
     { path: 'security/soc/dashboard', element: <SocDashboardWithSidebarsPage /> },
     { path: 'security/report-incident', element: <ReportIncidentPage /> },
     { path: 'security/my-reports', element: <MyReportsPage /> },
+    { path: 'security/incidents/:id', element: <IncidentDetailPage /> },
   ]),
 };
 

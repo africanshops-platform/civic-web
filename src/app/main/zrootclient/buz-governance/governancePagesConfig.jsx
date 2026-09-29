@@ -31,7 +31,7 @@ const governancePagesConfig = {
     { path: 'governance/participate', element: <CitizenParticipationPage /> },
     { path: 'governance/petitions/:petitionId', element: <PetitionDetailPage /> },
     { path: 'governance/my-votes', element: <MyVotingHistoryPage /> },
-    { path: 'governance/elections/:electionId/live', element: <ElectionLiveResultsPage /> },
+    { path: 'governance/elections/:electionId/live/manage', element: <ElectionLiveResultsPage /> },
     { path: 'governance/elections/:electionId/collation', element: <CollationCenterPage /> },
     { path: 'governance/elections/:electionId/oversight', element: <ElectionOversightPage /> },
     { path: 'governance/elections/:electionId/audit', element: <CollationAuditPage /> },

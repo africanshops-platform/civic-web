@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button, Chip } from '@mui/material';
 import { ArrowBack, HowToVote, LocationOn, FiberManualRecord } from '@mui/icons-material';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { useElectionDetail, useElectionCollation } from '../hooks/useGovernanceRepo';
 import LiveCollationBoard from '../components/LiveCollationBoard';
 import CandidateCard from '../components/CandidateCard';
@@ -10,6 +11,7 @@ import JurisdictionResultsMap from '../components/JurisdictionResultsMap';
 import { CivicLoadingSkeleton } from '../../civic-shared';
 
 export default function ElectionDetailPublicPage() {
+  const { isAuthenticated } = useCivicWebAuth();
   const { electionId } = useParams();
   const { data: elecData, isLoading: elecLoading } = useElectionDetail(electionId);
   const { data: collData, isLoading: collLoading } = useElectionCollation(electionId);
@@ -60,9 +62,9 @@ export default function ElectionDetailPublicPage() {
           ))}
         </div>
         {election.status !== 'completed' && (
-          <Button component={Link} to="/sign-in" variant="contained" startIcon={<HowToVote />}
+          <Button component={Link} to={isAuthenticated ? `/governance/elections/${election.id}/vote` : '/sign-in'} variant="contained" startIcon={<HowToVote />}
             sx={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)', color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 4, py: 1.5, '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' } }}>
-            Sign In to Cast Your Vote
+            {isAuthenticated ? 'Cast Your Vote' : 'Sign In to Cast Your Vote'}
           </Button>
         )}
       </div>

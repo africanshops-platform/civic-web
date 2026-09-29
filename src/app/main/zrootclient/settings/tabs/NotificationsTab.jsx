@@ -9,10 +9,11 @@ import Switch from "@mui/material/Switch";
 import FormHelperText from "@mui/material/FormHelperText";
 import _ from "@lodash";
 import { useEffect } from "react";
+import { toast } from "react-toastify";
 import {
-  useGetNotificationSettingsQuery,
-  useUpdateNotificationSettingsMutation,
-} from "../SettingsApi";
+  useGetNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useNotificationPreferencesRepo";
 
 const defaultValues = {
   communication: false,
@@ -37,24 +38,40 @@ const schema = z.object({
 });
 
 function NotificationsTab() {
-  const { data: notificationSettings, isError } = useGetNotificationSettingsQuery();
-  const [updateNotificationSettings] = useUpdateNotificationSettingsMutation();
-  const { control, watch, reset, handleSubmit, formState } = useForm({
+  const { data: notificationSettings, isError } = useGetNotificationPreferences();
+  const updateNotificationSettings = useUpdateNotificationPreferences();
+  const { control, reset, handleSubmit, formState } = useForm({
     defaultValues,
     mode: "all",
     resolver: zodResolver(schema),
   });
-  const { isValid, dirtyFields, errors } = formState;
-  // useEffect(() => {
-  // 	reset(notificationSettings);
-  // }, [notificationSettings, reset]);
+  const { isValid, dirtyFields } = formState;
+
+  useEffect(() => {
+    if (notificationSettings) reset(notificationSettings);
+  }, [notificationSettings, reset]);
 
   /**
    * Form Submit
    */
   function onSubmit(formData) {
-    // return
-    // updateNotificationSettings(formData);
+    updateNotificationSettings.mutate(formData, {
+      onSuccess: () => {
+        toast.success("Notification preferences saved.");
+        reset(formData);
+      },
+      onError: () => toast.error("Couldn't save your preferences. Please try again."),
+    });
+  }
+
+  if (isError) {
+    return (
+      <div className="w-full max-w-3xl">
+        <Typography color="error">
+          Couldn&apos;t load your notification preferences. Please refresh and try again.
+        </Typography>
+      </div>
+    );
   }
 
   return (
@@ -276,10 +293,10 @@ function NotificationsTab() {
           <Button
             variant="contained"
             color="secondary"
-            disabled={_.isEmpty(dirtyFields) || !isValid}
+            disabled={_.isEmpty(dirtyFields) || !isValid || updateNotificationSettings.isLoading}
             type="submit"
           >
-            Save
+            {updateNotificationSettings.isLoading ? "Saving…" : "Save"}
           </Button>
         </div>
       </form>

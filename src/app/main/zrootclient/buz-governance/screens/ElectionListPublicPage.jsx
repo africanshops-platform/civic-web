@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Button, Chip, TextField, InputAdornment } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { Search, HowToVote, BarChart, ArrowForward, CalendarToday, CheckCircle, People } from '@mui/icons-material';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { useElections } from '../hooks/useGovernanceRepo';
 import { ELECTION_TYPES, ELECTION_STATS } from '../mock';
 import { CivicLoadingSkeleton, CivicEmptyState } from '../../civic-shared';
@@ -20,6 +21,7 @@ const F = {
 };
 
 function ElectionCard({ election, index }) {
+  const { isAuthenticated } = useCivicWebAuth();
   const typeInfo = ELECTION_TYPES.find((t) => t.id === election.type) || {};
   const statusMap = {
     ongoing:   { label: 'LIVE',      bg: '#fef2f2', color: '#dc2626' },
@@ -70,9 +72,9 @@ function ElectionCard({ election, index }) {
           {election.status === 'ongoing' ? 'Live Results' : 'View Results'}
         </Button>
         {election.status !== 'completed' && (
-          <Button component={Link} to="/sign-in" size="medium" variant="outlined" startIcon={<HowToVote />}
+          <Button component={Link} to={isAuthenticated ? `/governance/elections/${election.id}/vote` : '/sign-in'} size="medium" variant="outlined" startIcon={<HowToVote />}
             sx={{ borderColor: '#d1d5db', color: '#374151', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.body }}>
-            Sign In to Vote
+            {isAuthenticated ? 'Vote Now' : 'Sign In to Vote'}
           </Button>
         )}
       </div>

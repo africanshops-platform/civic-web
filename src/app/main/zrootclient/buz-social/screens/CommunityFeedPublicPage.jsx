@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Button, Chip, TextField, InputAdornment } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { Search, Forum, AddCircleOutline, ArrowForward } from '@mui/icons-material';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { useIssues } from '../hooks/useSocialRepo';
 import IssueCard from '../components/IssueCard';
 import { CivicLoadingSkeleton, CivicEmptyState, CivicStatCard } from '../../civic-shared';
@@ -17,6 +18,7 @@ const F = {
 };
 
 export default function CommunityFeedPublicPage() {
+  const { isAuthenticated } = useCivicWebAuth();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const { data, isLoading, isError } = useIssues({ category: activeCategory });
@@ -65,9 +67,9 @@ export default function CommunityFeedPublicPage() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'clamp(12px, 1.8vw, 18px)' }}>
-        <Button component={Link} to="/sign-in" variant="contained" startIcon={<AddCircleOutline sx={{ fontSize: 'clamp(18px, 2.2vw, 22px)' }} />}
+        <Button component={Link} to={isAuthenticated ? '/community/create-issue' : '/sign-in'} variant="contained" startIcon={<AddCircleOutline sx={{ fontSize: 'clamp(18px, 2.2vw, 22px)' }} />}
           sx={{ background: 'linear-gradient(135deg, #059669 0%, #0f766e 100%)', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn, px: 'clamp(12px, 2vw, 20px)', py: 'clamp(8px, 1.2vw, 12px)' }}>
-          Sign In to Report Issue
+          {isAuthenticated ? 'Report Issue' : 'Sign In to Report Issue'}
         </Button>
       </div>
 

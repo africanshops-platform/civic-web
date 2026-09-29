@@ -1,8 +1,7 @@
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import ClienttErrorPage from '../../../components/ClienttErrorPage';
-import { CivicLoadingSkeleton, CivicEmptyState, CivicPaginationBar } from '../../../civic-shared';
+import { CivicLoadingSkeleton, CivicEmptyState, CivicPaginationBar, ClienttErrorPage } from '../../../civic-shared';
 import CampaignCard from '../../components/CampaignCard';
 import { CAMPAIGN_CATEGORIES } from '../../mock';
 

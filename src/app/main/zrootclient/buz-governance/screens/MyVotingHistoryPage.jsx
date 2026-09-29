@@ -135,7 +135,7 @@ function ActiveMyVotingHistoryPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <Chip label="VOTED" sx={{ height: F.chipH, fontSize: F.body, background: '#f0fdf4', color: '#16a34a', fontWeight: 800 }} />
                       <Button
-                        component={Link} to={`/governance/elections/${v.electionId}/live`}
+                        component={Link} to={`/governance/elections/${v.electionId}/live/manage`}
                         size="medium" endIcon={<ArrowForward />}
                         sx={{ color: '#1d4ed8', fontWeight: 700, textTransform: 'none', fontSize: F.body }}
                       >

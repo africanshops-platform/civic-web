@@ -1,9 +1,9 @@
 import { styled } from '@mui/material/styles';
 import { useEffect, useState, useCallback, useMemo, memo } from 'react';
-import { Button, Chip, CircularProgress, Slider } from '@mui/material';
+import { Button, Chip, CircularProgress } from '@mui/material';
 import {
   AccountBalance, CheckCircle, Warning, Schedule, Download,
-  HowToVote, Forum, Build, Assessment, Edit, Lock, LockOpen,
+  HowToVote, Forum, Build, Assessment, Edit, Lock, LockOpen, AddLocationAlt,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
@@ -11,7 +11,11 @@ import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import CivicTaxHeader from './shared-components/CivicTaxHeader';
 import CampaignsBrowseSidebarLeft from './shared-components/CampaignsBrowseSidebarLeft';
 import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSidebarRight';
-import { useMyObligations, usePayObligation, useObligationHistory } from '../hooks/useCivicTaxRepo';
+import EditCivicSplitDialog from '../components/EditCivicSplitDialog';
+import {
+  useMyObligations, usePayObligation, useObligationHistory,
+  useMySplitSummary, useUpdateCivicSplit, useCivicSubscriptionsReadiness,
+} from '../hooks/useCivicTaxRepo';
 import { CivicLoadingSkeleton, CivicPaginationBar } from '../../civic-shared';
 
 /* ── Font tokens ── */
@@ -33,11 +37,10 @@ const Root = styled(FusePageSimpleWithMargin)(() => ({
   },
 }));
 
-/* ── Governance rights data (static — comes from civic profile, not obligations API) ── */
-const MOCK_PROFILE = {
-  homeOrigin:    { lga: 'Ijebu-Ode',   state: 'Ogun State'   },
-  dwelling:      { lga: 'Eti-Osa',     state: 'Lagos State'  },
-  splitRatio:    { homeOrigin: 40, dwelling: 60 },
+/* ── Compliance/governance-eligibility data — no real backend source yet,
+   distinct from the LGA split below (which now comes from
+   GET /civic/tax/my-split-summary, real civicProfile data). ── */
+const MOCK_COMPLIANCE = {
   complianceScore: 88,
   totalPaidThisYear: 0,
   lastPaymentDate: null,
@@ -93,7 +96,7 @@ function ComplianceRing({ score }) {
   );
 }
 
-function TaxObligationCard({ obligation, onPay, isPaying }) {
+function TaxObligationCard({ obligation, onPay, isPaying, paymentSystemDown }) {
   const [confirming, setConfirming] = useState(false);
   const cfg = STATUS_CONFIG[obligation.uiStatus] || STATUS_CONFIG.upcoming;
   const StatusIcon = cfg.icon;
@@ -167,8 +170,9 @@ function TaxObligationCard({ obligation, onPay, isPaying }) {
           </div>
           {canPay && !confirming && (
             <Button variant="contained" onClick={() => setConfirming(true)}
+              disabled={paymentSystemDown}
               style={{ fontSize: F.btn }}
-              sx={{ background: obligation.uiStatus === 'overdue' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 'clamp(14px, 2.2vw, 24px)', py: 'clamp(10px, 1.4vw, 14px)', boxShadow: obligation.uiStatus === 'overdue' ? '0 6px 18px rgba(220,38,38,0.4)' : '0 6px 18px rgba(234,88,12,0.4)', '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' } }}>
+              sx={{ background: obligation.uiStatus === 'overdue' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 'clamp(14px, 2.2vw, 24px)', py: 'clamp(10px, 1.4vw, 14px)', boxShadow: obligation.uiStatus === 'overdue' ? '0 6px 18px rgba(220,38,38,0.4)' : '0 6px 18px rgba(234,88,12,0.4)', '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' }, '&:disabled': { background: '#e5e7eb', color: '#9ca3af', boxShadow: 'none' } }}>
               {obligation.uiStatus === 'overdue' ? '⚠️ Pay Now' : 'Pay Now'}
             </Button>
           )}
@@ -177,7 +181,7 @@ function TaxObligationCard({ obligation, onPay, isPaying }) {
               <span style={{ fontSize: F.meta, color: '#4b5563', fontWeight: 600 }}>
                 Confirm ₦{obligation.remainingNaira.toLocaleString()} payment?
               </span>
-              <Button variant="contained" size="small" disabled={isPaying}
+              <Button variant="contained" size="small" disabled={isPaying || paymentSystemDown}
                 onClick={() => { onPay({ obligationId: obligation.id, remainingKobo: obligation.remainingKobo }); setConfirming(false); }}
                 sx={{ background: ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '10px', textTransform: 'none', minWidth: 80 }}>
                 {isPaying ? <CircularProgress size={16} color="inherit" /> : 'Confirm'}
@@ -186,6 +190,11 @@ function TaxObligationCard({ obligation, onPay, isPaying }) {
                 sx={{ borderColor: '#fdba74', color: '#ea580c', borderRadius: '10px', textTransform: 'none' }}>
                 Cancel
               </Button>
+            </div>
+          )}
+          {canPay && paymentSystemDown && (
+            <div style={{ width: '100%', fontSize: F.meta, color: '#dc2626', fontWeight: 600 }}>
+              We can't confirm payment services are ready right now. Please try again shortly.
             </div>
           )}
           {obligation.uiStatus === 'upcoming' && (
@@ -240,7 +249,6 @@ function ActiveCivicTaxObligationsPage() {
   const isMobile  = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [leftSidebarOpen,  setLeftSidebarOpen]  = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
-  const [splitRatio, setSplitRatio] = useState(MOCK_PROFILE.splitRatio.dwelling);
   const [editingSplit, setEditingSplit] = useState(false);
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
@@ -251,6 +259,13 @@ function ActiveCivicTaxObligationsPage() {
   const { data: oblData,  isLoading: oblLoading  } = useMyObligations(oblPage);
   const { data: histData, isLoading: histLoading } = useObligationHistory(histPage);
   const { mutate: payObligation, isLoading: isPaying } = usePayObligation();
+  const readiness = useCivicSubscriptionsReadiness();
+  const paymentSystemDown = readiness.data?.healthy === false;
+  const { data: splitData, isLoading: splitLoading } = useMySplitSummary();
+  const { mutate: updateSplit, isLoading: isSavingSplit } = useUpdateCivicSplit();
+
+  const summary = splitData?.data;
+  const splitConfigured = summary?.configured;
 
   const obligations    = useMemo(() => oblData?.data?.obligations   ?? [], [oblData]);
   const history        = useMemo(() => histData?.data?.history      ?? [], [histData]);
@@ -265,7 +280,7 @@ function ActiveCivicTaxObligationsPage() {
     [obligations]
   );
 
-  const profile = MOCK_PROFILE;
+  const compliance = MOCK_COMPLIANCE;
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v)  => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
@@ -274,7 +289,7 @@ function ActiveCivicTaxObligationsPage() {
 
   const header = useMemo(() => (
     <CivicTaxHeader leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Civic Tax Obligations" subtitle="Pay taxes. Unlock governance. Shape your LGA." showContributeBtn={false} />
+      title="Civic Subscriptions Obligations" subtitle="Pay your subscription. Unlock governance. Shape your LGA." showContributeBtn={false} />
   ), [handleLeftToggle, handleRightToggle]);
 
   const content = useMemo(() => (
@@ -305,77 +320,83 @@ function ActiveCivicTaxObligationsPage() {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: 'clamp(5px,0.8vw,8px) clamp(14px,2vw,20px)', marginBottom: 12, border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(10px)' }}>
                 <AccountBalance style={{ color: '#fde047', fontSize: 'clamp(14px, 1.8vw, 18px)' }} />
-                <span style={{ color: 'white', fontWeight: 700, fontSize: F.meta }}>Compulsory Civic Tax Profile</span>
+                <span style={{ color: 'white', fontWeight: 700, fontSize: F.meta }}>Compulsory Civic Subscriptions Profile</span>
               </div>
               <div style={{ fontWeight: 900, fontSize: F.sectionH, color: 'white', lineHeight: 1.1 }}>Your Tax Identity</div>
               <div style={{ fontSize: F.body, color: 'rgba(255,255,255,0.85)', marginTop: 6 }}>
                 Taxes split between your home origin and dwelling. Governance access follows your tax allocation.
               </div>
             </div>
-            <ComplianceRing score={profile.complianceScore} />
+            <ComplianceRing score={compliance.complianceScore} />
           </div>
 
-          {/* LGA cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(10px, 1.6vw, 16px)', marginBottom: 'clamp(14px, 2vw, 20px)' }}>
-            {[
-              { label: 'Home Origin', emoji: '🏡', lga: profile.homeOrigin.lga, state: profile.homeOrigin.state, pct: 100 - splitRatio },
-              { label: 'Dwelling',    emoji: '🏙️', lga: profile.dwelling.lga,   state: profile.dwelling.state,   pct: splitRatio },
-            ].map((loc) => (
-              <div key={loc.label} style={{ borderRadius: 16, padding: 'clamp(12px, 1.8vw, 18px)', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.35)' }}>
-                <div style={{ fontSize: 'clamp(1.3rem, 2vw, 1.6rem)', marginBottom: 6 }}>{loc.emoji}</div>
-                <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>{loc.label}</div>
-                <div style={{ fontWeight: 900, fontSize: F.title, color: 'white', marginTop: 2 }}>{loc.lga}</div>
-                <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.7)' }}>{loc.state}</div>
-                <div style={{ marginTop: 10, padding: 'clamp(4px,0.6vw,6px) clamp(10px,1.4vw,14px)', background: 'rgba(255,255,255,0.25)', borderRadius: 999, display: 'inline-block', fontWeight: 800, fontSize: F.meta, color: 'white' }}>
-                  {loc.pct}% allocation
-                </div>
+          {splitLoading ? (
+            <div style={{ padding: 'clamp(24px,4vw,40px)', textAlign: 'center' }}>
+              <CircularProgress size={28} sx={{ color: 'white' }} />
+            </div>
+          ) : !splitConfigured ? (
+            <div style={{ borderRadius: 16, padding: 'clamp(16px, 2.4vw, 24px)', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)', textAlign: 'center' }}>
+              <div style={{ fontWeight: 800, fontSize: F.title, color: 'white', marginBottom: 6 }}>
+                No LGA split set up yet
               </div>
-            ))}
-          </div>
-
-          {/* Split bar + edit */}
-          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 'clamp(12px, 1.8vw, 18px)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.25)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>Tax Split Ratio</div>
-              <Button size="small" startIcon={<Edit style={{ fontSize: 'clamp(12px, 1.6vw, 16px)' }} />}
-                onClick={() => setEditingSplit((v) => !v)}
-                style={{ fontSize: F.meta }}
-                sx={{ color: 'white', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '8px', textTransform: 'none', fontWeight: 700, px: 1.5, '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' } }}>
-                {editingSplit ? 'Save' : 'Adjust'}
+              <div style={{ fontSize: F.body, color: 'rgba(255,255,255,0.8)', marginBottom: 16 }}>
+                Set your home-origin and dwelling LGA to see where your civic tax goes.
+              </div>
+              <Button variant="contained" startIcon={<AddLocationAlt />} onClick={() => setEditingSplit(true)}
+                sx={{ background: 'white', color: '#ea580c', fontWeight: 800, borderRadius: '12px', textTransform: 'none', '&:hover': { background: '#fff7ed' } }}>
+                Set Up My Split
               </Button>
             </div>
-            <div style={{ display: 'flex', height: 10, borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
-              <motion.div animate={{ width: `${100 - splitRatio}%` }} transition={{ duration: 0.4 }}
-                style={{ background: 'rgba(255,255,255,0.9)', borderRadius: '999px 0 0 999px' }} />
-              <motion.div animate={{ width: `${splitRatio}%` }} transition={{ duration: 0.4 }}
-                style={{ background: 'rgba(253,224,71,0.8)', borderRadius: '0 999px 999px 0' }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: F.meta, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
-              <span>🏡 {profile.homeOrigin.lga}: {100 - splitRatio}%</span>
-              <span>🏙️ {profile.dwelling.lga}: {splitRatio}%</span>
-            </div>
-            <AnimatePresence>
-              {editingSplit && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ marginTop: 14 }}>
-                  <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
-                    Drag to adjust how your tax is split between your two LGAs:
+          ) : (
+            <>
+              {/* LGA cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(10px, 1.6vw, 16px)', marginBottom: 'clamp(14px, 2vw, 20px)' }}>
+                {[
+                  { label: 'Home Origin', emoji: '🏡', lga: summary.homeOrigin.jurisdiction?.lga, state: summary.homeOrigin.jurisdiction?.state, pct: summary.homeOrigin.percent },
+                  { label: 'Dwelling',    emoji: '🏙️', lga: summary.dwelling.jurisdiction?.lga,   state: summary.dwelling.jurisdiction?.state,   pct: summary.dwelling.percent },
+                ].map((loc) => (
+                  <div key={loc.label} style={{ borderRadius: 16, padding: 'clamp(12px, 1.8vw, 18px)', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.35)' }}>
+                    <div style={{ fontSize: 'clamp(1.3rem, 2vw, 1.6rem)', marginBottom: 6 }}>{loc.emoji}</div>
+                    <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>{loc.label}</div>
+                    <div style={{ fontWeight: 900, fontSize: F.title, color: 'white', marginTop: 2 }}>{loc.lga}</div>
+                    <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.7)' }}>{loc.state}</div>
+                    <div style={{ marginTop: 10, padding: 'clamp(4px,0.6vw,6px) clamp(10px,1.4vw,14px)', background: 'rgba(255,255,255,0.25)', borderRadius: 999, display: 'inline-block', fontWeight: 800, fontSize: F.meta, color: 'white' }}>
+                      {loc.pct}% allocation
+                    </div>
                   </div>
-                  <Slider value={splitRatio} onChange={(_, v) => setSplitRatio(v)} min={10} max={90} step={5}
-                    sx={{ color: 'white', '& .MuiSlider-thumb': { backgroundColor: '#fde047', width: 20, height: 20, border: '3px solid #ea580c' }, '& .MuiSlider-track': { backgroundColor: '#fde047' }, '& .MuiSlider-rail': { backgroundColor: 'rgba(255,255,255,0.35)' }, '& .MuiSlider-valueLabel': { backgroundColor: '#ea580c', fontSize: F.meta } }}
-                    valueLabelDisplay="auto" valueLabelFormat={(v) => `${v}% ${profile.dwelling.lga}`} />
-                  <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
-                    ⚠️ Changes take effect from the next tax cycle.
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                ))}
+              </div>
+
+              {/* Split bar + edit */}
+              <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 'clamp(12px, 1.8vw, 18px)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.25)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>Tax Split Ratio</div>
+                  <Button size="small" startIcon={<Edit style={{ fontSize: 'clamp(12px, 1.6vw, 16px)' }} />}
+                    onClick={() => setEditingSplit(true)}
+                    style={{ fontSize: F.meta }}
+                    sx={{ color: 'white', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '8px', textTransform: 'none', fontWeight: 700, px: 1.5, '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' } }}>
+                    Adjust
+                  </Button>
+                </div>
+                <div style={{ display: 'flex', height: 10, borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
+                  <motion.div animate={{ width: `${summary.homeOrigin.percent}%` }} transition={{ duration: 0.4 }}
+                    style={{ background: 'rgba(255,255,255,0.9)', borderRadius: '999px 0 0 999px' }} />
+                  <motion.div animate={{ width: `${summary.dwelling.percent}%` }} transition={{ duration: 0.4 }}
+                    style={{ background: 'rgba(253,224,71,0.8)', borderRadius: '0 999px 999px 0' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: F.meta, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                  <span>🏡 {summary.homeOrigin.jurisdiction?.lga}: {summary.homeOrigin.percent}%</span>
+                  <span>🏙️ {summary.dwelling.jurisdiction?.lga}: {summary.dwelling.percent}%</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Compliance stats row */}
         <div style={{ background: 'white', padding: 'clamp(14px, 2vw, 20px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'clamp(10px, 1.6vw, 16px)', borderTop: '1px solid #ffedd5' }}>
           {[
-            { label: 'Compliance Score',   value: `${profile.complianceScore}%`,      color: '#16a34a' },
+            { label: 'Compliance Score',   value: `${compliance.complianceScore}%`,    color: '#16a34a' },
             { label: 'Active Obligations', value: obligations.length,                  color: '#7c3aed' },
             { label: 'Overdue',            value: overdueCount,                        color: overdueCount > 0 ? '#dc2626' : '#16a34a' },
             { label: 'Amount Due',         value: `₦${Math.round(totalOwed / 1000)}K`, color: '#ea580c' },
@@ -388,18 +409,26 @@ function ActiveCivicTaxObligationsPage() {
         </div>
       </motion.div>
 
+      <EditCivicSplitDialog
+        open={editingSplit}
+        onClose={() => setEditingSplit(false)}
+        summary={summary}
+        isSaving={isSavingSplit}
+        onSave={(payload) => updateSplit(payload, { onSuccess: () => setEditingSplit(false) })}
+      />
+
       {/* ── Governance Rights ── */}
       <div style={{ marginBottom: 'clamp(20px, 3vw, 32px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 'clamp(12px, 1.8vw, 18px)' }}>
           <div style={{ fontWeight: 900, fontSize: F.sectionH, color: '#1f2937' }}>Governance Rights</div>
-          <Chip label={profile.complianceScore >= 80 ? '✓ Fully Eligible' : 'Partial Access'} size="small"
+          <Chip label={compliance.complianceScore >= 80 ? '✓ Fully Eligible' : 'Partial Access'} size="small"
             style={{ fontSize: F.meta }}
-            sx={{ backgroundColor: profile.complianceScore >= 80 ? '#dcfce7' : '#fff7ed', color: profile.complianceScore >= 80 ? '#166534' : '#c2410c', fontWeight: 800, '& .MuiChip-label': { fontSize: F.meta } }} />
+            sx={{ backgroundColor: compliance.complianceScore >= 80 ? '#dcfce7' : '#fff7ed', color: compliance.complianceScore >= 80 ? '#166534' : '#c2410c', fontWeight: 800, '& .MuiChip-label': { fontSize: F.meta } }} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 'clamp(10px, 1.6vw, 16px)' }}>
           {GOVERNANCE_RIGHTS.map((right, i) => {
             const GovIcon = right.icon;
-            const unlocked = profile.complianceScore >= 80;
+            const unlocked = compliance.complianceScore >= 80;
             return (
               <motion.div key={right.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
                 style={{ display: 'flex', gap: 'clamp(10px, 1.4vw, 14px)', padding: 'clamp(12px, 1.8vw, 18px)', borderRadius: 16, background: unlocked ? 'white' : '#fafaf9', border: `1.5px solid ${unlocked ? '#fdba74' : '#e5e7eb'}`, opacity: unlocked ? 1 : 0.6 }}>
@@ -438,7 +467,7 @@ function ActiveCivicTaxObligationsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vw, 20px)' }}>
             {obligations.map((obl) => (
-              <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={isPaying} />
+              <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={isPaying} paymentSystemDown={paymentSystemDown} />
             ))}
           </div>
         )}
@@ -470,7 +499,11 @@ function ActiveCivicTaxObligationsPage() {
       </div>
 
     </div>
-  ), [splitRatio, editingSplit, overdueCount, totalOwed, obligations, history, oblLoading, histLoading, isPaying, payObligation, oblPagination, histPagination]);
+  ), [
+    editingSplit, summary, splitLoading, splitConfigured, isSavingSplit, updateSplit,
+    overdueCount, totalOwed, obligations, history, oblLoading, histLoading, isPaying, payObligation, oblPagination, histPagination,
+    paymentSystemDown,
+  ]);
 
   const leftSidebar  = useMemo(() => <CampaignsBrowseSidebarLeft />, []);
   const rightSidebar = useMemo(() => <CampaignsBrowseSidebarRight />, []);

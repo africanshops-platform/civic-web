@@ -97,7 +97,7 @@ function SignInPage() {
               Sign in
             </Typography>
             <Typography className="text-base text-gray-600 leading-relaxed">
-              Access your merchant dashboard and grow your business
+              Access your civic account to fund campaigns, report issues, and stay involved
             </Typography>
           </div>
 
@@ -174,7 +174,7 @@ function SignInPage() {
             }}
           >
             You're signing in to{" "}
-            <strong style={{ color: "#ea580c" }}>AfricanShops Merchant Portal</strong>. By
+            <strong style={{ color: "#ea580c" }}>AfricanShops Civic</strong>. By
             continuing, you agree to our terms of service and privacy policy.
           </Alert>
 
@@ -419,16 +419,16 @@ function SignInPage() {
               </span>
             </div>
             <div className="text-5xl font-bold text-gray-800 leading-tight">
-              to Your Business Hub
+              to Your Civic Account
             </div>
           </div>
 
           {/* Description */}
           <div className="text-center mb-40">
             <div className="text-lg leading-relaxed text-gray-600 max-w-xl mx-auto">
-              Access your powerful merchant dashboard with enterprise-grade security. Manage
-              inventory, track sales, analyze performance metrics, and grow your business with our
-              comprehensive suite of tools designed for African entrepreneurs.
+              Access your civic account with enterprise-grade security. Fund local campaigns,
+              report incidents, track youth programmes, and stay involved in your community with
+              a suite of tools designed for African citizens.
             </div>
           </div>
 
@@ -494,10 +494,10 @@ function SignInPage() {
 
             <div className="flex flex-col">
               <div className="text-2xl font-bold" style={{ color: "#ea580c" }}>
-                1,000+ Active Merchants
+                8,000+ Citizens Enrolled
               </div>
               <div className="text-sm text-gray-600 font-medium">
-                Join Africa's fastest-growing e-commerce platform
+                Join Africa's fastest-growing civic community
               </div>
             </div>
           </div>

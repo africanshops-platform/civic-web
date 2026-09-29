@@ -15,7 +15,11 @@ function drainQueue(error, token = null) {
 	refreshQueue = [];
 }
 
-async function doTokenRefresh() {
+// Exported so callers that just changed the user's own userTypes server-side
+// (e.g. useUpgradeToCivicUser) can force a fresh token before reloading —
+// see that call site's comment for why a bare page reload alone never picks
+// up a role change (it only re-reads whatever's already in localStorage).
+export async function doTokenRefresh() {
 	const stored = localStorage.getItem(jwtAuthConfig.refreshTokenStorageKey);
 	if (!stored) throw new Error('No refresh token stored');
 
@@ -400,8 +404,14 @@ export const userWithdrawRequestApi = (withdrawFormData) =>
  * --------------------------------------------------------------------------------------------------------------------
  */
 
+/** List this user's active sessions/devices — GET /auth-user/sessions */
+export const getSessionsApi = () => AuthApi().get('/auth-user/sessions');
+
 /** Revoke a specific session on the server — DELETE /auth-user/sessions/:sessionId */
 export const revokeSessionApi = (sessionId) => AuthApi().delete(`/auth-user/sessions/${sessionId}`);
+
+/** Revoke every other session, keeping the current one — DELETE /auth-user/sessions/all */
+export const revokeAllSessionsApi = () => AuthApi().delete('/auth-user/sessions/all');
 
 // Users Logout functionality  usersproducts
 export const logOut = () => {
@@ -434,7 +444,7 @@ export const userLogOutCall = () => {
 			/** Fuse admin starts */
 			resetSessionForShopUsers();
 
-			Cookies.remove('jwt_auth_credentials');
+			Cookies.remove('civic_jwt_auth_credentials');
 			/** *Fuse admin ends */
 
 			Cookies.remove('authUserInfo');
@@ -449,7 +459,7 @@ export const userLogOutCall = () => {
 			Cookies.remove('ADMIN_AFSP_Show_Hide_tmp_Lead');
 			Cookies.remove('ADMIN_AFSP_Show_Hide_tmp_Lead_ARC');
 
-			localStorage.removeItem('jwt_auth_credentials');
+			localStorage.removeItem('civic_jwt_auth_credentials');
 			localStorage.clear();
 
 			// Cookies.set(

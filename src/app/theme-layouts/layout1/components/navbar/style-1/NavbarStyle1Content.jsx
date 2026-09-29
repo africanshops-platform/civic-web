@@ -1,17 +1,10 @@
 import FuseScrollbars from "@fuse/core/FuseScrollbars";
 import { styled } from "@mui/material/styles";
 import clsx from "clsx";
-import { memo, useEffect } from "react";
-import Navigation from "app/theme-layouts/shared-components/navigation/Navigation";
+import { memo } from "react";
 import NavbarToggleButton from "app/theme-layouts/shared-components/navbar/NavbarToggleButton";
 import Logo from "../../../../shared-components/Logo";
 import UserNavbarHeader from "../../../../shared-components/UserNavbarHeader";
-import { useGetMyShopAndPlan } from "app/configs/data/server-calls/shopdetails/useShopDetails";
-import { Typography } from "@mui/material";
-import RealEstateNavigation from "app/theme-layouts/shared-components/navigation/accountsnavigation/RealEstateNavigation";
-import HotelsApartmentsNavigation from "app/theme-layouts/shared-components/navigation/hotelsnavigation/HotelsApartmentsNavigation";
-import LogisticsNavigation from "app/theme-layouts/shared-components/navigation/logisticsnavigation/LogisticsNavigation";
-import FoodMartNavigation from "app/theme-layouts/shared-components/navigation/foodmartnavigation/FoodMartNavigation";
 
 const Root = styled("div")(({ theme }) => ({
   backgroundColor: theme.palette.background.default,
@@ -35,14 +28,16 @@ const StyledContent = styled(FuseScrollbars)(() => ({
 
 /**
  * The navbar style 1 content.
+ *
+ * NOTE: this used to branch on a merchant "shop plan" (RETAIL, REALESTATES,
+ * FOODVENDORS, etc.) to pick which sidebar nav to render. civic-web has no
+ * shop-plan concept, so that branching could never resolve and the sidebar
+ * nav is intentionally left empty here. Building a real civic-appropriate
+ * sidebar nav is a separate feature task, not part of this cleanup.
  */
 function NavbarStyle1Content(props) {
-  const { data: myshopData, isLoading } = useGetMyShopAndPlan();
   const { className = "" } = props;
 
-  useEffect(() => {}, [myshopData?.data?.shopplan?.plankey]);
-
-  // console.log("navigationSliceUser", myshopData?.data?.shopplan?.plankey)
   return (
     <Root className={clsx("flex h-full flex-auto flex-col overflow-hidden", className)}>
       <div className="flex h-48 shrink-0 flex-row items-center px-20 md:h-72">
@@ -58,57 +53,6 @@ function NavbarStyle1Content(props) {
         option={{ suppressScrollX: true, wheelPropagation: false }}
       >
         <UserNavbarHeader />
-
-        {isLoading ? (
-          <>
-            <Typography>loading...</Typography>
-          </>
-        ) : (
-          <>
-            {myshopData?.data?.shopplan?.plankey === "RETAIL" && (
-              <>
-                <Navigation layout="vertical" />
-              </>
-            )}
-
-            {myshopData?.data?.shopplan?.plankey === "WHOLESALEANDRETAILERS" && (
-              <>
-                <Navigation layout="vertical" />
-              </>
-            )}
-            {myshopData?.data?.shopplan?.plankey === "MANUFACTURERS" && (
-              <>
-                <Navigation layout="vertical" />
-              </>
-            )}
-
-            {myshopData?.data?.shopplan?.plankey === "REALESTATES" && (
-              <>
-                <RealEstateNavigation layout="vertical" />
-              </>
-            )}
-
-            {myshopData?.data?.shopplan?.plankey === "HOTELSANDAPARTMENTS" && (
-              <>
-                <HotelsApartmentsNavigation layout="vertical" />
-              </>
-            )}
-
-            {myshopData?.data?.shopplan?.plankey === "FOODVENDORS" && (
-              <>
-                <FoodMartNavigation layout="vertical" />
-              </>
-            )}
-
-            {myshopData?.data?.shopplan?.plankey === "LOGISTICS" && (
-              <>
-                <LogisticsNavigation layout="vertical" />
-              </>
-            )}
-
-            {/* <Navigation layout="vertical" /> */}
-          </>
-        )}
 
         <div className="flex-0 flex items-center justify-center py-48 opacity-20">
           <img

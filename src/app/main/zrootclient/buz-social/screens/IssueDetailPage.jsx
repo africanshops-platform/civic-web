@@ -61,13 +61,13 @@ function ActiveIssueDetailPage() {
     if (isLoading) return <div className="flex-auto p-6 sm:p-8"><CivicLoadingSkeleton /></div>;
     if (isError || !issue) return (
       <div className="flex-auto p-6 sm:p-8" style={{ textAlign: 'center', color: '#6b7280', paddingTop: 40, fontSize: F.body }}>
-        Issue not found. <Link to="/community/feed">Go back to feed</Link>
+        Issue not found. <Link to="/community/my-feed">Go back to feed</Link>
       </div>
     );
     return (
       <div className="flex-auto p-6 sm:p-8" style={{ background: 'linear-gradient(180deg,#f9fafb 0%,#f0fdf4 100%)', minHeight: '100%' }}>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <Button component={Link} to="/community/feed" startIcon={<ArrowBack sx={{ fontSize: 'clamp(16px, 2vw, 20px)' }} />}
+          <Button component={Link} to="/community/my-feed" startIcon={<ArrowBack sx={{ fontSize: 'clamp(16px, 2vw, 20px)' }} />}
             sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 600, mb: 2.5, px: 0, fontSize: F.body }}>
             Back to Feed
           </Button>
