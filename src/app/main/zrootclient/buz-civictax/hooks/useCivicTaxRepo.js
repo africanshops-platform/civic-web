@@ -14,6 +14,10 @@ const api = {
   getMyObligations:    (params) => AuthApi().get('/civic/subscriptions/obligations/mine', { params }),
   payObligation:       (data)   => AuthApi().post('/civic/subscriptions/obligations/pay', data),
   payObligations:      (data)   => AuthApi().post('/civic/subscriptions/obligations/pay-many', data),
+  getMyCivicWallet:    ()       => AuthApi().get('/civic/subscriptions/wallet/me'),
+  getSpendingBalance:  ()       => AuthApi().get('/fintech-accounts/user/balance?currency=NGN'),
+  fundCivicWallet:     (acct, body) => AuthApi().post(`/fintech-accounts/user/account/${acct}/civic-wallet/fund`, body),
+  withdrawCivicWallet: (acct, body) => AuthApi().post(`/fintech-accounts/user/account/${acct}/civic-wallet/withdraw`, body),
   getObligationHistory:(params) => AuthApi().get('/civic/subscriptions/obligations/history', { params }),
   getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
@@ -327,6 +331,42 @@ export function usePayObligations() {
     }
   );
 }
+
+// ─── Civic wallet (opened automatically for every civic user) ────────────────
+
+/** The caller's civic wallet (opened on first use), its balance in naira, and the account number fund/withdraw take. */
+export function useMyCivicWallet() {
+  return useQuery(['civictax-my-civic-wallet'], () => api.getMyCivicWallet(), {
+    select: (res) => res.data,
+    staleTime: 15 * 1000,
+  });
+}
+
+/** The spending (default) wallet balance in naira — what funding the civic wallet draws from. */
+export function useSpendingBalance() {
+  return useQuery(['civictax-spending-balance'], () => api.getSpendingBalance(), {
+    select: (res) => toNaira(Number(res.data?.availableBalance ?? 0)),
+    staleTime: 15 * 1000,
+  });
+}
+
+function useCivicWalletMove(call, successMsg) {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ accountNumber, amountNaira, pin }) => call(accountNumber, { amountKobo: toKobo(amountNaira), transactionPin: pin }),
+    {
+      onSuccess: () => {
+        toast.success(successMsg);
+        queryClient.invalidateQueries(['civictax-my-civic-wallet']);
+        queryClient.invalidateQueries(['civictax-spending-balance']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'That did not go through. Please check the amount and PIN.'),
+    }
+  );
+}
+
+export const useFundCivicWallet = () => useCivicWalletMove(api.fundCivicWallet, 'Civic wallet funded.');
+export const useWithdrawCivicWallet = () => useCivicWalletMove(api.withdrawCivicWallet, 'Moved back to your spending wallet.');
 
 export function useObligationHistory(page = 1, limit = 20) {
   const { page: p, limit: l } = paginate(page, limit);

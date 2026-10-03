@@ -12,6 +12,7 @@ import CivicTaxHeader from './shared-components/CivicTaxHeader';
 import CampaignsBrowseSidebarLeft from './shared-components/CampaignsBrowseSidebarLeft';
 import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSidebarRight';
 import EditCivicSplitDialog from '../components/EditCivicSplitDialog';
+import CivicWalletCard from '../components/CivicWalletCard';
 import {
   useMyObligations, usePayObligation, usePayObligations, useObligationHistory,
   useMySplitSummary, useUpdateCivicSplit, useCivicSubscriptionsReadiness,
@@ -368,6 +369,8 @@ function ActiveCivicTaxObligationsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CivicWalletCard />
 
       {/* ── Tax Identity Profile ── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
