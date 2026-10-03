@@ -13,6 +13,7 @@ const api = {
   contribute:          (data)   => AuthApi().post(`/civic/subscriptions/campaigns/${data.campaignId}/contribute`, data),
   getMyObligations:    (params) => AuthApi().get('/civic/subscriptions/obligations/mine', { params }),
   payObligation:       (data)   => AuthApi().post('/civic/subscriptions/obligations/pay', data),
+  payObligations:      (data)   => AuthApi().post('/civic/subscriptions/obligations/pay-many', data),
   getObligationHistory:(params) => AuthApi().get('/civic/subscriptions/obligations/history', { params }),
   getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
@@ -213,23 +214,42 @@ export function useContributeToCampaign() {
 
 // ─── Obligations ─────────────────────────────────────────────────────────────
 
-const OBL_STATUS_MAP = {
-  OVERDUE:        'overdue',
-  UNPAID:         'due_soon',
-  PARTIALLY_PAID: 'due_soon',
-  PAID:           'paid',
-  WAIVED:         'paid',
-};
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** The month a bill is FOR ("2026-12"), from the generator's key or, for older manual bills, its due date. */
+function monthKeyOfObligation(obl) {
+  if (obl.generatedForMonth) return obl.generatedForMonth;
+  const d = new Date(obl.dueDate);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 
 function normalizeObligation(obl) {
   const amountKobo  = Number(obl.amountKobo ?? 0);
   const paidKobo    = Number(obl.paidKobo ?? 0);
   const remainingKobo = Math.max(0, amountKobo - paidKobo);
 
+  // Month-mapped subscriptions: a bill is overdue / due now / upcoming by the MONTH it is for, not by a status flag.
+  const monthKey = monthKeyOfObligation(obl);
+  const [y, m] = monthKey.split('-').map(Number);
+  const now = new Date();
+  const monthDelta = y * 12 + (m - 1) - (now.getFullYear() * 12 + now.getMonth());
+  const settled = obl.status === 'PAID' || obl.status === 'WAIVED';
+  let uiStatus = 'paid';
+  if (!settled) {
+    if (monthDelta < 0) uiStatus = 'overdue';
+    else if (monthDelta === 0) uiStatus = 'due_soon';
+    else uiStatus = 'upcoming';
+  }
+  const heldPrepaid = (obl.payments ?? []).some((pay) => pay.holdStatus === 'HELD');
+
   return {
     ...obl,
     // UI-friendly fields
-    uiStatus:       OBL_STATUS_MAP[obl.status] ?? 'upcoming',
+    uiStatus,
+    monthKey,
+    monthLabel: `${MONTH_NAMES[m - 1]} ${y}`,
+    isFutureMonth: monthDelta > 0,
+    heldPrepaid,
     amountNaira:    toNaira(amountKobo),
     paidNaira:      toNaira(paidKobo),
     remainingNaira: toNaira(remainingKobo),
@@ -247,7 +267,7 @@ function normalizeObligation(obl) {
   };
 }
 
-export function useMyObligations(page = 1, limit = 20) {
+export function useMyObligations(page = 1, limit = 50) {
   const { page: p, limit: l } = paginate(page, limit);
   return useQuery(
     ['civictax-my-obligations', p, l],
@@ -286,6 +306,24 @@ export function usePayObligation() {
       onError: (err) => {
         toast.error(err?.response?.data?.message ?? 'Payment failed. Please try again.');
       },
+    }
+  );
+}
+
+/** Pay several months at once (e.g. the rest of the year). Future months are held and released in their month. */
+export function usePayObligations() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (obligationIds) => api.payObligations({ obligationIds, idempotencyKey: crypto.randomUUID() }),
+    {
+      onSuccess: (res) => {
+        const d = res.data ?? {};
+        if (d.complete) toast.success(`${d.paid?.length ?? 0} month${d.paid?.length === 1 ? '' : 's'} paid.`);
+        else toast.warn(`${d.paid?.length ?? 0} paid, then stopped: ${d.message ?? 'a payment failed'}`);
+        queryClient.invalidateQueries(['civictax-my-obligations']);
+        queryClient.invalidateQueries(['civictax-obligation-history']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Payment failed. Please try again.'),
     }
   );
 }
