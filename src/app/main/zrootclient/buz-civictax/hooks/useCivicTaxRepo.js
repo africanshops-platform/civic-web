@@ -303,7 +303,7 @@ export function usePayObligation() {
       }),
     {
       onSuccess: () => {
-        toast.success('Tax payment successful!');
+        toast.success('Payment received. Thank you!');
         queryClient.invalidateQueries(['civictax-my-obligations']);
         queryClient.invalidateQueries(['civictax-obligation-history']);
       },

@@ -202,7 +202,13 @@ function TaxObligationCard({ obligation, onPay, isPaying, paymentSystemDown, spl
               ₦{(canPay ? obligation.remainingNaira : obligation.amountNaira).toLocaleString()}
             </div>
           </div>
-          {canPay && !confirming && (
+          {isPaying && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#c2410c', fontWeight: 700, fontSize: F.meta }}>
+              <CircularProgress size={18} sx={{ color: '#ea580c' }} />
+              Processing your payment — this can take up to a minute. Please keep this page open.
+            </div>
+          )}
+          {canPay && !confirming && !isPaying && (
             <Button variant="contained" onClick={() => setConfirming(true)}
               disabled={paymentSystemDown}
               style={{ fontSize: F.btn }}
@@ -210,7 +216,7 @@ function TaxObligationCard({ obligation, onPay, isPaying, paymentSystemDown, spl
               {payLabel}
             </Button>
           )}
-          {canPay && confirming && (
+          {canPay && confirming && !isPaying && (
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <span style={{ fontSize: F.meta, color: '#4b5563', fontWeight: 600 }}>
                 Confirm ₦{obligation.remainingNaira.toLocaleString()} payment?
@@ -285,7 +291,12 @@ function ActiveCivicTaxObligationsPage() {
 
   const { data: oblData,  isLoading: oblLoading  } = useMyObligations(oblPage);
   const { data: histData, isLoading: histLoading } = useObligationHistory(histPage);
-  const { mutate: payObligation, isLoading: isPaying } = usePayObligation();
+  const { mutate: payMutate } = usePayObligation();
+  const [payingId, setPayingId] = useState(null);
+  const payObligation = useCallback((args) => {
+    setPayingId(args.obligationId);
+    payMutate(args, { onSettled: () => setPayingId(null) });
+  }, [payMutate]);
   const readiness = useCivicSubscriptionsReadiness();
   const paymentSystemDown = readiness.data?.healthy === false;
   const { data: splitData, isLoading: splitLoading } = useMySplitSummary();
@@ -549,7 +560,7 @@ function ActiveCivicTaxObligationsPage() {
                 {sec.hint && <div style={{ fontSize: F.meta, color: '#6b7280', marginBottom: 10 }}>{sec.hint}</div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vw, 20px)', marginTop: 8 }}>
                   {sec.items.map((obl) => (
-                    <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={isPaying} paymentSystemDown={paymentSystemDown}
+                    <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={payingId === obl.id} paymentSystemDown={paymentSystemDown}
                       split={splitConfigured ? summary : null} selected={selected.includes(obl.id)} onToggle={toggleSelected} />
                   ))}
                 </div>
@@ -587,7 +598,7 @@ function ActiveCivicTaxObligationsPage() {
     </div>
   ), [
     editingSplit, summary, splitLoading, splitConfigured, isSavingSplit, updateSplit,
-    overdueCount, totalOwed, obligations, history, oblLoading, histLoading, isPaying, payObligation, oblPagination, histPagination,
+    overdueCount, totalOwed, obligations, history, oblLoading, histLoading, payingId, payObligation, oblPagination, histPagination,
     paymentSystemDown, compliance, sections, selected, toggleSelected, payableIds, selectedTotal, restTotal, isPayingMany, payThese,
   ]);
 
