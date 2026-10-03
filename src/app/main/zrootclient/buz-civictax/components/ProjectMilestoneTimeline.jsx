@@ -63,6 +63,12 @@ function MilestoneItem({ milestone, index, isLast }) {
           </div>
         )}
 
+        {Number(milestone.amountDisbursedKobo) > 0 && (
+          <div style={{ fontSize: F.meta, color: '#16a34a', marginTop: 4, fontWeight: 700 }}>
+            💸 ₦{(Number(milestone.amountDisbursedKobo) / 100).toLocaleString('en-NG', { maximumFractionDigits: 0 })} released at this milestone
+          </div>
+        )}
+
         {milestone.evidence && (
           <div style={{ fontSize: F.meta, color: '#2563eb', marginTop: 4, cursor: 'pointer', fontWeight: 600 }}>
             📎 {milestone.evidence}

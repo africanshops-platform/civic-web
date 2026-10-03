@@ -9,6 +9,7 @@ const api = {
   getMyContributions:  (params) => AuthApi().get('/civic/subscriptions/contributions/mine', { params }),
   getContribReceipt:   (id)     => AuthApi().get(`/civic/subscriptions/contributions/${id}`),
   getLgaProjects:      (params) => AuthApi().get('/civic/subscriptions/projects', { params }),
+  getProjectFunding:   (campaignId) => AuthApi().get(`/civic/subscriptions/campaigns/${campaignId}/funding`),
   contribute:          (data)   => AuthApi().post(`/civic/subscriptions/campaigns/${data.campaignId}/contribute`, data),
   getMyObligations:    (params) => AuthApi().get('/civic/subscriptions/obligations/mine', { params }),
   payObligation:       (data)   => AuthApi().post('/civic/subscriptions/obligations/pay', data),
@@ -302,4 +303,18 @@ export function useUpdateCivicSplit() {
       },
     }
   );
+}
+
+
+/**
+ * civic-26: raised / disbursed / remaining for a project's campaign, from the ledger custody wallet (totals only).
+ * `hasWallet: false` means the campaign predates per-project custody — callers should show nothing rather than zeros.
+ */
+export function useProjectFunding(campaignId) {
+  return useQuery(['civictax-project-funding', campaignId], () => api.getProjectFunding(campaignId), {
+    enabled: Boolean(campaignId),
+    select: (res) => res.data,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
 }
