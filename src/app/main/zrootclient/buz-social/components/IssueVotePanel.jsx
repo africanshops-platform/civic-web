@@ -63,7 +63,7 @@ function IssueVotePanel({ issue, myVote, onVote, isVoting, accent = '#059669' })
     <div style={box}>
       <Typography sx={{ fontWeight: 800, color: '#111827', fontSize: F.subH, mb: 0.5 }}>Should this become a funded project?</Typography>
       <Typography sx={{ color: '#6b7280', fontSize: F.meta, mb: 1.5 }}>
-        Only verified citizens whose home or dwelling LGA is {issue.jurisdiction.lga} can vote — one vote each.
+        Only verified citizens whose home or dwelling LGA is {issue.jurisdiction.lga} can vote, once they have paid at least 2 of this year's 12 civic subscription months — one vote each.
       </Typography>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: F.meta, color: '#374151', fontWeight: 700, marginBottom: 6 }}>
         <span>{issue.supportPercent}% support</span>

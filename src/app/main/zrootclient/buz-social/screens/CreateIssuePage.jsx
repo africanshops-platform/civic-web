@@ -113,7 +113,7 @@ function ActiveCreateIssuePage() {
             </div>
             <div style={{ borderRadius: 'clamp(14px, 2vw, 20px)', padding: 'clamp(14px, 2vw, 20px)', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
               <Typography sx={{ color: '#166534', fontSize: F.body, lineHeight: 1.7 }}>
-                Your issue is posted in the LGA you pick above. Only verified citizens of that LGA can vote on it. If at least 60% of the votes support
+                Your issue is posted in the LGA you pick above. Only verified citizens of that LGA who have paid at least 2 of this year's 12 subscription months can vote on it. If at least 60% of the votes support
                 it, your LGA coordinator is asked to turn it into a funded project.
               </Typography>
             </div>
