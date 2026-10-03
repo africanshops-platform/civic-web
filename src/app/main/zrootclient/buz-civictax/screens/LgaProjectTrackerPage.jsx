@@ -52,6 +52,20 @@ function ProjectFunding({ campaignId }) {
   );
 }
 
+const API_STATUS = { PLANNED: 'upcoming', IN_PROGRESS: 'in_progress', COMPLETED: 'completed' };
+
+/** The API sends PLANNED/IN_PROGRESS/COMPLETED and per-milestone statuses; the card wants a lowercase status and a % done. */
+function normalizeProject(p) {
+  const milestones = p.milestones || [];
+  const done = milestones.filter((m) => m.status === 'COMPLETED').length;
+  const status = p.status in STATUS_CONFIG ? p.status : API_STATUS[p.status] || 'upcoming';
+  return {
+    ...p,
+    status,
+    completionPercentage: p.completionPercentage ?? (milestones.length ? Math.round((done / milestones.length) * 100) : 0),
+  };
+}
+
 function ProjectCard({ project, index }) {
   const [expanded, setExpanded] = useState(false);
   const config     = STATUS_CONFIG[project.status] || STATUS_CONFIG.upcoming;
@@ -142,7 +156,7 @@ function ActiveLgaProjectTrackerPage() {
 
   const [page, setPage] = useState(1);
   const { data, isLoading } = useLgaProjects({ page });
-  const projects    = useMemo(() => data?.data?.projects    || [], [data]);
+  const projects    = useMemo(() => (data?.data?.projects || []).map(normalizeProject), [data]);
   const pagination  = useMemo(() => data?.data?.pagination,       [data]);
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v)  => !v), []);
