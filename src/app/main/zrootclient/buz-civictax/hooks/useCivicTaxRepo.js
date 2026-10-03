@@ -123,7 +123,22 @@ export function useContributionReceipt(transactionId) {
     () => api.getContribReceipt(transactionId),
     {
       enabled: Boolean(transactionId),
-      select: (res) => ({ data: { receipt: res.data } }),
+      select: (res) => {
+        const r = res.data || {};
+        return {
+          data: {
+            receipt: {
+              ...r,
+              transactionId: r.transactionId ?? r.id,
+              amount: r.amount ?? (r.amountKobo == null ? 0 : Number(r.amountKobo) / 100),
+              campaignTitle: r.campaignTitle ?? r.campaign?.title,
+              campaignCategory: r.campaignCategory ?? r.campaign?.category,
+              jurisdiction: r.jurisdiction ?? { lga: r.campaign?.lga, state: r.campaign?.state },
+              message: r.message ?? r.note,
+            },
+          },
+        };
+      },
       staleTime: 10 * 60 * 1000,
     }
   );
@@ -184,6 +199,9 @@ export function useContributeToCampaign() {
       onSuccess: (res) => {
         toast.success(res.data?.message ?? 'Contribution successful! Thank you for making a difference.');
         queryClient.invalidateQueries(['civictax-campaigns']);
+        queryClient.invalidateQueries(['civictax-campaign']);
+        queryClient.invalidateQueries(['civictax-project-funding']);
+        queryClient.invalidateQueries(['civictax-lga-projects']);
         queryClient.invalidateQueries(['civictax-my-contributions']);
       },
       onError: (err) => {

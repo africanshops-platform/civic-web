@@ -137,7 +137,7 @@ function ActiveContributionReceiptPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'clamp(10px, 1.4vw, 14px)', borderRadius: 12, background: '#fff7ed', marginBottom: 'clamp(14px, 2vw, 22px)' }}>
                 <People style={{ color: '#ea580c', fontSize: 'clamp(20px, 2.8vw, 28px)', flexShrink: 0 }} />
                 <div style={{ fontSize: F.body, color: '#374151', lineHeight: 1.5 }}>
-                  Your contribution joins <strong>{(Math.floor(Math.random() * 1000) + 500).toLocaleString()}</strong> others powering this campaign. Together, you're changing lives.
+                  Your contribution goes straight into this project's escrow-held wallet and is only released to the LGA as milestones are approved. Together, you're changing lives.
                 </div>
               </div>
 
