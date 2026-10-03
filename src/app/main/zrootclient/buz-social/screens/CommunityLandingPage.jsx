@@ -124,7 +124,7 @@ export default function CommunityLandingPage() {
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <motion.div {...inViewUp()} style={{ textAlign: 'center', marginBottom: 'clamp(40px,5vw,64px)' }}>
             <h2 style={{ margin: '0 0 16px', fontWeight: 900, color: '#111827', fontSize: F.sectionH }}>How It Works</h2>
-            <p style={{ margin: '0 auto', color: '#6b7280', maxWidth: 540, fontSize: F.body }}>From ground level to government desk in minutes.</p>
+            <p style={{ margin: '0 auto', color: '#6b7280', maxWidth: 540, fontSize: F.body }}>From the street to your community's leaders in minutes.</p>
           </motion.div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 'clamp(20px,3vw,36px)' }}>
             {HOW_IT_WORKS.map((s, i) => (

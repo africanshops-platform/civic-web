@@ -13,6 +13,7 @@ import CampaignsBrowseSidebarLeft from './shared-components/CampaignsBrowseSideb
 import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSidebarRight';
 import EditCivicSplitDialog from '../components/EditCivicSplitDialog';
 import CivicWalletCard from '../components/CivicWalletCard';
+import DeactivateCivicDialog from '../components/DeactivateCivicDialog';
 import {
   useMyObligations, usePayObligation, usePayObligations, useObligationHistory,
   useMySplitSummary, useUpdateCivicSplit, useCivicSubscriptionsReadiness,
@@ -39,10 +40,10 @@ const Root = styled(FusePageSimpleWithMargin)(() => ({
 }));
 
 const GOVERNANCE_RIGHTS = [
-  { icon: HowToVote, label: 'Vote in LGA Elections',   desc: 'Cast ballots in local government elections for both registered LGAs.' },
+  { icon: HowToVote, label: 'Vote on Community Issues', desc: 'Vote on local issues in the LGAs you belong to.' },
   { icon: Forum,     label: 'Community Issue Reports', desc: 'Submit, upvote, and comment on infrastructure issues in your LGAs.' },
   { icon: Build,     label: 'Project Proposals',       desc: 'Propose and vote on community development projects.' },
-  { icon: Assessment,label: 'Budget Review Access',    desc: 'Review and comment on LGA budget allocations and expenditure reports.' },
+  { icon: Assessment,label: 'Project Funding Transparency', desc: 'See how contributions to community projects are held and released.' },
 ];
 
 const STATUS_CONFIG = {
@@ -283,6 +284,7 @@ function ActiveCivicTaxObligationsPage() {
   const [leftSidebarOpen,  setLeftSidebarOpen]  = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
   const [editingSplit, setEditingSplit] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
@@ -373,8 +375,8 @@ function ActiveCivicTaxObligationsPage() {
               <Warning style={{ color: '#dc2626', fontSize: 'clamp(22px, 3vw, 30px)', flexShrink: 0 }} />
             </motion.div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: F.subH, color: '#991b1b' }}>{overdueCount} Overdue Tax Obligation{overdueCount > 1 ? 's' : ''}</div>
-              <div style={{ fontSize: F.body, color: '#b91c1c', marginTop: 2 }}>Unpaid taxes may restrict your governance participation. Pay now to remain eligible.</div>
+              <div style={{ fontWeight: 800, fontSize: F.subH, color: '#991b1b' }}>{overdueCount} Overdue Subscription Month{overdueCount > 1 ? 's' : ''}</div>
+              <div style={{ fontSize: F.body, color: '#b91c1c', marginTop: 2 }}>Pay at least 2 months of this year's subscription to vote on community issues. Pay now to stay eligible.</div>
             </div>
             <div style={{ fontWeight: 900, fontSize: F.sectionH, color: '#dc2626', flexShrink: 0 }}>₦{totalOwed.toLocaleString()}</div>
           </motion.div>
@@ -382,6 +384,7 @@ function ActiveCivicTaxObligationsPage() {
       </AnimatePresence>
 
       <CivicWalletCard />
+      <DeactivateCivicDialog open={deactivating} onClose={() => setDeactivating(false)} onDone={() => { window.location.href = '/'; }} />
 
       {/* ── Tax Identity Profile ── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -391,11 +394,11 @@ function ActiveCivicTaxObligationsPage() {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: 'clamp(5px,0.8vw,8px) clamp(14px,2vw,20px)', marginBottom: 12, border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(10px)' }}>
                 <AccountBalance style={{ color: '#fde047', fontSize: 'clamp(14px, 1.8vw, 18px)' }} />
-                <span style={{ color: 'white', fontWeight: 700, fontSize: F.meta }}>Compulsory Civic Subscriptions Profile</span>
+                <span style={{ color: 'white', fontWeight: 700, fontSize: F.meta }}>Civic Subscriptions Profile</span>
               </div>
-              <div style={{ fontWeight: 900, fontSize: F.sectionH, color: 'white', lineHeight: 1.1 }}>Your Tax Identity</div>
+              <div style={{ fontWeight: 900, fontSize: F.sectionH, color: 'white', lineHeight: 1.1 }}>Your Subscription Profile</div>
               <div style={{ fontSize: F.body, color: 'rgba(255,255,255,0.85)', marginTop: 6 }}>
-                Taxes split between your home origin and dwelling. Governance access follows your tax allocation.
+                Your subscription is shared between your home origin and where you live. Voting on community issues follows your paid months.
               </div>
             </div>
             <ComplianceRing score={compliance.complianceScore} />
@@ -411,7 +414,7 @@ function ActiveCivicTaxObligationsPage() {
                 No LGA split set up yet
               </div>
               <div style={{ fontSize: F.body, color: 'rgba(255,255,255,0.8)', marginBottom: 16 }}>
-                Set your home-origin and dwelling LGA to see where your civic tax goes.
+                Set your home-origin and dwelling LGA to see where your civic subscription goes.
               </div>
               <Button variant="contained" startIcon={<AddLocationAlt />} onClick={() => setEditingSplit(true)}
                 sx={{ background: 'white', color: '#ea580c', fontWeight: 800, borderRadius: '12px', textTransform: 'none', '&:hover': { background: '#fff7ed' } }}>
@@ -441,7 +444,7 @@ function ActiveCivicTaxObligationsPage() {
               {/* Split bar + edit */}
               <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 'clamp(12px, 1.8vw, 18px)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.25)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>Tax Split Ratio</div>
+                  <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>Subscription Split</div>
                   <Button size="small" startIcon={<Edit style={{ fontSize: 'clamp(12px, 1.6vw, 16px)' }} />}
                     onClick={() => setEditingSplit(true)}
                     style={{ fontSize: F.meta }}
@@ -595,9 +598,13 @@ function ActiveCivicTaxObligationsPage() {
         <CivicPaginationBar pagination={histPagination} onPageChange={setHistPage} theme="light" />
       </div>
 
+      <div style={{ marginTop: 'clamp(24px, 4vw, 40px)', textAlign: 'center' }}>
+        <Button onClick={() => setDeactivating(true)} sx={{ color: '#9ca3af', textTransform: 'none', fontWeight: 600 }}>Deactivate my civic profile</Button>
+      </div>
+
     </div>
   ), [
-    editingSplit, summary, splitLoading, splitConfigured, isSavingSplit, updateSplit,
+    editingSplit, deactivating, summary, splitLoading, splitConfigured, isSavingSplit, updateSplit,
     overdueCount, totalOwed, obligations, history, oblLoading, histLoading, payingId, payObligation, oblPagination, histPagination,
     paymentSystemDown, compliance, sections, selected, toggleSelected, payableIds, selectedTotal, restTotal, isPayingMany, payThese,
   ]);
