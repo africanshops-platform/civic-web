@@ -96,7 +96,33 @@ function ComplianceRing({ score }) {
   );
 }
 
-function TaxObligationCard({ obligation, onPay, isPaying, paymentSystemDown }) {
+/**
+ * Which LGAs this obligation's money goes to (civic-17). A payment is split between the citizen's home-origin and
+ * dwelling LGAs, so the row's single `lga` tag was misleading: paid rows show the real recorded split, unpaid rows show
+ * the split that will apply from the citizen's current preference, and only rows with neither fall back to the tag.
+ */
+function ObligationJurisdiction({ obligation, split }) {
+  const naira = (n) => `₦${Number(n).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
+  const icon = (label) => (label === 'HOME_ORIGIN' ? '🏡' : '🏙️');
+  if (obligation.paidSplits?.length) {
+    return (
+      <span>
+        {obligation.paidSplits.map((sp) => `${icon(sp.label)} ${sp.lga ?? '—'}: ${naira(sp.amountNaira)}`).join(' · ')} ·{' '}
+      </span>
+    );
+  }
+  if (split?.homeOrigin && split?.dwelling && obligation.uiStatus !== 'paid') {
+    return (
+      <span>
+        🏡 {split.homeOrigin.jurisdiction?.lga ?? '—'} {split.homeOrigin.percent}% · 🏙️ {split.dwelling.jurisdiction?.lga ?? '—'}{' '}
+        {split.dwelling.percent}% ·{' '}
+      </span>
+    );
+  }
+  return obligation.lga ? <span>{obligation.lga}, {obligation.state} · </span> : null;
+}
+
+function TaxObligationCard({ obligation, onPay, isPaying, paymentSystemDown, split }) {
   const [confirming, setConfirming] = useState(false);
   const cfg = STATUS_CONFIG[obligation.uiStatus] || STATUS_CONFIG.upcoming;
   const StatusIcon = cfg.icon;
@@ -119,7 +145,7 @@ function TaxObligationCard({ obligation, onPay, isPaying, paymentSystemDown }) {
                 {(obligation.obligationType ?? '').replace(/_/g, ' ')}
               </div>
               <div style={{ fontSize: F.meta, color: '#6b7280', marginTop: 2 }}>
-                {obligation.lga && <span>{obligation.lga}, {obligation.state} · </span>}
+                <ObligationJurisdiction obligation={obligation} split={split} />
                 Due: <strong style={{ color: obligation.uiStatus === 'overdue' ? '#dc2626' : '#ea580c' }}>
                   {obligation.dueDate
                     ? new Date(obligation.dueDate).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -467,7 +493,7 @@ function ActiveCivicTaxObligationsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 2vw, 20px)' }}>
             {obligations.map((obl) => (
-              <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={isPaying} paymentSystemDown={paymentSystemDown} />
+              <TaxObligationCard key={obl.id} obligation={obl} onPay={payObligation} isPaying={isPaying} paymentSystemDown={paymentSystemDown} split={splitConfigured ? summary : null} />
             ))}
           </div>
         )}

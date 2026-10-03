@@ -201,6 +201,16 @@ function normalizeObligation(obl) {
     paidNaira:      toNaira(paidKobo),
     remainingNaira: toNaira(remainingKobo),
     remainingKobo,
+    // civic-17: where the money actually went — [{ label: 'HOME_ORIGIN'|'DWELLING', lga, state, amountNaira }] from the
+    // payment(s)' recorded split. Empty for unpaid rows and for payments made before splits were recorded.
+    paidSplits: (obl.payments ?? [])
+      .flatMap((pay) => (Array.isArray(pay.splitBreakdown) ? pay.splitBreakdown : []))
+      .map((sp) => ({
+        label: sp.label,
+        lga: sp.jurisdiction?.lga,
+        state: sp.jurisdiction?.state,
+        amountNaira: toNaira(Number(sp.amountKobo ?? 0)),
+      })),
   };
 }
 
