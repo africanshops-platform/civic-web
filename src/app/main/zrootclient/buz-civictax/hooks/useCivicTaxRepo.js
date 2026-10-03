@@ -42,6 +42,20 @@ function extractPagination(d, page, limit) {
 
 // ─── hooks ────────────────────────────────────────────────────────────────────
 
+/** The API sends kobo amounts, a flat jurisdiction and an uppercase status; the screens read naira, a nested jurisdiction and a lowercase status. */
+export function normalizeCampaign(c) {
+  if (!c) return c;
+  const kobo = (v) => (v == null ? 0 : Number(v) / 100);
+  return {
+    ...c,
+    raisedAmount: c.raisedAmount ?? kobo(c.raisedAmountKobo),
+    targetAmount: c.targetAmount ?? kobo(c.targetAmountKobo),
+    contributorsCount: c.contributorsCount ?? c._count?.contributions ?? 0,
+    status: typeof c.status === 'string' ? c.status.toLowerCase() : c.status,
+    jurisdiction: c.jurisdiction ?? { country: c.country, state: c.state, lga: c.lga, ward: c.ward },
+  };
+}
+
 export function useCampaigns(filters = {}) {
   const { category, status, stateId, lgaId, search, page = 1, limit = 20 } = filters;
   const { page: p, limit: l } = paginate(page, limit);
@@ -53,7 +67,7 @@ export function useCampaigns(filters = {}) {
     {
       select: (res) => {
         const d = res.data;
-        let campaigns = d.data ?? d.campaigns ?? [];
+        let campaigns = (d.data ?? d.campaigns ?? []).map(normalizeCampaign);
         if (search) {
           const q = search.toLowerCase();
           campaigns = campaigns.filter(
@@ -75,7 +89,7 @@ export function useCampaignDetail(campaignId) {
     () => api.getCampaignDetail(campaignId),
     {
       enabled: Boolean(campaignId),
-      select: (res) => ({ data: { campaign: res.data } }),
+      select: (res) => ({ data: { campaign: normalizeCampaign(res.data) } }),
       staleTime: 3 * 60 * 1000,
     }
   );
