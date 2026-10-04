@@ -36,7 +36,7 @@ export function normalizeIssue(i, votePolicy) {
   const up = i.upvoteCount ?? 0;
   const down = i.downvoteCount ?? 0;
   const cast = up + down;
-  const policy = votePolicy || { supportThreshold: 0.6, minVotes: 20 };
+  const policy = votePolicy || { supportThreshold: 0.6 };
   return {
     id: i.id,
     title: i.title,
@@ -61,6 +61,8 @@ export function normalizeIssue(i, votePolicy) {
     votesCast: cast,
     supportPercent: cast ? Math.round((up / cast) * 100) : 0,
     votePolicy: policy,
+    // the LGA's registered civic users the 60% was measured against, frozen when the issue was presented
+    thresholdRegisteredUsers: i.thresholdRegisteredUsers ?? null,
     declineReason: i.declineReason ?? null,
     campaignId: i.campaignId ?? null,
     votingClosed: String(i.status || 'OPEN').toUpperCase() !== 'OPEN',
