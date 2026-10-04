@@ -96,12 +96,12 @@ function CivicHubSwitcher() {
           <ListItemText primary="Healthcare" />
         </MenuItem>
 
-        <MenuItem component={NavLinkAdapter} to="/governance">
+        {false && <MenuItem component={NavLinkAdapter} to="/governance">
           <ListItemIcon className="min-w-40">
             <FuseSvgIcon>heroicons-outline:briefcase</FuseSvgIcon>
           </ListItemIcon>
           <ListItemText primary="Governance" />
-        </MenuItem>
+        </MenuItem>}
         
 
         

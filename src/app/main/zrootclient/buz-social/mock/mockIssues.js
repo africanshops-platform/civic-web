@@ -118,4 +118,6 @@ export const ISSUE_CATEGORIES = [
   { id: 'utilities', label: 'Utilities', icon: '💧', color: '#0f766e', bgColor: '#f0fdfa' },
   { id: 'education', label: 'Education', icon: '📚', color: '#1d4ed8', bgColor: '#eff6ff' },
   { id: 'transportation', label: 'Transport', icon: '🚌', color: '#7c3aed', bgColor: '#f5f3ff' },
+  { id: 'governance', label: 'Governance', icon: '🏛️', color: '#0f766e', bgColor: '#f0fdfa' },
+  { id: 'other', label: 'Other', icon: '📌', color: '#6b7280', bgColor: '#f9fafb' },
 ];

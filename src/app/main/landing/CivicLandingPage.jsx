@@ -71,13 +71,7 @@ const MORE_VERTICALS = [
     emoji: "🩺",
     title: "Healthcare",
     to: "/healthcare",
-    desc: "Find a nearby facility, book an appointment, and get real-time public-health alerts for your area.",
-  },
-  {
-    emoji: "🗳️",
-    title: "Governance",
-    to: "/governance",
-    desc: "Register, verify with your NIN, and vote — with ward-by-ward results tracked live as counting happens.",
+    desc: "Community health information and services for your area.",
   },
 ];
 

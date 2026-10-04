@@ -9,9 +9,18 @@ const api = {
   getMyContributions:  (params) => AuthApi().get('/civic/subscriptions/contributions/mine', { params }),
   getContribReceipt:   (id)     => AuthApi().get(`/civic/subscriptions/contributions/${id}`),
   getLgaProjects:      (params) => AuthApi().get('/civic/subscriptions/projects', { params }),
+  getProjectFunding:   (campaignId) => AuthApi().get(`/civic/subscriptions/campaigns/${campaignId}/funding`),
   contribute:          (data)   => AuthApi().post(`/civic/subscriptions/campaigns/${data.campaignId}/contribute`, data),
   getMyObligations:    (params) => AuthApi().get('/civic/subscriptions/obligations/mine', { params }),
   payObligation:       (data)   => AuthApi().post('/civic/subscriptions/obligations/pay', data),
+  payObligations:      (data)   => AuthApi().post('/civic/subscriptions/obligations/pay-many', data),
+  getMyCivicWallet:    ()       => AuthApi().get('/civic/subscriptions/wallet/me'),
+  getDeactivationPreview: ()    => AuthApi().get('/civic/subscriptions/deactivation-preview'),
+  refundPrepaid:       ()       => AuthApi().post('/civic/subscriptions/obligations/refund-prepaid'),
+  deactivateCivic:     ()       => AuthApi().post('/civic/subscriptions/deactivate'),
+  getSpendingBalance:  ()       => AuthApi().get('/fintech-accounts/user/balance?currency=NGN'),
+  fundCivicWallet:     (acct, body) => AuthApi().post(`/fintech-accounts/user/account/${acct}/civic-wallet/fund`, body),
+  withdrawCivicWallet: (acct, body) => AuthApi().post(`/fintech-accounts/user/account/${acct}/civic-wallet/withdraw`, body),
   getObligationHistory:(params) => AuthApi().get('/civic/subscriptions/obligations/history', { params }),
   getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
@@ -41,6 +50,20 @@ function extractPagination(d, page, limit) {
 
 // ─── hooks ────────────────────────────────────────────────────────────────────
 
+/** The API sends kobo amounts, a flat jurisdiction and an uppercase status; the screens read naira, a nested jurisdiction and a lowercase status. */
+export function normalizeCampaign(c) {
+  if (!c) return c;
+  const kobo = (v) => (v == null ? 0 : Number(v) / 100);
+  return {
+    ...c,
+    raisedAmount: c.raisedAmount ?? kobo(c.raisedAmountKobo),
+    targetAmount: c.targetAmount ?? kobo(c.targetAmountKobo),
+    contributorsCount: c.contributorsCount ?? c._count?.contributions ?? 0,
+    status: typeof c.status === 'string' ? c.status.toLowerCase() : c.status,
+    jurisdiction: c.jurisdiction ?? { country: c.country, state: c.state, lga: c.lga, ward: c.ward },
+  };
+}
+
 export function useCampaigns(filters = {}) {
   const { category, status, stateId, lgaId, search, page = 1, limit = 20 } = filters;
   const { page: p, limit: l } = paginate(page, limit);
@@ -52,7 +75,7 @@ export function useCampaigns(filters = {}) {
     {
       select: (res) => {
         const d = res.data;
-        let campaigns = d.data ?? d.campaigns ?? [];
+        let campaigns = (d.data ?? d.campaigns ?? []).map(normalizeCampaign);
         if (search) {
           const q = search.toLowerCase();
           campaigns = campaigns.filter(
@@ -74,7 +97,7 @@ export function useCampaignDetail(campaignId) {
     () => api.getCampaignDetail(campaignId),
     {
       enabled: Boolean(campaignId),
-      select: (res) => ({ data: { campaign: res.data } }),
+      select: (res) => ({ data: { campaign: normalizeCampaign(res.data) } }),
       staleTime: 3 * 60 * 1000,
     }
   );
@@ -108,7 +131,22 @@ export function useContributionReceipt(transactionId) {
     () => api.getContribReceipt(transactionId),
     {
       enabled: Boolean(transactionId),
-      select: (res) => ({ data: { receipt: res.data } }),
+      select: (res) => {
+        const r = res.data || {};
+        return {
+          data: {
+            receipt: {
+              ...r,
+              transactionId: r.transactionId ?? r.id,
+              amount: r.amount ?? (r.amountKobo == null ? 0 : Number(r.amountKobo) / 100),
+              campaignTitle: r.campaignTitle ?? r.campaign?.title,
+              campaignCategory: r.campaignCategory ?? r.campaign?.category,
+              jurisdiction: r.jurisdiction ?? { lga: r.campaign?.lga, state: r.campaign?.state },
+              message: r.message ?? r.note,
+            },
+          },
+        };
+      },
       staleTime: 10 * 60 * 1000,
     }
   );
@@ -169,6 +207,9 @@ export function useContributeToCampaign() {
       onSuccess: (res) => {
         toast.success(res.data?.message ?? 'Contribution successful! Thank you for making a difference.');
         queryClient.invalidateQueries(['civictax-campaigns']);
+        queryClient.invalidateQueries(['civictax-campaign']);
+        queryClient.invalidateQueries(['civictax-project-funding']);
+        queryClient.invalidateQueries(['civictax-lga-projects']);
         queryClient.invalidateQueries(['civictax-my-contributions']);
       },
       onError: (err) => {
@@ -180,31 +221,60 @@ export function useContributeToCampaign() {
 
 // ─── Obligations ─────────────────────────────────────────────────────────────
 
-const OBL_STATUS_MAP = {
-  OVERDUE:        'overdue',
-  UNPAID:         'due_soon',
-  PARTIALLY_PAID: 'due_soon',
-  PAID:           'paid',
-  WAIVED:         'paid',
-};
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** The month a bill is FOR ("2026-12"), from the generator's key or, for older manual bills, its due date. */
+function monthKeyOfObligation(obl) {
+  if (obl.generatedForMonth) return obl.generatedForMonth;
+  const d = new Date(obl.dueDate);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 
 function normalizeObligation(obl) {
   const amountKobo  = Number(obl.amountKobo ?? 0);
   const paidKobo    = Number(obl.paidKobo ?? 0);
   const remainingKobo = Math.max(0, amountKobo - paidKobo);
 
+  // Month-mapped subscriptions: a bill is overdue / due now / upcoming by the MONTH it is for, not by a status flag.
+  const monthKey = monthKeyOfObligation(obl);
+  const [y, m] = monthKey.split('-').map(Number);
+  const now = new Date();
+  const monthDelta = y * 12 + (m - 1) - (now.getFullYear() * 12 + now.getMonth());
+  const settled = obl.status === 'PAID' || obl.status === 'WAIVED';
+  let uiStatus = 'paid';
+  if (!settled) {
+    if (monthDelta < 0) uiStatus = 'overdue';
+    else if (monthDelta === 0) uiStatus = 'due_soon';
+    else uiStatus = 'upcoming';
+  }
+  const heldPrepaid = (obl.payments ?? []).some((pay) => pay.holdStatus === 'HELD');
+
   return {
     ...obl,
     // UI-friendly fields
-    uiStatus:       OBL_STATUS_MAP[obl.status] ?? 'upcoming',
+    uiStatus,
+    monthKey,
+    monthLabel: `${MONTH_NAMES[m - 1]} ${y}`,
+    isFutureMonth: monthDelta > 0,
+    heldPrepaid,
     amountNaira:    toNaira(amountKobo),
     paidNaira:      toNaira(paidKobo),
     remainingNaira: toNaira(remainingKobo),
     remainingKobo,
+    // civic-17: where the money actually went — [{ label: 'HOME_ORIGIN'|'DWELLING', lga, state, amountNaira }] from the
+    // payment(s)' recorded split. Empty for unpaid rows and for payments made before splits were recorded.
+    paidSplits: (obl.payments ?? [])
+      .flatMap((pay) => (Array.isArray(pay.splitBreakdown) ? pay.splitBreakdown : []))
+      .map((sp) => ({
+        label: sp.label,
+        lga: sp.jurisdiction?.lga,
+        state: sp.jurisdiction?.state,
+        amountNaira: toNaira(Number(sp.amountKobo ?? 0)),
+      })),
   };
 }
 
-export function useMyObligations(page = 1, limit = 20) {
+export function useMyObligations(page = 1, limit = 50) {
   const { page: p, limit: l } = paginate(page, limit);
   return useQuery(
     ['civictax-my-obligations', p, l],
@@ -236,7 +306,7 @@ export function usePayObligation() {
       }),
     {
       onSuccess: () => {
-        toast.success('Tax payment successful!');
+        toast.success('Payment received. Thank you!');
         queryClient.invalidateQueries(['civictax-my-obligations']);
         queryClient.invalidateQueries(['civictax-obligation-history']);
       },
@@ -246,6 +316,82 @@ export function usePayObligation() {
     }
   );
 }
+
+/** Pay several months at once (e.g. the rest of the year). Future months are held and released in their month. */
+export function usePayObligations() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (obligationIds) => api.payObligations({ obligationIds, idempotencyKey: crypto.randomUUID() }),
+    {
+      onSuccess: (res) => {
+        const d = res.data ?? {};
+        if (d.complete) toast.success(`${d.paid?.length ?? 0} month${d.paid?.length === 1 ? '' : 's'} paid.`);
+        else toast.warn(`${d.paid?.length ?? 0} paid, then stopped: ${d.message ?? 'a payment failed'}`);
+        queryClient.invalidateQueries(['civictax-my-obligations']);
+        queryClient.invalidateQueries(['civictax-obligation-history']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Payment failed. Please try again.'),
+    }
+  );
+}
+
+// ─── Civic wallet (opened automatically for every civic user) ────────────────
+
+/** The caller's civic wallet (opened on first use), its balance in naira, and the account number fund/withdraw take. */
+export function useMyCivicWallet() {
+  return useQuery(['civictax-my-civic-wallet'], () => api.getMyCivicWallet(), {
+    select: (res) => res.data,
+    staleTime: 15 * 1000,
+  });
+}
+
+/** The spending (default) wallet balance in naira — what funding the civic wallet draws from. */
+export function useSpendingBalance() {
+  return useQuery(['civictax-spending-balance'], () => api.getSpendingBalance(), {
+    select: (res) => toNaira(Number(res.data?.availableBalance ?? 0)),
+    staleTime: 15 * 1000,
+  });
+}
+
+function useCivicWalletMove(call, successMsg) {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ accountNumber, amountNaira, pin }) => call(accountNumber, { amountKobo: toKobo(amountNaira), transactionPin: pin }),
+    {
+      onSuccess: () => {
+        toast.success(successMsg);
+        queryClient.invalidateQueries(['civictax-my-civic-wallet']);
+        queryClient.invalidateQueries(['civictax-spending-balance']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'That did not go through. Please check the amount and PIN.'),
+    }
+  );
+}
+
+export const useFundCivicWallet = () => useCivicWalletMove(api.fundCivicWallet, 'Civic wallet funded.');
+export const useWithdrawCivicWallet = () => useCivicWalletMove(api.withdrawCivicWallet, 'Moved back to your spending wallet.');
+
+// ─── Deactivating the civic profile (guided: refund prepaid -> move money back -> deactivate) ───
+
+export function useDeactivationPreview(enabled = true) {
+  return useQuery(['civictax-deactivation-preview'], () => api.getDeactivationPreview(), { enabled, select: (res) => res.data, staleTime: 0 });
+}
+
+function useDeactivationStep(call, successMsg) {
+  const queryClient = useQueryClient();
+  return useMutation(() => call(), {
+    onSuccess: () => {
+      if (successMsg) toast.success(successMsg);
+      queryClient.invalidateQueries(['civictax-deactivation-preview']);
+      queryClient.invalidateQueries(['civictax-my-civic-wallet']);
+      queryClient.invalidateQueries(['civictax-my-obligations']);
+    },
+    onError: (err) => toast.error(err?.response?.data?.message ?? 'That did not go through. Please try again.'),
+  });
+}
+
+export const useRefundPrepaid = () => useDeactivationStep(api.refundPrepaid, 'Prepaid months returned to your civic wallet.');
+export const useDeactivateCivic = () => useDeactivationStep(api.deactivateCivic, 'Your civic profile has been deactivated.');
 
 export function useObligationHistory(page = 1, limit = 20) {
   const { page: p, limit: l } = paginate(page, limit);
@@ -292,4 +438,18 @@ export function useUpdateCivicSplit() {
       },
     }
   );
+}
+
+
+/**
+ * civic-26: raised / disbursed / remaining for a project's campaign, from the ledger custody wallet (totals only).
+ * `hasWallet: false` means the campaign predates per-project custody — callers should show nothing rather than zeros.
+ */
+export function useProjectFunding(campaignId) {
+  return useQuery(['civictax-project-funding', campaignId], () => api.getProjectFunding(campaignId), {
+    enabled: Boolean(campaignId),
+    select: (res) => res.data,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
 }

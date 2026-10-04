@@ -10,7 +10,6 @@ import { useReportIssue } from '../hooks/useSocialRepo';
 import CommunityHeader from './shared-components/CommunityHeader';
 import CommunityFeedSidebarLeft from './shared-components/CommunityFeedSidebarLeft';
 import CommunityFeedSidebarRight from './shared-components/CommunityFeedSidebarRight';
-import { JurisdictionSelector } from '../../civic-shared';
 import { ISSUE_CATEGORIES } from '../mock';
 
 const F = {
@@ -29,20 +28,13 @@ const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
   },
 }));
 
-const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Low — Minor inconvenience' },
-  { value: 'medium', label: 'Medium — Affecting daily life' },
-  { value: 'high', label: 'High — Serious community impact' },
-  { value: 'critical', label: 'Critical — Urgent health/safety risk' },
-];
 
 function ActiveCreateIssuePage() {
   const navigate = useNavigate();
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
-  const [form, setForm] = useState({ title: '', category: '', priority: 'medium', description: '', address: '' });
-  const [jurisdiction, setJurisdiction] = useState({});
+  const [form, setForm] = useState({ title: '', category: '', locationBasis: 'DWELLING', description: '' });
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
@@ -51,7 +43,7 @@ function ActiveCreateIssuePage() {
   function update(key, value) { setForm((prev) => ({ ...prev, [key]: value })); }
   function handleSubmit(e) {
     e.preventDefault();
-    reportIssue({ ...form, jurisdiction }, { onSuccess: () => setTimeout(() => navigate('/community/my-feed'), 2200) });
+    reportIssue(form, { onSuccess: () => setTimeout(() => navigate('/community/my-feed'), 2200) });
   }
 
   const isValid = form.title.trim() && form.category && form.description.trim().length > 20;
@@ -106,9 +98,10 @@ function ActiveCreateIssuePage() {
                     </Select>
                   </FormControl>
                   <FormControl>
-                    <InputLabel sx={{ fontSize: F.body }}>Priority Level</InputLabel>
-                    <Select value={form.priority} label="Priority Level" onChange={(e) => update('priority', e.target.value)} sx={{ borderRadius: '12px', fontSize: F.body }}>
-                      {PRIORITY_OPTIONS.map((p) => <MenuItem key={p.value} value={p.value} sx={{ fontSize: F.body }}>{p.label}</MenuItem>)}
+                    <InputLabel sx={{ fontSize: F.body }}>Which of your LGAs?</InputLabel>
+                    <Select value={form.locationBasis} label="Which of your LGAs?" onChange={(e) => update('locationBasis', e.target.value)} sx={{ borderRadius: '12px', fontSize: F.body }}>
+                      <MenuItem value="DWELLING" sx={{ fontSize: F.body }}>Where I live now</MenuItem>
+                      <MenuItem value="HOME_ORIGIN" sx={{ fontSize: F.body }}>My home-origin LGA</MenuItem>
                     </Select>
                   </FormControl>
                 </div>
@@ -116,14 +109,13 @@ function ActiveCreateIssuePage() {
                   placeholder="Describe the issue in detail. When did it start? How many people are affected?"
                   value={form.description} onChange={(e) => update('description', e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', fontSize: F.body }, '& .MuiInputLabel-root': { fontSize: F.body } }} />
-                <TextField label="Location / Address" fullWidth placeholder="e.g. Admiralty Way, Lekki Phase 1, Lagos"
-                  value={form.address} onChange={(e) => update('address', e.target.value)}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', fontSize: F.body }, '& .MuiInputLabel-root': { fontSize: F.body } }} />
               </div>
             </div>
-            <div style={{ borderRadius: 'clamp(14px, 2vw, 20px)', padding: 'clamp(18px, 2.8vw, 28px)', background: 'white', border: '1px solid #e5e7eb' }}>
-              <Typography sx={{ fontWeight: 800, color: '#111827', mb: 2, fontSize: F.subH }}>Jurisdiction</Typography>
-              <JurisdictionSelector value={jurisdiction} onChange={setJurisdiction} />
+            <div style={{ borderRadius: 'clamp(14px, 2vw, 20px)', padding: 'clamp(14px, 2vw, 20px)', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <Typography sx={{ color: '#166534', fontSize: F.body, lineHeight: 1.7 }}>
+                Your issue is posted in the LGA you pick above. Only verified citizens of that LGA who have paid at least 2 of this year's 12 subscription months can vote on it. If at least 60% of the votes support
+                it, your LGA coordinator is asked to turn it into a funded project.
+              </Typography>
             </div>
             <Button type="submit" variant="contained" size="large" fullWidth disabled={!isValid || isLoading}
               startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <Send sx={{ fontSize: 'clamp(18px, 2.2vw, 22px)' }} />}
@@ -135,7 +127,7 @@ function ActiveCreateIssuePage() {
       </div>
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, jurisdiction, isLoading, isSuccess]);
+  }, [form, isLoading, isSuccess]);
 
   const leftSidebar = useMemo(() => <CommunityFeedSidebarLeft />, []);
   const rightSidebar = useMemo(() => <CommunityFeedSidebarRight />, []);

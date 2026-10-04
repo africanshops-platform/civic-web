@@ -38,8 +38,11 @@ function ContributionForm({ campaignId, campaignTitle }) {
       { campaignId, amount: parsed, message },
       {
         onSuccess: (res) => {
-          if (res?.data?.success) {
-            setTimeout(() => navigate(`/civictax/${res.data.transactionId}/receipt`), 1200);
+          // the API returns the contribution record itself (id, status COMPLETED)
+          const d = res?.data;
+          const receiptId = d?.transactionId ?? d?.id;
+          if (receiptId && (d?.success || d?.status === 'COMPLETED')) {
+            setTimeout(() => navigate(`/civictax/${receiptId}/receipt`), 1200);
           }
         },
       }

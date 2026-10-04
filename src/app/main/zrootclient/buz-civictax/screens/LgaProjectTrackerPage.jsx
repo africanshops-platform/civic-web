@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
-import { useLgaProjects } from '../hooks/useCivicTaxRepo';
+import { useLgaProjects, useProjectFunding } from '../hooks/useCivicTaxRepo';
 import CivicTaxHeader from './shared-components/CivicTaxHeader';
 import CampaignsBrowseSidebarLeft from './shared-components/CampaignsBrowseSidebarLeft';
 import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSidebarRight';
@@ -30,6 +30,41 @@ const STATUS_CONFIG = {
   completed:   { icon: CheckCircle, color: '#16a34a', bg: '#dcfce7',  label: 'Completed'   },
   upcoming:    { icon: Schedule,    color: '#6b7280', bg: '#f9fafb',  label: 'Upcoming'    },
 };
+
+/** Raised / released / remaining, straight from the ledger. Renders nothing for projects without a custody wallet yet. */
+function ProjectFunding({ campaignId }) {
+  const { data: f } = useProjectFunding(campaignId);
+  if (!f?.hasWallet) return null;
+  const naira = (kobo) => `₦${(Number(kobo || 0) / 100).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 'clamp(12px, 1.6vw, 18px)' }}>
+      {[
+        { label: 'Raised',    value: naira(f.raisedKobo) },
+        { label: 'Released',  value: naira(f.disbursedKobo) },
+        { label: 'Remaining', value: naira(f.remainingKobo) },
+      ].map((item) => (
+        <div key={item.label} style={{ textAlign: 'center', padding: 'clamp(8px, 1.2vw, 12px)', borderRadius: 12, background: '#fff7ed' }}>
+          <div style={{ fontSize: F.meta, color: '#9ca3af', fontWeight: 600 }}>{item.label}</div>
+          <div style={{ fontSize: F.body, fontWeight: 800, color: '#ea580c' }}>{item.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const API_STATUS = { PLANNED: 'upcoming', IN_PROGRESS: 'in_progress', COMPLETED: 'completed' };
+
+/** The API sends PLANNED/IN_PROGRESS/COMPLETED and per-milestone statuses; the card wants a lowercase status and a % done. */
+function normalizeProject(p) {
+  const milestones = p.milestones || [];
+  const done = milestones.filter((m) => m.status === 'COMPLETED').length;
+  const status = p.status in STATUS_CONFIG ? p.status : API_STATUS[p.status] || 'upcoming';
+  return {
+    ...p,
+    status,
+    completionPercentage: p.completionPercentage ?? (milestones.length ? Math.round((done / milestones.length) * 100) : 0),
+  };
+}
 
 function ProjectCard({ project, index }) {
   const [expanded, setExpanded] = useState(false);
@@ -67,19 +102,8 @@ function ProjectCard({ project, index }) {
             sx={{ height: 8, borderRadius: 4, backgroundColor: '#ffedd5', '& .MuiLinearProgress-bar': { borderRadius: 4, background: project.completionPercentage === 100 ? 'linear-gradient(90deg, #16a34a, #15803d)' : 'linear-gradient(90deg, #f97316, #ea580c)' } }} />
         </div>
 
-        {/* Budget grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 'clamp(12px, 1.6vw, 18px)' }}>
-          {[
-            { label: 'Budget',    value: `₦${(project.budget / 1000000).toFixed(1)}M` },
-            { label: 'Spent',     value: `₦${(project.spent / 1000000).toFixed(1)}M` },
-            { label: 'Remaining', value: `₦${((project.budget - project.spent) / 1000000).toFixed(1)}M` },
-          ].map((item) => (
-            <div key={item.label} style={{ textAlign: 'center', padding: 'clamp(8px, 1.2vw, 12px)', borderRadius: 12, background: '#fff7ed' }}>
-              <div style={{ fontSize: F.meta, color: '#9ca3af', fontWeight: 600 }}>{item.label}</div>
-              <div style={{ fontSize: F.body, fontWeight: 800, color: '#ea580c' }}>{item.value}</div>
-            </div>
-          ))}
-        </div>
+        {/* Funding — real numbers from the project's ledger custody wallet (civic-26) */}
+        <ProjectFunding campaignId={project.campaignId} />
 
         {/* Contractor */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 'clamp(12px, 1.6vw, 18px)', padding: 'clamp(10px, 1.4vw, 14px)', borderRadius: 12, background: '#fff7ed' }}>
@@ -132,7 +156,7 @@ function ActiveLgaProjectTrackerPage() {
 
   const [page, setPage] = useState(1);
   const { data, isLoading } = useLgaProjects({ page });
-  const projects    = useMemo(() => data?.data?.projects    || [], [data]);
+  const projects    = useMemo(() => (data?.data?.projects || []).map(normalizeProject), [data]);
   const pagination  = useMemo(() => data?.data?.pagination,       [data]);
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v)  => !v), []);

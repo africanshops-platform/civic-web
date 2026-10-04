@@ -58,7 +58,7 @@ export default function EditCivicSplitDialog({ open, onClose, summary, onSave, i
             valueLabelFormat={(v) => `${v}% Dwelling`}
           />
           <div className="text-12 text-gray-500 mt-4">
-            Each LGA must keep between 30% and 70% of your civic tax.
+            Each LGA must keep between 30% and 70% of your civic subscription.
           </div>
         </div>
       </DialogContent>
