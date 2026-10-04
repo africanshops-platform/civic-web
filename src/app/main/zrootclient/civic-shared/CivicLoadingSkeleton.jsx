@@ -42,7 +42,7 @@ function CivicLoadingSkeleton({ message = 'Loading...', cardCount = 4, variant =
                 style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}
               >
                 <img
-                  src="/assets/images/logo/logo.svg"
+                  src="/assets/images/afslogo/afslogo.png"
                   alt="AfricanShops"
                   className="w-12 h-12"
                   onError={(e) => {
