@@ -12,16 +12,16 @@ const PRODUCTS = [
   {
     key: 'treasury-bills',
     title: 'Treasury Bills',
-    blurb: 'Lend to the government short-term and earn a fixed, guaranteed return — 91 to 364 days.',
+    blurb: 'Short-term government-issued securities with terms from 91 to 364 days. Not available yet.',
     icon: 'heroicons-solid:library',
-    stat: 'Fixed return',
+    stat: 'Planned',
   },
   {
     key: 'stocks',
     title: 'Stocks',
-    blurb: 'Buy shares in companies listed on the Nigerian Exchange, fractional or full unit.',
+    blurb: 'Shares in companies listed on the Nigerian Exchange. Values can go down as well as up. Not available yet.',
     icon: 'heroicons-solid:chart-bar',
-    stat: 'Market-linked',
+    stat: 'Planned',
   },
 ];
 
@@ -59,7 +59,7 @@ export default function FinanceMarketsContent() {
                 Markets
               </Typography>
               <Typography style={{ fontSize: F.body, color: tokens.heroTextMuted, marginTop: 8, maxWidth: 480 }}>
-                Grow your money beyond savings — treasury bills and stocks, coming to your wallet.
+                Treasury bills and stocks are planned for a future update.
               </Typography>
             </div>
             <div
@@ -125,8 +125,8 @@ export default function FinanceMarketsContent() {
             <FuseSvgIcon size={20} style={{ color: tokens.info }}>heroicons-outline:information-circle</FuseSvgIcon>
           </div>
           <Typography style={{ fontSize: F.body, color: tokens.textSecondary, lineHeight: 1.5 }}>
-            We're building Markets alongside our regulatory partners. Your Savings and Wallets balances are unaffected
-            and remain fully available in the meantime.
+            Markets is not available yet, and nothing can be bought here today. Your Savings and Wallets balances are
+            unaffected.
           </Typography>
         </motion.div>
       </motion.div>
