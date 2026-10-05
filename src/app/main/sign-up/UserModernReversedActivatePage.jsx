@@ -161,11 +161,11 @@ function UserModernReversedActivatePage({ resendOTP }) {
             <div
               className="flex h-56 w-56 items-center justify-center rounded-xl mb-32"
               style={{
-                background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-                boxShadow: "0 4px 20px rgba(234, 88, 12, 0.3)",
+                background: "#000000",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.25)",
               }}
             >
-              <img className="w-40" src="assets/images/afslogo/afslogo.png" alt="logo" />
+              <img className="w-40" src="assets/images/afslogo/civic-logo-white.png" alt="logo" />
             </div>
 
             <Typography className="text-4xl font-extrabold leading-tight tracking-tight">

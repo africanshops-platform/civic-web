@@ -28,7 +28,7 @@ const FooterAfricanshops = () => {
               style={{ textDecoration: "none" }}
             >
               <img
-                src="assets/images/afslogo/afslogo.png"
+                src="assets/images/afslogo/civic-logo.png"
                 width={48}
                 height={48}
                 alt="Africanshops Logo"

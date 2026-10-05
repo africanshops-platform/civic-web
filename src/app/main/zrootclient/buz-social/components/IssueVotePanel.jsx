@@ -11,14 +11,18 @@ const F = {
 };
 
 /**
- * How a community issue becomes a funded project (civic-19/20): citizens of the LGA vote; once at least 60% of the votes
- * cast support it (with a minimum number of votes) voting closes and the LGA coordinator decides whether to make it a
+ * How a community issue becomes a funded project (civic-19/20): citizens of the LGA vote; once the upvotes reach 60% of
+ * the citizens registered to the LGA, voting closes and the LGA coordinator decides whether to make it a
  * campaign + project people can fund. A declined issue is closed for good — raise it again to restart the process.
  */
 function IssueVotePanel({ issue, myVote, onVote, isVoting, accent = '#059669' }) {
-  const policy = issue.votePolicy || { supportThreshold: 0.6, minVotes: 20 };
+  const policy = issue.votePolicy || { supportThreshold: 0.6 };
   const needPct = Math.round(policy.supportThreshold * 100);
-  const enough = issue.votesCast >= policy.minVotes;
+  // The 60% is measured against the LGA's registered citizens, so progress is upvotes toward the votes required.
+  const registered = policy.registeredUsers ?? null;
+  const required = policy.requiredUpvotes ?? null;
+  const progress = required ? Math.min(100, Math.round((issue.upvotes / required) * 100)) : 0;
+  const frozenRegistered = issue.thresholdRegisteredUsers ?? null;
   const box = { borderRadius: 18, padding: 'clamp(14px, 2.2vw, 22px)', background: 'white', border: '1px solid #e5e7eb' };
 
   if (issue.status === 'declined') {
@@ -52,8 +56,10 @@ function IssueVotePanel({ issue, myVote, onVote, isVoting, accent = '#059669' })
       <div style={{ ...box, background: '#fffbeb', borderColor: '#fde68a' }}>
         <Typography sx={{ fontWeight: 800, color: '#92400e', fontSize: F.subH, mb: 1 }}>The community has spoken</Typography>
         <Typography sx={{ color: '#374151', fontSize: F.body, lineHeight: 1.7 }}>
-          {issue.upvotes} of {issue.votesCast} votes ({issue.supportPercent}%) supported this. Voting is closed and your LGA coordinator is
-          deciding whether to make it a funded project.
+          {frozenRegistered
+            ? `${issue.upvotes} upvotes — ${Math.round((issue.upvotes / frozenRegistered) * 100)}% of the ${frozenRegistered} citizens registered in ${issue.jurisdiction.lga} — supported this.`
+            : `${issue.upvotes} of ${issue.votesCast} votes supported this.`}{' '}
+          Voting is closed and your LGA coordinator is deciding whether to make it a funded project.
         </Typography>
       </div>
     );
@@ -66,13 +72,13 @@ function IssueVotePanel({ issue, myVote, onVote, isVoting, accent = '#059669' })
         Only verified citizens whose home or dwelling LGA is {issue.jurisdiction.lga} can vote, once they have paid at least 2 of this year's 12 civic subscription months — one vote each.
       </Typography>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: F.meta, color: '#374151', fontWeight: 700, marginBottom: 6 }}>
-        <span>{issue.supportPercent}% support</span>
-        <span>needs {needPct}% of at least {policy.minVotes} votes</span>
+        <span>{required ? `${issue.upvotes} of ${required} upvotes needed` : `${issue.upvotes} upvote${issue.upvotes === 1 ? '' : 's'}`}</span>
+        <span>{registered ? `${needPct}% of ${registered} citizens in ${issue.jurisdiction.lga}` : `needs ${needPct}% of the citizens in ${issue.jurisdiction.lga}`}</span>
       </div>
-      <LinearProgress variant="determinate" value={Math.min(100, issue.supportPercent)}
-        sx={{ height: 10, borderRadius: 5, backgroundColor: '#e5e7eb', '& .MuiLinearProgress-bar': { borderRadius: 5, backgroundColor: issue.supportPercent >= needPct && enough ? '#16a34a' : accent } }} />
+      <LinearProgress variant="determinate" value={progress}
+        sx={{ height: 10, borderRadius: 5, backgroundColor: '#e5e7eb', '& .MuiLinearProgress-bar': { borderRadius: 5, backgroundColor: progress >= 100 ? '#16a34a' : accent } }} />
       <div style={{ fontSize: F.meta, color: '#6b7280', margin: '6px 0 14px' }}>
-        {issue.votesCast} vote{issue.votesCast === 1 ? '' : 's'} cast{enough ? '' : ` · ${policy.minVotes - issue.votesCast} more needed before it can be presented`}
+        {issue.votesCast} vote{issue.votesCast === 1 ? '' : 's'} cast{required && issue.upvotes < required ? ` · ${required - issue.upvotes} more upvote${required - issue.upvotes === 1 ? '' : 's'} needed before it can be presented` : ''}
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         {[{ type: 'UP', label: 'Support', Icon: ThumbUp, color: accent }, { type: 'DOWN', label: 'Not now', Icon: ThumbDown, color: '#6b7280' }].map(({ type, label, Icon, color }) => (

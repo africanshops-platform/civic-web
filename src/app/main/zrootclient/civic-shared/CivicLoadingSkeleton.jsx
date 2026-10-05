@@ -39,10 +39,10 @@ function CivicLoadingSkeleton({ message = 'Loading...', cardCount = 4, variant =
               <CircularProgress size={110} thickness={3} sx={{ color: '#ea580c', position: 'absolute', top: -15, left: -15 }} />
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl"
-                style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}
+                style={{ background: '#000000' }}
               >
                 <img
-                  src="/assets/images/logo/logo.svg"
+                  src="/assets/images/afslogo/civic-logo-white.png"
                   alt="AfricanShops"
                   className="w-12 h-12"
                   onError={(e) => {

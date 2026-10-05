@@ -32,7 +32,7 @@ export default function ProgrammesScreen() {
         <span className="fl2-eyebrow">Youth &amp; Sports · Skill Up · Get Enrolled</span>
         <h1 style={{ fontSize: '2.8rem' }}>Programmes</h1>
         <span className="fl2-small fl2-muted">
-          Government-backed youth programmes beyond sport — tech, agriculture, arts, entrepreneurship, health, vocational.
+          Community youth programmes beyond sport — tech, agriculture, arts, entrepreneurship, health, vocational.
         </span>
       </div>
 

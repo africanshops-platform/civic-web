@@ -56,7 +56,7 @@ export default function HubScreen() {
     },
     {
       icon: MenuBookIcon, title: 'Programmes',
-      desc: 'Government-backed youth programmes beyond sport — tech, agriculture, arts, entrepreneurship, health, vocational.',
+      desc: 'Community youth programmes beyond sport — tech, agriculture, arts, entrepreneurship, health, vocational.',
       stat: stats ? `${stats.totalPrograms} programmes · ${stats.openPrograms} open now` : 'Loading…',
       to: '/youth-v2/programs',
     },
