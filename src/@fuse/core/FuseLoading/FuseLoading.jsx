@@ -159,7 +159,7 @@ function FuseLoading(props) {
         >
           {/* Company Logo */}
           <img
-            src="/assets/images/afslogo/afslogo.png"
+            src="/assets/images/afslogo/civic-logo.png"
             alt="AfricanShops"
             style={{
               width: "50px",

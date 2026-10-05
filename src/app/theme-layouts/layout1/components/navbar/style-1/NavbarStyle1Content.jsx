@@ -58,7 +58,7 @@ function NavbarStyle1Content(props) {
           <img
             className="w-full max-w-64"
             // src="assets/images/afslogo/afLogo.svg"
-            src="assets/images/afslogo/afslogo.png"
+            src="assets/images/afslogo/civic-logo.png"
             alt="footer logo"
             width={45}
             height={45}
