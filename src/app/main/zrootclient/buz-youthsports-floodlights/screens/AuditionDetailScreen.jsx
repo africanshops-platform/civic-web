@@ -5,6 +5,8 @@ import { ArrowBack, CalendarToday } from '@mui/icons-material';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { Pill, TeamName } from './shared/flHelpers';
 import { useAuditionDetail, useApplyToAudition, useMyAuditionApplications } from '../hooks/useFloodlightsRepo';
+import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
+
 
 export default function AuditionDetailScreen() {
   const { auditionId } = useParams();
@@ -14,6 +16,7 @@ export default function AuditionDetailScreen() {
   const myApplications = myAppsData?.data?.applications ?? [];
   const existingApplication = myApplications.find((a) => a.auditionId === auditionId);
   const applyToAudition = useApplyToAudition();
+  const { guard, gateDialog } = useInteractGuard();
 
   const [applicantName, setApplicantName] = useState('');
   const [pitchNote, setPitchNote] = useState('');
@@ -108,7 +111,7 @@ export default function AuditionDetailScreen() {
                   <button
                     type="button"
                     disabled={!applicantName.trim() || applyToAudition.isLoading}
-                    onClick={handleApply}
+                    onClick={guard(handleApply)}
                     className="fl2-btn fl2-btn-gold fl2-btn-block"
                   >
                     {applyToAudition.isLoading ? 'Submitting…' : 'Apply Now'}
@@ -119,6 +122,7 @@ export default function AuditionDetailScreen() {
           </div>
         </>
       )}
+      {gateDialog}
     </FloodlightsPage>
   );
 }

@@ -6,6 +6,7 @@ import FloodlightsPage from './shared/FloodlightsPage';
 import { FormDots, Pill, TeamName, TeamIdentity, computeForm } from './shared/flHelpers';
 import { useTournamentDetail, useEnrollInTournament, useMyTournamentEnrollments } from '../hooks/useFloodlightsRepo';
 import { SPORT_ICONS } from '../mock';
+import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
 
 // Phase 7 of the club-recruitment pipeline (2026-08-30) — direct individual
 // enrollment, only for participationMode: SINGLE tournaments (e.g. athletics,
@@ -16,6 +17,7 @@ import { SPORT_ICONS } from '../mock';
 function EnrollPanel({ tournament }) {
   const [justEnrolled, setJustEnrolled] = useState(false);
   const enrollMutation = useEnrollInTournament();
+  const { guard, gateDialog } = useInteractGuard();
   // Multi-account retest finding (2026-08-30): the button must reflect a
   // pre-existing enrollment from a prior visit/session, not just this
   // component's own click history — otherwise a returning, already-enrolled
@@ -45,11 +47,12 @@ function EnrollPanel({ tournament }) {
       <Button
         variant="contained"
         disabled={enrolled || closed || full || enrollMutation.isLoading}
-        onClick={() => enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setJustEnrolled(true) })}
+        onClick={guard(() => enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setJustEnrolled(true) }))}
         sx={{ textTransform: 'none', fontWeight: 700 }}
       >
         {buttonLabel}
       </Button>
+      {gateDialog}
     </div>
   );
 }

@@ -198,6 +198,9 @@ export function useRequestMentorship() {
   );
 }
 
+// Public pages call these "my ..." queries too (to show "Enrolled"/"Watching"); a guest has no session, so they must not fire.
+const hasSession = () => Boolean(localStorage.getItem('jwt_access_token'));
+
 export function useMyPrograms(filters = {}) {
   const { page = 1, limit = 20 } = filters;
   return useQuery(
@@ -209,6 +212,7 @@ export function useMyPrograms(filters = {}) {
         return { data: { enrollments: (d.data ?? []).map(normalizeEnrollment), total: d.total ?? 0 } };
       },
       staleTime: 2 * 60 * 1000,
+      enabled: hasSession(),
     }
   );
 }
@@ -252,7 +256,7 @@ export function useMyTournamentEnrollments(filters = {}) {
   return useQuery(
     ['youth-tournament-my-enrollments', filters],
     () => api.getMyTournamentEnrollments({ page, limit }),
-    { select: (res) => ({ data: res.data }), staleTime: 60 * 1000 }
+    { select: (res) => ({ data: res.data }), staleTime: 60 * 1000, enabled: hasSession() }
   );
 }
 
