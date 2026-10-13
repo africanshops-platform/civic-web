@@ -16,7 +16,6 @@ const api = {
   payObligations:      (data)   => AuthApi().post('/civic/subscriptions/obligations/pay-many', data),
   getMyCivicWallet:    ()       => AuthApi().get('/civic/subscriptions/wallet/me'),
   getDeactivationPreview: ()    => AuthApi().get('/civic/subscriptions/deactivation-preview'),
-  refundPrepaid:       ()       => AuthApi().post('/civic/subscriptions/obligations/refund-prepaid'),
   deactivateCivic:     ()       => AuthApi().post('/civic/subscriptions/deactivate'),
   getSpendingBalance:  ()       => AuthApi().get('/fintech-accounts/user/balance?currency=NGN'),
   fundCivicWallet:     (acct, body) => AuthApi().post(`/fintech-accounts/user/account/${acct}/civic-wallet/fund`, body),
@@ -371,7 +370,7 @@ function useCivicWalletMove(call, successMsg) {
 export const useFundCivicWallet = () => useCivicWalletMove(api.fundCivicWallet, 'Civic wallet funded.');
 export const useWithdrawCivicWallet = () => useCivicWalletMove(api.withdrawCivicWallet, 'Moved back to your spending wallet.');
 
-// ─── Deactivating the civic profile (guided: refund prepaid -> move money back -> deactivate) ───
+// ─── Deactivating the civic profile (guided: move the civic wallet balance back -> deactivate). Paid subscriptions are never refunded. ───
 
 export function useDeactivationPreview(enabled = true) {
   return useQuery(['civictax-deactivation-preview'], () => api.getDeactivationPreview(), { enabled, select: (res) => res.data, staleTime: 0 });
@@ -390,7 +389,6 @@ function useDeactivationStep(call, successMsg) {
   });
 }
 
-export const useRefundPrepaid = () => useDeactivationStep(api.refundPrepaid, 'Prepaid months returned to your civic wallet.');
 export const useDeactivateCivic = () => useDeactivationStep(api.deactivateCivic, 'Your civic profile has been deactivated.');
 
 export function useObligationHistory(page = 1, limit = 20) {
