@@ -94,17 +94,65 @@ function BracketMatchBox({ match, home, away }) {
   );
 }
 
+const SEEDING_TEXT = {
+  RANKED: 'Ranked: the strongest entrants are seeded to meet last.',
+  RANDOM: 'Random draw (reproducible and recorded).',
+  GEO_BALANCED: 'Geo-balanced draw: people from the same area are spread apart so every region stays in the tournament as long as possible.',
+};
+const TIEBREAK_TEXT = {
+  EXTRA_TIME_THEN_PENALTIES: 'A level match goes to extra time, then penalties.',
+  SUDDEN_DEATH: 'A level match is decided by sudden death.',
+  REPLAY: 'A level match is replayed.',
+};
+
+/** The tournament's rules and guidelines, written by the admin (defaults per sport kind): visible to anyone who can see or enter it. */
+function RulesCard({ tournament }) {
+  const r = tournament.rules;
+  if (!r) return null;
+  return (
+    <div className="fl2-card fl2-stack" style={{ gap: 6 }}>
+      <span className="fl2-eyebrow">Rules & guidelines</span>
+      <ul className="fl2-small" style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 4 }}>
+        {tournament.flow && <li>{tournament.flow.participation === 'SINGLE' ? 'Played by individual players.' : 'Played by teams entered by clubs.'}</li>}
+        {SEEDING_TEXT[r.seeding] && <li>{SEEDING_TEXT[r.seeding]}</li>}
+        {tournament.format === 'KNOCKOUT' && <li>{r.thirdPlaceMatch ? 'A third-place match is played.' : 'No third-place match.'}</li>}
+        {TIEBREAK_TEXT[r.tieBreak] && <li>{TIEBREAK_TEXT[r.tieBreak]}</li>}
+        {r.matchFormat && <li>{r.matchFormat}</li>}
+      </ul>
+      {r.guidelines && <p className="fl2-small" style={{ margin: '6px 0 0', whiteSpace: 'pre-line' }}>{r.guidelines}</p>}
+    </div>
+  );
+}
+
+function PodiumCard({ tournament }) {
+  const p = tournament.podium;
+  if (!p) return null;
+  const name = (id) => (tournament.teams ?? []).find((t) => t.id === id)?.teamName ?? '—';
+  return (
+    <div className="fl2-card fl2-stack" style={{ gap: 4 }}>
+      <span className="fl2-eyebrow">Final result</span>
+      <span style={{ fontWeight: 800 }}>🏆 {name(p.first)}</span>
+      <span className="fl2-small">🥈 {name(p.second)}</span>
+      {p.third && <span className="fl2-small">🥉 {name(p.third)}</span>}
+    </div>
+  );
+}
+
 function BracketView({ tournament }) {
   const teams = tournament.teams ?? [];
-  const matches = tournament.matches ?? [];
+  const allMatches = tournament.matches ?? [];
+  const matches = allMatches.filter((m) => !m.isThirdPlace);
+  const thirdPlace = allMatches.find((m) => m.isThirdPlace);
   const teamById = (id) => teams.find((t) => t.id === id);
   const realRounds = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
   // No fixtures generated yet (e.g. a fresh, still-registering tournament) —
   // still show the shape of the bracket the artifact always shows: a fixed
   // Quarterfinal/Semifinal/Final skeleton, all slots TBD, rather than a
   // blank page or a capacity-derived round count the artifact never had.
-  const totalRounds = realRounds.length || 3;
-  const rounds = realRounds.length ? realRounds : [1, 2, 3];
+  // Once drawn, the backend tells us how many rounds the bracket has (later rounds appear as results come in), so rounds that have
+  // not been played yet still show as TBD and "Final" is only ever the last one.
+  const totalRounds = tournament.bracketData?.totalRounds ?? (realRounds.length || 3);
+  const rounds = Array.from({ length: totalRounds }, (_, i) => i + 1);
 
   return (
     <>
@@ -119,11 +167,9 @@ function BracketView({ tournament }) {
       <div className="fl2-scrollx">
         <div className="fl2-row" style={{ gap: 32, alignItems: 'center', minWidth: 700, padding: '12px 4px' }}>
           {rounds.map((round, roundIdx) => {
-            const roundMatches = realRounds.length
-              ? matches.filter((m) => m.round === round).sort((a, b) => a.id.localeCompare(b.id))
-              : [];
+            const roundMatches = matches.filter((m) => m.round === round).sort((a, b) => a.id.localeCompare(b.id));
             const slots = roundMatches.length || 2 ** (totalRounds - roundIdx - 1);
-            const gap = [20, 64, 0][roundIdx] ?? 0;
+            const gap = [20, 64, 150, 330, 700][roundIdx] ?? 0;
             return (
               <div key={round} className="fl2-stack" style={{ gap: 24 }}>
                 <span className="fl2-eyebrow" style={{ textAlign: 'center' }}>{roundLabel(round, totalRounds)}</span>
@@ -137,6 +183,12 @@ function BracketView({ tournament }) {
           })}
         </div>
       </div>
+      {thirdPlace && (
+        <div className="fl2-stack" style={{ gap: 8 }}>
+          <span className="fl2-eyebrow">Third-place match</span>
+          <BracketMatchBox match={thirdPlace} home={teamById(thirdPlace.homeTeamId)} away={teamById(thirdPlace.awayTeamId)} />
+        </div>
+      )}
     </>
   );
 }
@@ -285,6 +337,8 @@ export default function TournamentDetailScreen() {
         <>
           {header}
           <EnrollPanel tournament={tournament} />
+          <PodiumCard tournament={tournament} />
+          <RulesCard tournament={tournament} />
           {isKnockout ? <BracketView tournament={tournament} /> : <LeagueView tournament={tournament} />}
         </>
       )}
