@@ -4,6 +4,7 @@ import { ArrowBack } from '@mui/icons-material';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { Avatar, Pill } from './shared/flHelpers';
 import { usePlayers, useIsWatchingPlayer, useWatchPlayer, useUnwatchPlayer } from '../hooks/useFloodlightsRepo';
+import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
 
 // The artifact's own watchlist was client-only state (state.watchlist, a
 // plain Set, never persisted to a backend) — now a real PlayerWatchlist
@@ -14,6 +15,7 @@ export default function PlayerScreen() {
   const { isWatching } = useIsWatchingPlayer(playerId);
   const watchMutation = useWatchPlayer();
   const unwatchMutation = useUnwatchPlayer();
+  const { guard, gateDialog } = useInteractGuard();
 
   const player = data?.data?.players?.find((p) => p.id === playerId);
 
@@ -47,7 +49,7 @@ export default function PlayerScreen() {
               type="button"
               className="fl2-btn fl2-btn-outline fl2-btn-sm"
               disabled={watchMutation.isLoading || unwatchMutation.isLoading}
-              onClick={() => (isWatching ? unwatchMutation.mutate(playerId) : watchMutation.mutate(playerId))}
+              onClick={guard(() => (isWatching ? unwatchMutation.mutate(playerId) : watchMutation.mutate(playerId)))}
             >
               {isWatching ? '★ On watchlist' : '☆ Watchlist'}
             </button>
@@ -71,6 +73,7 @@ export default function PlayerScreen() {
           </div>
         </>
       )}
+      {gateDialog}
     </FloodlightsPage>
   );
 }

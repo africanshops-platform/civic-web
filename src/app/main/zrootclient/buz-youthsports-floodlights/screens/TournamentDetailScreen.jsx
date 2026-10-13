@@ -6,6 +6,8 @@ import FloodlightsPage from './shared/FloodlightsPage';
 import { FormDots, Pill, TeamName, TeamIdentity, computeForm } from './shared/flHelpers';
 import { useTournamentDetail, useEnrollInTournament, useMyTournamentEnrollments } from '../hooks/useFloodlightsRepo';
 import { SPORT_ICONS } from '../mock';
+import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
+import { canEnter, stageText } from '../stage';
 
 // Phase 7 of the club-recruitment pipeline (2026-08-30) — direct individual
 // enrollment, only for participationMode: SINGLE tournaments (e.g. athletics,
@@ -16,6 +18,7 @@ import { SPORT_ICONS } from '../mock';
 function EnrollPanel({ tournament }) {
   const [justEnrolled, setJustEnrolled] = useState(false);
   const enrollMutation = useEnrollInTournament();
+  const { guard, gateDialog } = useInteractGuard();
   // Multi-account retest finding (2026-08-30): the button must reflect a
   // pre-existing enrollment from a prior visit/session, not just this
   // component's own click history — otherwise a returning, already-enrolled
@@ -24,10 +27,20 @@ function EnrollPanel({ tournament }) {
   const alreadyEnrolled = (myEnrollments?.data?.data ?? []).some((e) => e.tournamentId === tournament.id);
   const enrolled = justEnrolled || alreadyEnrolled;
 
-  if (tournament.participationMode !== 'SINGLE') return null;
+  // Team tournaments are entered by CLUBS from the merchant app (the team is a merchant there); citizens never register a team.
+  if (tournament.participationMode !== 'SINGLE') {
+    return (
+      <div className="fl2-card fl2-stack" style={{ gap: 4 }}>
+        <span className="fl2-eyebrow">Team tournament</span>
+        <span className="fl2-small fl2-muted">
+          Clubs enter this tournament from the AfricanShops Merchant app, where each team is managed. Follow the standings, fixtures and results here.
+        </span>
+      </div>
+    );
+  }
 
   const full = (tournament.currentTeams ?? 0) >= (tournament.maxTeams ?? 0);
-  const closed = tournament.status !== 'upcoming';
+  const closed = !canEnter(tournament);
   let buttonLabel = 'Enroll';
   if (enrolled) buttonLabel = 'Enrolled';
   else if (enrollMutation.isLoading) buttonLabel = 'Enrolling…';
@@ -38,18 +51,19 @@ function EnrollPanel({ tournament }) {
         <span className="fl2-eyebrow">Individual enrollment</span>
         <span className="fl2-small fl2-muted">
           {tournament.currentTeams ?? 0} of {tournament.maxTeams} enrolled
-          {closed && ' — enrollment closed'}
+          {closed && ` — ${stageText(tournament).toLowerCase() || 'enrollment closed'}`}
           {!closed && full && ' — full'}
         </span>
       </div>
       <Button
         variant="contained"
         disabled={enrolled || closed || full || enrollMutation.isLoading}
-        onClick={() => enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setJustEnrolled(true) })}
+        onClick={guard(() => enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setJustEnrolled(true) }))}
         sx={{ textTransform: 'none', fontWeight: 700 }}
       >
         {buttonLabel}
       </Button>
+      {gateDialog}
     </div>
   );
 }
@@ -80,17 +94,65 @@ function BracketMatchBox({ match, home, away }) {
   );
 }
 
+const SEEDING_TEXT = {
+  RANKED: 'Ranked: the strongest entrants are seeded to meet last.',
+  RANDOM: 'Random draw (reproducible and recorded).',
+  GEO_BALANCED: 'Geo-balanced draw: people from the same area are spread apart so every region stays in the tournament as long as possible.',
+};
+const TIEBREAK_TEXT = {
+  EXTRA_TIME_THEN_PENALTIES: 'A level match goes to extra time, then penalties.',
+  SUDDEN_DEATH: 'A level match is decided by sudden death.',
+  REPLAY: 'A level match is replayed.',
+};
+
+/** The tournament's rules and guidelines, written by the admin (defaults per sport kind): visible to anyone who can see or enter it. */
+function RulesCard({ tournament }) {
+  const r = tournament.rules;
+  if (!r) return null;
+  return (
+    <div className="fl2-card fl2-stack" style={{ gap: 6 }}>
+      <span className="fl2-eyebrow">Rules & guidelines</span>
+      <ul className="fl2-small" style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 4 }}>
+        {tournament.flow && <li>{tournament.flow.participation === 'SINGLE' ? 'Played by individual players.' : 'Played by teams entered by clubs.'}</li>}
+        {SEEDING_TEXT[r.seeding] && <li>{SEEDING_TEXT[r.seeding]}</li>}
+        {tournament.format === 'KNOCKOUT' && <li>{r.thirdPlaceMatch ? 'A third-place match is played.' : 'No third-place match.'}</li>}
+        {TIEBREAK_TEXT[r.tieBreak] && <li>{TIEBREAK_TEXT[r.tieBreak]}</li>}
+        {r.matchFormat && <li>{r.matchFormat}</li>}
+      </ul>
+      {r.guidelines && <p className="fl2-small" style={{ margin: '6px 0 0', whiteSpace: 'pre-line' }}>{r.guidelines}</p>}
+    </div>
+  );
+}
+
+function PodiumCard({ tournament }) {
+  const p = tournament.podium;
+  if (!p) return null;
+  const name = (id) => (tournament.teams ?? []).find((t) => t.id === id)?.teamName ?? '—';
+  return (
+    <div className="fl2-card fl2-stack" style={{ gap: 4 }}>
+      <span className="fl2-eyebrow">Final result</span>
+      <span style={{ fontWeight: 800 }}>🏆 {name(p.first)}</span>
+      <span className="fl2-small">🥈 {name(p.second)}</span>
+      {p.third && <span className="fl2-small">🥉 {name(p.third)}</span>}
+    </div>
+  );
+}
+
 function BracketView({ tournament }) {
   const teams = tournament.teams ?? [];
-  const matches = tournament.matches ?? [];
+  const allMatches = tournament.matches ?? [];
+  const matches = allMatches.filter((m) => !m.isThirdPlace);
+  const thirdPlace = allMatches.find((m) => m.isThirdPlace);
   const teamById = (id) => teams.find((t) => t.id === id);
   const realRounds = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
   // No fixtures generated yet (e.g. a fresh, still-registering tournament) —
   // still show the shape of the bracket the artifact always shows: a fixed
   // Quarterfinal/Semifinal/Final skeleton, all slots TBD, rather than a
   // blank page or a capacity-derived round count the artifact never had.
-  const totalRounds = realRounds.length || 3;
-  const rounds = realRounds.length ? realRounds : [1, 2, 3];
+  // Once drawn, the backend tells us how many rounds the bracket has (later rounds appear as results come in), so rounds that have
+  // not been played yet still show as TBD and "Final" is only ever the last one.
+  const totalRounds = tournament.bracketData?.totalRounds ?? (realRounds.length || 3);
+  const rounds = Array.from({ length: totalRounds }, (_, i) => i + 1);
 
   return (
     <>
@@ -98,18 +160,16 @@ function BracketView({ tournament }) {
         <span className="fl2-eyebrow">Registration</span>
         <div className="fl2-statbar"><i style={{ width: `${Math.min(100, ((tournament.teamsRegistered ?? 0) / (tournament.maxTeams || 1)) * 100)}%` }} /></div>
         <span className="fl2-small fl2-muted">
-          {tournament.teamsRegistered ?? 0} of {tournament.maxTeams} registered — <span style={{ color: 'var(--gold)', fontWeight: 700 }}>registration opening soon</span>.
+          {tournament.teamsRegistered ?? 0} of {tournament.maxTeams} {tournament.participationMode === 'SINGLE' ? 'players' : 'teams'} registered — <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{stageText(tournament) || 'status unavailable'}</span>.
         </span>
       </div>
 
       <div className="fl2-scrollx">
         <div className="fl2-row" style={{ gap: 32, alignItems: 'center', minWidth: 700, padding: '12px 4px' }}>
           {rounds.map((round, roundIdx) => {
-            const roundMatches = realRounds.length
-              ? matches.filter((m) => m.round === round).sort((a, b) => a.id.localeCompare(b.id))
-              : [];
+            const roundMatches = matches.filter((m) => m.round === round).sort((a, b) => a.id.localeCompare(b.id));
             const slots = roundMatches.length || 2 ** (totalRounds - roundIdx - 1);
-            const gap = [20, 64, 0][roundIdx] ?? 0;
+            const gap = [20, 64, 150, 330, 700][roundIdx] ?? 0;
             return (
               <div key={round} className="fl2-stack" style={{ gap: 24 }}>
                 <span className="fl2-eyebrow" style={{ textAlign: 'center' }}>{roundLabel(round, totalRounds)}</span>
@@ -123,6 +183,12 @@ function BracketView({ tournament }) {
           })}
         </div>
       </div>
+      {thirdPlace && (
+        <div className="fl2-stack" style={{ gap: 8 }}>
+          <span className="fl2-eyebrow">Third-place match</span>
+          <BracketMatchBox match={thirdPlace} home={teamById(thirdPlace.homeTeamId)} away={teamById(thirdPlace.awayTeamId)} />
+        </div>
+      )}
     </>
   );
 }
@@ -271,6 +337,8 @@ export default function TournamentDetailScreen() {
         <>
           {header}
           <EnrollPanel tournament={tournament} />
+          <PodiumCard tournament={tournament} />
+          <RulesCard tournament={tournament} />
           {isKnockout ? <BracketView tournament={tournament} /> : <LeagueView tournament={tournament} />}
         </>
       )}

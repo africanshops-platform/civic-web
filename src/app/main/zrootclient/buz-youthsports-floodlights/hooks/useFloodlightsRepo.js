@@ -5,7 +5,7 @@ import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 // v2 pages reuse every already-real hook from the v1 module untouched —
 // re-exported here so v2 screens have one import surface.
 export {
-  useYouthStats, usePrograms, useProgramDetail, useTalents,
+  usePrograms, useProgramDetail, useTalents,
   useTournaments, useTournamentDetail, useRequestMentorship,
   useEnrollInTournament, useMyTournamentEnrollments,
   useMyPrograms, useEnrollInProgram, useRegisterForTournament,
@@ -107,6 +107,9 @@ export function useMatchStats(matchId) {
 // client-only useState with no backend at all. One query drives both "is
 // this player on my watchlist" (membership check) and a future dedicated
 // "my watchlist" listing, so the two never drift out of sync.
+// Public pages call these "my ..." queries too (to show "Enrolled"/"Watching"); a guest has no session, so they must not fire.
+const hasSession = () => Boolean(localStorage.getItem('jwt_access_token'));
+
 export function useMyWatchlist() {
   return useQuery(
     ['youth-watchlist-mine'],
@@ -114,6 +117,7 @@ export function useMyWatchlist() {
     {
       select: (res) => ({ data: { entries: res.data?.data ?? res.data ?? [] } }),
       staleTime: 30 * 1000,
+      enabled: hasSession(),
     }
   );
 }
@@ -205,6 +209,7 @@ export function useMyAuditionApplications() {
     {
       select: (res) => ({ data: { applications: res.data ?? [] } }),
       staleTime: 60 * 1000,
+      enabled: hasSession(),
     }
   );
 }

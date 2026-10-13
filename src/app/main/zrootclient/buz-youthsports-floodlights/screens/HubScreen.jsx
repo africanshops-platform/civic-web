@@ -5,17 +5,18 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { FormDots, Pill, TeamName, TeamIdentity, computeForm } from './shared/flHelpers';
-import { useYouthStats, useTournaments, useTournamentDetail, usePrograms, useTalents } from '../hooks/useFloodlightsRepo';
+import { useTournaments, useTournamentDetail, usePrograms, useTalents } from '../hooks/useFloodlightsRepo';
 import { PROGRAM_CATEGORIES } from '../mock';
 
 export default function HubScreen() {
-  const { data: statsData } = useYouthStats();
   const { data: tournamentsData } = useTournaments();
   const { data: talentsData } = useTalents({ limit: 1 });
-  const { data: programsData } = usePrograms({ limit: 1 });
+  const { data: programsData } = usePrograms({ limit: 50 });
 
   const tournaments = tournamentsData?.data?.tournaments ?? [];
-  const stats = statsData?.data?.stats;
+  // REAL figures only (the old hub showed invented totals from a mock): counts come straight from the API lists.
+  const programTotal = programsData?.data?.total;
+  const openPrograms = programsData ? (programsData.data?.programs ?? []).filter((p) => p.status === 'open').length : undefined;
   // Prefer the LEAGUE tournament with the most teams actually registered —
   // list order alone (e.g. the first "ongoing" match) can land on a league
   // with zero teams and nothing to show, even when a richer one exists.
@@ -57,7 +58,7 @@ export default function HubScreen() {
     {
       icon: MenuBookIcon, title: 'Programmes',
       desc: 'Community youth programmes beyond sport — tech, agriculture, arts, entrepreneurship, health, vocational.',
-      stat: stats ? `${stats.totalPrograms} programmes · ${stats.openPrograms} open now` : 'Loading…',
+      stat: programTotal != null ? `${programTotal} programmes · ${openPrograms} open now` : 'Loading…',
       to: '/youth-v2/programs',
     },
   ];
@@ -112,10 +113,10 @@ export default function HubScreen() {
       </div>
 
       <div className="fl2-grid-4">
-        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Total programmes</span><h2 style={{ fontSize: '2.8rem' }}>{stats?.totalPrograms ?? '—'}</h2></div>
-        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Open for enrolment</span><h2 style={{ fontSize: '2.8rem', color: 'var(--pitch)' }}>{stats?.openPrograms ?? '—'}</h2></div>
-        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Youth enrolled</span><h2 style={{ fontSize: '2.8rem' }}>{stats?.totalYouthEnrolled?.toLocaleString() ?? '—'}</h2></div>
-        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Graduates this year</span><h2 style={{ fontSize: '2.8rem' }}>{stats?.graduatesThisYear?.toLocaleString() ?? '—'}</h2></div>
+        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Programmes</span><h2 style={{ fontSize: '2.8rem' }}>{programTotal ?? '—'}</h2></div>
+        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Open for enrolment</span><h2 style={{ fontSize: '2.8rem', color: 'var(--pitch)' }}>{openPrograms ?? '—'}</h2></div>
+        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Tournaments running</span><h2 style={{ fontSize: '2.8rem' }}>{tournamentsData ? tournaments.length : '—'}</h2></div>
+        <div className="fl2-card fl2-stack"><span className="fl2-eyebrow">Talents scouted</span><h2 style={{ fontSize: '2.8rem' }}>{talentsData?.data?.total?.toLocaleString() ?? '—'}</h2></div>
       </div>
 
       <div className="fl2-stack">

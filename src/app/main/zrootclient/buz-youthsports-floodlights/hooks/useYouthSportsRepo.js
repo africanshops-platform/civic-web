@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { YOUTH_STATS } from '../mock';
 
 // Browse/detail (programs, tournaments, spotlights), mentorship-request, and
 // (as of 2026-09-09) enroll/my-programs/register-team are all wired to the
@@ -91,17 +90,6 @@ function normalizeSpotlight(s) {
     jurisdiction: { lga: s.lga, state: s.state },
     verified: s.isVerified,
   };
-}
-
-export function useYouthStats() {
-  return useQuery(
-    ['youth-stats'],
-    async () => {
-      await delay(300);
-      return { data: { stats: YOUTH_STATS } };
-    },
-    { staleTime: 10 * 60 * 1000 }
-  );
 }
 
 export function usePrograms(filters = {}) {
@@ -198,6 +186,9 @@ export function useRequestMentorship() {
   );
 }
 
+// Public pages call these "my ..." queries too (to show "Enrolled"/"Watching"); a guest has no session, so they must not fire.
+const hasSession = () => Boolean(localStorage.getItem('jwt_access_token'));
+
 export function useMyPrograms(filters = {}) {
   const { page = 1, limit = 20 } = filters;
   return useQuery(
@@ -209,6 +200,7 @@ export function useMyPrograms(filters = {}) {
         return { data: { enrollments: (d.data ?? []).map(normalizeEnrollment), total: d.total ?? 0 } };
       },
       staleTime: 2 * 60 * 1000,
+      enabled: hasSession(),
     }
   );
 }
@@ -252,7 +244,7 @@ export function useMyTournamentEnrollments(filters = {}) {
   return useQuery(
     ['youth-tournament-my-enrollments', filters],
     () => api.getMyTournamentEnrollments({ page, limit }),
-    { select: (res) => ({ data: res.data }), staleTime: 60 * 1000 }
+    { select: (res) => ({ data: res.data }), staleTime: 60 * 1000, enabled: hasSession() }
   );
 }
 
