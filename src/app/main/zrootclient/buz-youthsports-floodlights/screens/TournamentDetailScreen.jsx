@@ -7,6 +7,7 @@ import { FormDots, Pill, TeamName, TeamIdentity, computeForm } from './shared/fl
 import { useTournamentDetail, useEnrollInTournament, useMyTournamentEnrollments } from '../hooks/useFloodlightsRepo';
 import { SPORT_ICONS } from '../mock';
 import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
+import { canEnter, stageText } from '../stage';
 
 // Phase 7 of the club-recruitment pipeline (2026-08-30) — direct individual
 // enrollment, only for participationMode: SINGLE tournaments (e.g. athletics,
@@ -39,7 +40,7 @@ function EnrollPanel({ tournament }) {
   }
 
   const full = (tournament.currentTeams ?? 0) >= (tournament.maxTeams ?? 0);
-  const closed = tournament.status !== 'upcoming';
+  const closed = !canEnter(tournament);
   let buttonLabel = 'Enroll';
   if (enrolled) buttonLabel = 'Enrolled';
   else if (enrollMutation.isLoading) buttonLabel = 'Enrolling…';
@@ -50,7 +51,7 @@ function EnrollPanel({ tournament }) {
         <span className="fl2-eyebrow">Individual enrollment</span>
         <span className="fl2-small fl2-muted">
           {tournament.currentTeams ?? 0} of {tournament.maxTeams} enrolled
-          {closed && ' — enrollment closed'}
+          {closed && ` — ${stageText(tournament).toLowerCase() || 'enrollment closed'}`}
           {!closed && full && ' — full'}
         </span>
       </div>
@@ -111,7 +112,7 @@ function BracketView({ tournament }) {
         <span className="fl2-eyebrow">Registration</span>
         <div className="fl2-statbar"><i style={{ width: `${Math.min(100, ((tournament.teamsRegistered ?? 0) / (tournament.maxTeams || 1)) * 100)}%` }} /></div>
         <span className="fl2-small fl2-muted">
-          {tournament.teamsRegistered ?? 0} of {tournament.maxTeams} registered — <span style={{ color: 'var(--gold)', fontWeight: 700 }}>registration opening soon</span>.
+          {tournament.teamsRegistered ?? 0} of {tournament.maxTeams} {tournament.participationMode === 'SINGLE' ? 'players' : 'teams'} registered — <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{stageText(tournament) || 'status unavailable'}</span>.
         </span>
       </div>
 
