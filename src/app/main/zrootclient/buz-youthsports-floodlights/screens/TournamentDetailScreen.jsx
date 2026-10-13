@@ -26,7 +26,17 @@ function EnrollPanel({ tournament }) {
   const alreadyEnrolled = (myEnrollments?.data?.data ?? []).some((e) => e.tournamentId === tournament.id);
   const enrolled = justEnrolled || alreadyEnrolled;
 
-  if (tournament.participationMode !== 'SINGLE') return null;
+  // Team tournaments are entered by CLUBS from the merchant app (the team is a merchant there); citizens never register a team.
+  if (tournament.participationMode !== 'SINGLE') {
+    return (
+      <div className="fl2-card fl2-stack" style={{ gap: 4 }}>
+        <span className="fl2-eyebrow">Team tournament</span>
+        <span className="fl2-small fl2-muted">
+          Clubs enter this tournament from the AfricanShops Merchant app, where each team is managed. Follow the standings, fixtures and results here.
+        </span>
+      </div>
+    );
+  }
 
   const full = (tournament.currentTeams ?? 0) >= (tournament.maxTeams ?? 0);
   const closed = tournament.status !== 'upcoming';
