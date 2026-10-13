@@ -1,7 +1,8 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Forum, CheckCircle, TrendingUp, Group } from '@mui/icons-material';
 import { CivicStatCard, ActivityFeedItem } from '../../../civic-shared';
-import { ISSUE_STATS, PROJECT_STATS } from '../../mock';
+import { useIssues } from '../../hooks/useSocialRepo';
+import { useCampaigns } from '../../../buz-civictax/hooks/useCivicTaxRepo';
 
 const F = {
   meta:    'clamp(1.2rem, 1.8vw, 1.5rem)',
@@ -9,15 +10,35 @@ const F = {
   sectionH:'clamp(2rem,   4vw,   3.4rem)',
 };
 
-const ACTIVITY = [
-  { id: 1, title: 'New issue: Flooded road in Surulere Ward 5',       subtitle: '4 min ago',  category: 'infrastructure' },
-  { id: 2, title: 'Official response on Opebi streetlights issue',    subtitle: '32 min ago', category: 'security'       },
-  { id: 3, title: 'Agege Market lighting project — 100% complete',    subtitle: '2 hrs ago',  category: 'environment'    },
-  { id: 4, title: '142 upvotes on Lekki drainage issue today',        subtitle: '5 hrs ago',  category: 'default'        },
-];
+const ZERO_STATS = { openIssues: 0, inProgressIssues: 0, resolvedIssues: 0, resolutionRate: 0 };
 
-function CommunityFeedSidebarRight({ stats }) {
-  const s = stats || ISSUE_STATS;
+function timeAgo(date) {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(date).getTime()) / 60000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  if (mins < 1440) return `${Math.round(mins / 60)} hr ago`;
+  return `${Math.round(mins / 1440)} d ago`;
+}
+
+function CommunityFeedSidebarRight() {
+  // Real figures from the same (cached) queries the feed and campaign pages use.
+  const { data: issueData } = useIssues({});
+  const { data: campaignData } = useCampaigns({ limit: 50 });
+  const s = issueData?.data?.stats ?? ZERO_STATS;
+  const issues = useMemo(() => issueData?.data?.issues ?? [], [issueData]);
+  const projects = useMemo(() => (campaignData?.data?.campaigns ?? []).filter((c) => c.project), [campaignData]);
+  const raised = projects.reduce((n, c) => n + (c.raisedAmount || 0), 0);
+  const target = projects.reduce((n, c) => n + (c.targetAmount || 0), 0);
+  const naira = (v) => `₦${Number(v).toLocaleString()}`;
+  const activity = useMemo(() => [...issues]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 4)
+    .map((i) => ({
+      id: i.id,
+      title: i.status === 'converted' ? `Now a funded project: ${i.title}` : `Issue: ${i.title}`,
+      subtitle: timeAgo(i.createdAt),
+      category: 'default',
+    })), [issues]);
 
   return (
     <div style={{ padding: 'clamp(14px, 2vw, 20px)', display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 2.4vw, 22px)' }}>
@@ -47,13 +68,13 @@ function CommunityFeedSidebarRight({ stats }) {
           border: '1px solid #bbf7d0',
         }}>
           <div style={{ fontWeight: 900, color: '#166534', fontSize: F.sectionH, lineHeight: 1.1, marginBottom: 4 }}>
-            {PROJECT_STATS.inProgressProjects}
+            {projects.length}
           </div>
           <div style={{ fontSize: F.meta, color: '#16a34a', fontWeight: 600 }}>
-            projects in progress
+            funded projects
           </div>
           <div style={{ fontSize: F.meta, color: '#6b7280', marginTop: 4 }}>
-            ₦{(PROJECT_STATS.totalSpent / 1_000_000_000).toFixed(1)}B spent of ₦{(PROJECT_STATS.totalBudget / 1_000_000_000).toFixed(1)}B budget
+            {naira(raised)} raised of {naira(target)} target
           </div>
         </div>
       </div>
@@ -64,7 +85,8 @@ function CommunityFeedSidebarRight({ stats }) {
           Live Activity
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {ACTIVITY.map((item, i) => (
+          {activity.length === 0 && <div style={{ fontSize: F.meta, color: '#9ca3af' }}>No activity yet.</div>}
+          {activity.map((item, i) => (
             <ActivityFeedItem
               key={item.id}
               title={item.title}

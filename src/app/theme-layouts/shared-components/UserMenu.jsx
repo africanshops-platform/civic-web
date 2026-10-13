@@ -122,63 +122,78 @@ function UserMenu({ user }) {
               </ListItemIcon>
               <ListItemText primary="Inbox" />
             </MenuItem>
-            {/* /realestate/my-inspection-schedules */}
+            <Divider variant="middle" />
+
+            {/* ── Civic verticals (the civic user's own dashboards — same set as the landing page) ── */}
+            <div className="px-16 pt-8 pb-4">
+              <Typography className="text-10 font-semibold uppercase tracking-widest" color="text.disabled">
+                Civic
+              </Typography>
+            </div>
+
             <MenuItem
               component={Link}
-              to="/realestate/my-inspection-schedules"
+              to="/civictax"
               onClick={userMenuClose}
               role="button"
             >
               <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:map</FuseSvgIcon>
+                <FuseSvgIcon>heroicons-outline:receipt-tax</FuseSvgIcon>
               </ListItemIcon>
-              <ListItemText primary="Estate Resources" />
-            </MenuItem>
-            <MenuItem
-              component={Link}
-              to="/bookings/my-reservations"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:map</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="My Trips" />
+              <ListItemText primary="Civic Subscriptions" />
             </MenuItem>
 
             <MenuItem
               component={Link}
-              to="/marketplace/user/orders"
+              to="/security/map"
               onClick={userMenuClose}
               role="button"
             >
               <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:shopping-bag</FuseSvgIcon>
+                <FuseSvgIcon>heroicons-outline:shield-check</FuseSvgIcon>
               </ListItemIcon>
-              <ListItemText primary="Orders" />
+              <ListItemText primary="Security Map" />
             </MenuItem>
 
             <MenuItem
               component={Link}
-              to="/foodmarts/user/food-orders"
+              to="/youth-v2"
               onClick={userMenuClose}
               role="button"
             >
               <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:shopping-cart</FuseSvgIcon>
+                <FuseSvgIcon>heroicons-outline:badge-check</FuseSvgIcon>
               </ListItemIcon>
-              <ListItemText primary="Food Orders" />
+              <ListItemText primary="Youth Programmes" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/community"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:speakerphone</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Community" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              to="/healthcare"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:heart</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Healthcare" />
             </MenuItem>
 
             <Divider variant="middle" />
 
-            {/* ── Finance Section ── */}
-            <div className="px-16 pt-8 pb-4">
-              <Typography className="text-10 font-semibold uppercase tracking-widest" color="text.disabled">
-                Finance
-              </Typography>
-            </div>
-
+            {/* Every fintech page is reachable from the finance dashboard itself, so the menu carries one entry. */}
             <MenuItem
               component={Link}
               to="/africanshops/finance-v2/overview"
@@ -186,93 +201,9 @@ function UserMenu({ user }) {
               role="button"
             >
               <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:home</FuseSvgIcon>
+                <FuseSvgIcon>heroicons-outline:cash</FuseSvgIcon>
               </ListItemIcon>
-              <ListItemText primary="Finance Overview" />
-            </MenuItem>
-
-            <MenuItem
-              component={Link}
-              to="/africanshops/finance-v2/transactions"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:clipboard-document-list</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="Transactions" />
-            </MenuItem>
-
-            <MenuItem
-              component={Link}
-              to="/africanshops/finance-v2/transfer"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:arrows-right-left</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="Transfer Money" />
-            </MenuItem>
-
-            <MenuItem
-              component={Link}
-              to="/africanshops/finance-v2/transfer-external"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:paper-airplane</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="Send to Bank" />
-            </MenuItem>
-
-            <MenuItem
-              component={Link}
-              to="/africanshops/finance-v2/withdrawal"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:arrow-up-tray</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="Withdraw" />
-            </MenuItem>
-
-            <MenuItem
-              component={Link}
-              to="/africanshops/finance-v2/savings"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:banknotes</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="Savings" />
-            </MenuItem>
-
-            <MenuItem
-              component={Link}
-              to="/africanshops/finance-v2/wallets"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:wallet</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="Multi-Currency Wallets" />
-            </MenuItem>
-
-            <MenuItem
-              component={Link}
-              to="/africanshops/finance-v2/cards"
-              onClick={userMenuClose}
-              role="button"
-            >
-              <ListItemIcon className="min-w-40">
-                <FuseSvgIcon>heroicons-outline:credit-card</FuseSvgIcon>
-              </ListItemIcon>
-              <ListItemText primary="Virtual Card" />
+              <ListItemText primary="Wallet" />
             </MenuItem>
 
             <Divider variant="middle" />

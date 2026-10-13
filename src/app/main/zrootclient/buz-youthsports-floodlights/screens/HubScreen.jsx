@@ -56,7 +56,7 @@ export default function HubScreen() {
     },
     {
       icon: MenuBookIcon, title: 'Programmes',
-      desc: 'Government-backed youth programmes beyond sport — tech, agriculture, arts, entrepreneurship, health, vocational.',
+      desc: 'Community youth programmes beyond sport — tech, agriculture, arts, entrepreneurship, health, vocational.',
       stat: stats ? `${stats.totalPrograms} programmes · ${stats.openPrograms} open now` : 'Loading…',
       to: '/youth-v2/programs',
     },
@@ -72,7 +72,7 @@ export default function HubScreen() {
           tech, agriculture, arts and more — from Lagos to Abuja, from the pitch to the boardroom.
         </p>
         <div className="fl2-row" style={{ marginTop: 16, gap: 8, flexWrap: 'wrap' }}>
-          <Pill variant="muted">🏛️ Government Backed</Pill>
+          <Pill variant="muted">🤝 Community Programme</Pill>
           <Pill variant="muted">⚽ NFF Partnered</Pill>
           <Pill variant="muted">🆓 Free Programmes Available</Pill>
           <Pill variant="muted">🎖️ NYSC Accredited</Pill>
