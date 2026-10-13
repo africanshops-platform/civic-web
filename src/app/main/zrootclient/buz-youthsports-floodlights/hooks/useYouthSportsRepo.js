@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { YOUTH_STATS } from '../mock';
 
 // Browse/detail (programs, tournaments, spotlights), mentorship-request, and
 // (as of 2026-09-09) enroll/my-programs/register-team are all wired to the
@@ -91,17 +90,6 @@ function normalizeSpotlight(s) {
     jurisdiction: { lga: s.lga, state: s.state },
     verified: s.isVerified,
   };
-}
-
-export function useYouthStats() {
-  return useQuery(
-    ['youth-stats'],
-    async () => {
-      await delay(300);
-      return { data: { stats: YOUTH_STATS } };
-    },
-    { staleTime: 10 * 60 * 1000 }
-  );
 }
 
 export function usePrograms(filters = {}) {

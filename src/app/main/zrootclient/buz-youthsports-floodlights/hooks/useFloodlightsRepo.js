@@ -5,7 +5,7 @@ import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 // v2 pages reuse every already-real hook from the v1 module untouched —
 // re-exported here so v2 screens have one import surface.
 export {
-  useYouthStats, usePrograms, useProgramDetail, useTalents,
+  usePrograms, useProgramDetail, useTalents,
   useTournaments, useTournamentDetail, useRequestMentorship,
   useEnrollInTournament, useMyTournamentEnrollments,
   useMyPrograms, useEnrollInProgram, useRegisterForTournament,

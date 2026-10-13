@@ -80,10 +80,3 @@ export const PROGRAM_CATEGORIES = [
   { id: 'vocational', label: 'Vocational', icon: '🔧', color: '#374151', bgColor: '#f9fafb' },
 ];
 
-export const YOUTH_STATS = {
-  totalPrograms: 47,
-  openPrograms: 28,
-  totalYouthEnrolled: 8420,
-  graduatesThisYear: 2140,
-  programsCompleted: 19,
-};
