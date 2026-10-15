@@ -37,6 +37,8 @@ import socialPagesConfig from "../main/zrootclient/buz-social/socialPagesConfig"
 import socialPublicPagesConfig from "../main/zrootclient/buz-social/socialPublicPagesConfig";
 import healthcarePagesConfig from "../main/zrootclient/buz-healthcare/healthcarePagesConfig";
 import healthcarePublicPagesConfig from "../main/zrootclient/buz-healthcare/healthcarePublicPagesConfig";
+import educationPagesConfig, { educationBrowseConfig } from "../main/zrootclient/buz-education/educationPagesConfig";
+import educationPublicPagesConfig from "../main/zrootclient/buz-education/educationPublicPagesConfig";
 import youthsportsFloodlightsPagesConfig from "../main/zrootclient/buz-youthsports-floodlights/youthsportsFloodlightsPagesConfig";
 import youthsportsFloodlightsPublicPagesConfig from "../main/zrootclient/buz-youthsports-floodlights/youthsportsFloodlightsPublicPagesConfig";
 
@@ -84,6 +86,8 @@ const routeConfigs = [
   governancePagesConfig,
   socialPagesConfig,
   healthcarePagesConfig,
+  educationPagesConfig,
+  educationBrowseConfig,
   youthsportsFloodlightsPagesConfig,
   /****
    * #########################################################################################
@@ -109,6 +113,7 @@ const routes = [
   ...governancePublicPagesConfig,
   ...socialPublicPagesConfig,
   ...healthcarePublicPagesConfig,
+  ...educationPublicPagesConfig,
   ...youthsportsFloodlightsPublicPagesConfig,
   /****
    * ##############################################################

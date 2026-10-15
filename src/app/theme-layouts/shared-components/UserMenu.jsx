@@ -191,6 +191,18 @@ function UserMenu({ user }) {
               <ListItemText primary="Healthcare" />
             </MenuItem>
 
+            <MenuItem
+              component={Link}
+              to="/education"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:academic-cap</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="Education" />
+            </MenuItem>
+
             <Divider variant="middle" />
 
             {/* Every fintech page is reachable from the finance dashboard itself, so the menu carries one entry. */}

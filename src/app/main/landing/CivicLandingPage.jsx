@@ -71,7 +71,13 @@ const MORE_VERTICALS = [
     emoji: "🩺",
     title: "Healthcare",
     to: "/healthcare",
-    desc: "Community health information and services for your area.",
+    desc: "Find approved facilities, book a time that is really free, and control who sees your health record.",
+  },
+  {
+    emoji: "🎓",
+    title: "Education",
+    to: "/education",
+    desc: "Find an approved school, apply, and follow your child's grades, attendance and school notices.",
   },
 ];
 
