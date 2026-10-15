@@ -1,135 +1,101 @@
-import { styled } from '@mui/material/styles';
-import { useEffect, useState, useCallback, useMemo, memo } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, Chip, CircularProgress } from '@mui/material';
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Button, Chip, CircularProgress, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { motion } from 'framer-motion';
-import { CalendarToday, Schedule } from '@mui/icons-material';
-import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
-import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
-import HealthcareHeader from './shared-components/HealthcareHeader';
-import HealthcareSidebarLeft from './shared-components/HealthcareSidebarLeft';
-import HealthcareSidebarRight from './shared-components/HealthcareSidebarRight';
+import { CalendarToday } from '@mui/icons-material';
+import HealthcarePageShell from './shared-components/HealthcarePageShell';
 import { useMyAppointments, useCancelAppointment } from '../hooks/useHealthcareRepo';
+import { APPT_STATUS, formatWhen } from '../constants';
 
-const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
-  '& .FusePageSimple-header': {
-    backgroundColor: theme.palette.background.paper,
-    borderBottomWidth: 1,
-    borderStyle: 'solid',
-    borderColor: theme.palette.divider,
-  },
-}));
+const LIMIT = 10;
+const CAN_CANCEL = ['PENDING', 'CONFIRMED'];
 
-const STATUS_STYLES = {
-  confirmed: { bg: '#dcfce7', color: '#166534', label: 'Confirmed' },
-  pending: { bg: '#fffbeb', color: '#b45309', label: 'Pending' },
-  cancelled: { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' },
-  completed: { bg: '#f3f4f6', color: '#374151', label: 'Completed' },
-};
+export default function MyAppointmentsPage() {
+  const [sp, setSp] = useSearchParams();
+  const page = Math.max(Number(sp.get('page')) || 1, 1);
+  const { data, isLoading, isError } = useMyAppointments({ page, limit: LIMIT });
+  const cancel = useCancelAppointment();
+  const [target, setTarget] = useState(null);
+  const [reason, setReason] = useState('');
+  const rows = data?.data?.data ?? [];
+  const total = data?.data?.total ?? 0;
+  const totalPages = data?.data?.totalPages ?? 1;
 
-function ActiveMyAppointmentsPage() {
-  const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState(!isMobile);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
-
-  useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
-
-  const { data, isLoading, isError } = useMyAppointments();
-  const cancelMutation = useCancelAppointment();
-  const appointments = useMemo(() => data?.data?.appointments ?? [], [data]);
-
-  const handleLeftToggle = useCallback(() => setLeftSidebarOpen((v) => !v), []);
-  const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
-  const handleLeftClose = useCallback(() => setLeftSidebarOpen(false), []);
-  const handleRightClose = useCallback(() => setRightSidebarOpen(false), []);
-
-  const header = useMemo(() => (
-    <HealthcareHeader leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="My Appointments" subtitle="Healthcare · Your Booked Appointments" />
-  ), [handleLeftToggle, handleRightToggle]);
-
-  const leftSidebar = useMemo(() => <HealthcareSidebarLeft />, []);
-  const rightSidebar = useMemo(() => <HealthcareSidebarRight />, []);
-
-  const content = useMemo(() => (
-    <div className="flex-auto p-6 sm:p-8" style={{ background: 'linear-gradient(180deg,#f9fafb 0%,#f0fdf4 100%)', minHeight: '100%' }}>
+  return (
+    <HealthcarePageShell title="My appointments" subtitle="Healthcare · Your visits">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
           <div>
             <h1 style={{ margin: 0, fontWeight: 900, fontSize: 'clamp(2.8rem,4.5vw,4rem)', color: '#111827' }}>
               <CalendarToday sx={{ fontSize: 'inherit', color: '#16a34a', mr: 1, verticalAlign: 'middle' }} />
-              My Appointments
+              My appointments
             </h1>
-            <p style={{ margin: '6px 0 0', color: '#6b7280', fontSize: '1.8rem' }}>{appointments.length} appointment{appointments.length !== 1 ? 's' : ''}</p>
+            <p style={{ margin: '6px 0 0', color: '#6b7280', fontSize: '1.8rem' }}>{total} in all</p>
           </div>
-          <Button component={Link} to="/healthcare/book" variant="contained"
-            sx={{ background: 'linear-gradient(135deg,#16a34a 0%,#0f766e 100%)', color: 'white', fontWeight: 700, borderRadius: '14px', textTransform: 'none', fontSize: '1.76rem', px: 3, py: 1.5, '&:hover': { filter: 'brightness(0.92)' } }}>
-            + New Appointment
+          <Button component={Link} to="/healthcare/book" variant="contained" sx={{ background: 'linear-gradient(135deg,#16a34a 0%,#0f766e 100%)', color: 'white', fontWeight: 700, borderRadius: '14px', textTransform: 'none', fontSize: '1.76rem', px: 3, py: 1.5 }}>
+            Book a new one
           </Button>
         </div>
 
         {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><CircularProgress size={56} sx={{ color: '#16a34a' }} /></div>}
-
-        {isError && (
-          <div style={{ padding: 32, textAlign: 'center', borderRadius: 18, background: '#fef2f2', border: '1px solid #fecaca' }}>
-            <div style={{ color: '#dc2626', fontWeight: 700, fontSize: '1.8rem' }}>Failed to load appointments.</div>
-          </div>
-        )}
-
-        {!isLoading && !isError && appointments.length === 0 && (
+        {isError && <div style={{ padding: 32, textAlign: 'center', borderRadius: 18, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 700, fontSize: '1.8rem' }}>We could not load your appointments. Please try again.</div>}
+        {!isLoading && !isError && rows.length === 0 && (
           <div style={{ textAlign: 'center', padding: '80px 20px' }}>
             <div style={{ fontSize: '4rem', marginBottom: 20 }}>📋</div>
             <div style={{ fontWeight: 800, color: '#374151', fontSize: '2.2rem', marginBottom: 10 }}>No appointments yet</div>
-            <div style={{ color: '#9ca3af', fontSize: '1.8rem', marginBottom: 28 }}>Book your first appointment with a nearby facility.</div>
-            <Button component={Link} to="/healthcare/book" variant="contained"
-              sx={{ background: 'linear-gradient(135deg,#16a34a 0%,#0f766e 100%)', color: 'white', fontWeight: 700, borderRadius: '14px', textTransform: 'none', fontSize: '1.76rem', px: 4, py: 1.5, '&:hover': { filter: 'brightness(0.92)' } }}>
-              Book Appointment
-            </Button>
+            <div style={{ color: '#9ca3af', fontSize: '1.8rem' }}>Book your first visit with a facility near you.</div>
           </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {appointments.map((apt, i) => {
-            const statusStyle = STATUS_STYLES[apt.status] || STATUS_STYLES.pending;
+          {rows.map((a) => {
+            const st = APPT_STATUS[a.status] ?? APPT_STATUS.PENDING;
             return (
-              <motion.div key={apt.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                style={{ padding: 28, borderRadius: 22, background: 'white', border: '1px solid #e5e7eb', display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', flexShrink: 0, border: '1px solid #bbf7d0' }}>
-                  🏥
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+              <div key={a.id} style={{ padding: 28, borderRadius: 22, background: 'white', border: '1px solid #e5e7eb', display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 220 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
-                    <div style={{ fontWeight: 800, color: '#111827', fontSize: '2rem' }}>{apt.facilityName}</div>
-                    <Chip label={statusStyle.label} sx={{ height: 36, fontSize: '1.4rem', background: statusStyle.bg, color: statusStyle.color, fontWeight: 800 }} />
+                    <div style={{ fontWeight: 800, color: '#111827', fontSize: '2rem' }}>{a.facility?.name ?? 'Facility'}</div>
+                    <Chip label={st.label} sx={{ height: 36, fontSize: '1.4rem', background: st.bg, color: st.color, fontWeight: 800 }} />
                   </div>
-                  <div style={{ color: '#6b7280', fontSize: '1.76rem', marginBottom: 10 }}>Dr. {apt.practitionerName} · {apt.specialty}</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '1.7rem', color: '#374151' }}><CalendarToday sx={{ fontSize: 24 }} />{apt.date}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '1.7rem', color: '#374151' }}><Schedule sx={{ fontSize: 24 }} />{apt.time}</span>
-                    {apt.referenceCode && <span style={{ fontSize: '1.64rem', color: '#9ca3af', fontFamily: 'monospace' }}>Ref: {apt.referenceCode}</span>}
+                  <div style={{ color: '#374151', fontSize: '1.8rem', fontWeight: 700 }}>{formatWhen(a.slotStart ?? a.preferredDate)}</div>
+                  <div style={{ color: '#6b7280', fontSize: '1.7rem', margin: '4px 0' }}>
+                    {a.departmentId}
+                    {a.practitioner?.name ? ` · ${a.practitioner.name}` : ''}
                   </div>
+                  <div style={{ color: '#6b7280', fontSize: '1.6rem' }}>For: {a.reason}</div>
+                  {a.facilityNote && <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 12, background: '#f0fdf4', color: '#166534', fontSize: '1.6rem' }}>From the facility: {a.facilityNote}</div>}
+                  {a.cancellationNote && a.status === 'CANCELLED' && <div style={{ marginTop: 8, color: '#991b1b', fontSize: '1.6rem' }}>Reason: {a.cancellationNote}</div>}
+                  {a.facility?.address && <div style={{ marginTop: 8, color: '#9ca3af', fontSize: '1.5rem' }}>{a.facility.address}{a.facility.phone ? ` · ${a.facility.phone}` : ''}</div>}
                 </div>
-                {(apt.status === 'confirmed' || apt.status === 'pending') && (
-                  <Button size="medium" onClick={() => cancelMutation.mutate(apt.id)} disabled={cancelMutation.isLoading}
-                    sx={{ color: '#dc2626', border: '1px solid #fecaca', borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: '1.6rem', px: 2.5, flexShrink: 0, '&:hover': { background: '#fef2f2' } }}>
+                {CAN_CANCEL.includes(a.status) && (
+                  <Button onClick={() => { setTarget(a); setReason(''); }} sx={{ color: '#dc2626', border: '1px solid #fecaca', borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: '1.6rem', px: 2.5, flexShrink: 0 }}>
                     Cancel
                   </Button>
                 )}
-              </motion.div>
+              </div>
             );
           })}
         </div>
-      </motion.div>
-    </div>
-  ), [appointments, isLoading, isError, cancelMutation]);
 
-  return (
-    <Root header={header} content={content}
-      leftSidebarOpen={leftSidebarOpen} leftSidebarOnClose={handleLeftClose} leftSidebarContent={leftSidebar}
-      rightSidebarOpen={rightSidebarOpen} rightSidebarOnClose={handleRightClose} rightSidebarContent={rightSidebar}
-      scroll="content" />
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+            <Pagination count={totalPages} page={page} onChange={(_, p) => setSp(p > 1 ? { page: String(p) } : {}, { replace: true })} size="large" />
+          </div>
+        )}
+      </motion.div>
+
+      <Dialog open={Boolean(target)} onClose={() => setTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 800 }}>Cancel this appointment?</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus fullWidth multiline rows={2} label="Why? (optional)" value={reason} onChange={(e) => setReason(e.target.value.slice(0, 280))} sx={{ mt: 1 }} />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setTarget(null)}>Keep it</Button>
+          <Button color="error" variant="contained" disabled={cancel.isLoading} onClick={() => cancel.mutate({ appointmentId: target.id, reason: reason.trim() || undefined }, { onSuccess: () => setTarget(null) })}>
+            Cancel appointment
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </HealthcarePageShell>
   );
 }
-
-const MemoizedActivePage = memo(ActiveMyAppointmentsPage);
-export default function MyAppointmentsPage() { return <MemoizedActivePage />; }

@@ -6,6 +6,7 @@ const FacilityDetailPage = lazy(() => import('./screens/FacilityDetailPage'));
 const AppointmentBookingPage = lazy(() => import('./screens/AppointmentBookingPage'));
 const MyAppointmentsPage = lazy(() => import('./screens/MyAppointmentsPage'));
 const HealthAlertsPage = lazy(() => import('./screens/HealthAlertsPage'));
+const MyRecordPage = lazy(() => import('./screens/MyRecordPage'));
 
 const LAYOUT = {
   layout: {
@@ -27,6 +28,7 @@ const healthcarePagesConfig = {
     { path: 'healthcare/book', element: <AppointmentBookingPage /> },
     { path: 'healthcare/my-appointments', element: <MyAppointmentsPage /> },
     { path: 'healthcare/alerts', element: <HealthAlertsPage /> },
+    { path: 'healthcare/my-record', element: <MyRecordPage /> },
   ]),
 };
 
