@@ -1,4 +1,5 @@
 export const LEVELS = [
+  { id: 'NURSERY', label: 'Nursery school', icon: '🧸' },
   { id: 'PRIMARY', label: 'Primary school', icon: '🏫' },
   { id: 'SECONDARY', label: 'Secondary school', icon: '🏫' },
   { id: 'TERTIARY', label: 'Tertiary institution', icon: '🎓' },
