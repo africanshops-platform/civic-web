@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Button, Chip } from '@mui/material';
 import { ArrowBack, HowToVote, LocationOn, FiberManualRecord } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
-import { useElectionDetail, useElectionCollation } from '../hooks/useGovernanceRepo';
+import { useElectionDetail, useElectionCollation, useElectionLocations } from '../hooks/useGovernanceRepo';
+import VotingLocationsMap from '../components/VotingLocationsMap';
 import LiveCollationBoard from '../components/LiveCollationBoard';
 import CandidateCard from '../components/CandidateCard';
 import WardResultsList from '../components/WardResultsList';
@@ -16,6 +17,7 @@ export default function ElectionDetailPublicPage() {
   const { electionId } = useParams();
   const { data: elecData, isLoading: elecLoading } = useElectionDetail(electionId);
   const { data: collData, isLoading: collLoading } = useElectionCollation(electionId);
+  const { data: locations = [] } = useElectionLocations(electionId);
 
   const election = useMemo(() => elecData?.data?.election, [elecData]);
   const candidates = useMemo(() => elecData?.data?.candidates || [], [elecData]);
@@ -84,7 +86,9 @@ export default function ElectionDetailPublicPage() {
 
         {/* Map */}
         <div style={{ borderRadius: 20, padding: 'clamp(18px, 3vw, 28px)', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 4px 18px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ margin: '0 0 16px', fontWeight: 800, color: '#111827', fontSize: '1rem' }}>Ward Results</h3>
+          <h3 style={{ margin: '0 0 16px', fontWeight: 800, color: '#111827', fontSize: '1rem' }}>Where to Vote</h3>
+          <VotingLocationsMap locations={locations} onlineOnly={election.isOnlineVotingEnabled} />
+          <h3 style={{ margin: '24px 0 16px', fontWeight: 800, color: '#111827', fontSize: '1rem' }}>Ward Results</h3>
           <WardResultsList wards={wards} candidates={candidates} />
         </div>
       </div>

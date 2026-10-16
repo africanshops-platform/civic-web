@@ -13,6 +13,7 @@ const api = {
   getCollation:  (id)     => AuthApi().get(`/governance/elections/${id}/collation`),
   getAudit:      (id)     => AuthApi().get(`/governance/elections/${id}/audit`),
   eligibility:   (id)     => AuthApi().get(`/governance/elections/${id}/eligibility`),
+  locations:     (id)     => AuthApi().get(`/governance/elections/${id}/locations`),
   listPetitions: (params) => AuthApi().get('/governance/petitions', { params }),
   getPetition:   (id)     => AuthApi().get(`/governance/petitions/${id}`),
   signPetition:  (body)   => AuthApi().post('/governance/petitions/sign', body),
@@ -148,6 +149,15 @@ export function useElectionAudit(electionId) {
     enabled: Boolean(electionId),
     select: (res) => res.data,
     staleTime: 30 * 1000,
+  });
+}
+
+/** Where this community vote is conducted: real, admin-created locations with their own coordinates. Public. */
+export function useElectionLocations(electionId) {
+  return useQuery(['governance-locations', electionId], () => api.locations(electionId), {
+    enabled: Boolean(electionId),
+    select: (res) => res.data?.items ?? [],
+    staleTime: 60 * 1000,
   });
 }
 
