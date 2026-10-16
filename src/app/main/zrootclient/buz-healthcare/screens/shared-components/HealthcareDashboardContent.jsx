@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom';
 import { ArrowForward, LocalHospital } from '@mui/icons-material';
 import { AVAILABILITY, typeInfo } from '../../constants';
 
-function FacilityRow({ facility }) {
+function FacilityRow({ facility, enrolment }) {
+  const isMine = enrolment?.mineId === facility.id;
+  const isPrimary = enrolment?.primaryIds?.includes(facility.id);
   const t = typeInfo(facility.type);
   const a = AVAILABILITY[facility.availability] ?? AVAILABILITY.AVAILABLE;
   return (
@@ -23,6 +25,8 @@ function FacilityRow({ facility }) {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12, fontSize: '1.64rem', color: '#374151' }}>
           <span>{t.label}</span>
+          {isMine && <Chip label="Your primary facility" size="small" sx={{ fontWeight: 800, background: '#fef3c7', color: '#92400e' }} />}
+          {!isMine && isPrimary && <Chip label="Primary for your area" size="small" sx={{ fontWeight: 800, background: '#dcfce7', color: '#166534' }} />}
           {facility.phone && <span>📞 {facility.phone}</span>}
           {facility._count?.practitioners > 0 && (
             <span>
@@ -31,6 +35,11 @@ function FacilityRow({ facility }) {
           )}
         </div>
       </div>
+      {enrolment?.enabled && isPrimary && !isMine && (
+        <Button variant="outlined" onClick={() => enrolment.onEnrol(facility)} sx={{ borderColor: '#16a34a', color: '#166534', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.56rem', px: 2.5, py: 1.25, flexShrink: 0 }}>
+          Enrol here
+        </Button>
+      )}
       <Button
         component={Link}
         to={`/healthcare/facility/${facility.id}`}
@@ -44,7 +53,7 @@ function FacilityRow({ facility }) {
   );
 }
 
-function HealthcareDashboardContent({ facilities, total, page, totalPages, onPage, isLoading, isError, filtered }) {
+function HealthcareDashboardContent({ facilities, total, page, totalPages, onPage, isLoading, isError, filtered, enrolment }) {
   if (isLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, gap: 20 }}>
@@ -92,7 +101,7 @@ function HealthcareDashboardContent({ facilities, total, page, totalPages, onPag
       ) : (
         <div>
           {facilities.map((f) => (
-            <FacilityRow key={f.id} facility={f} />
+            <FacilityRow key={f.id} facility={f} enrolment={enrolment} />
           ))}
           {totalPages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>

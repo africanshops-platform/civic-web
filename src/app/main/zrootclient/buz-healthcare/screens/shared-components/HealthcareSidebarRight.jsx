@@ -4,6 +4,8 @@ import { Chip } from '@mui/material';
 import { Warning } from '@mui/icons-material';
 import { useHealthAlerts } from '../../hooks/useHealthcareRepo';
 import { ALERT_SEVERITY, EMERGENCY_NUMBER } from '../../constants';
+import FacilityMap from '../../components/FacilityMap';
+import { useEnrolmentOptions, useMyEnrolment } from '../../hooks/useHealthcareRepo';
 
 const F = {
   sectionHead: 'clamp(1.76rem, 2.6vw, 2.2rem)',
@@ -13,12 +15,21 @@ const F = {
 };
 
 /** Live alerts from the facilities in the area, and the national emergency number. Nothing here is a made-up figure. */
-function HealthcareSidebarRight() {
+function HealthcareSidebarRight({ mapFacilities }) {
   const { data } = useHealthAlerts({ limit: 3 });
+  const { data: mine } = useMyEnrolment();
+  const { data: options } = useEnrolmentOptions(mine?.enabled);
+  const primaryIds = (options?.items ?? []).map((i) => i.facility.id);
   const alerts = data?.data?.data ?? [];
 
   return (
     <div style={{ padding: 'clamp(16px, 2vw, 24px)', display: 'flex', flexDirection: 'column', gap: 'clamp(18px, 2.4vw, 26px)' }}>
+      {mapFacilities && (
+        <div>
+          <div style={{ fontWeight: 800, color: '#111827', fontSize: F.sectionHead, marginBottom: 14 }}>Map</div>
+          <FacilityMap facilities={mapFacilities} primaryIds={primaryIds} mineId={mine?.enrolment?.facility?.id ?? null} />
+        </div>
+      )}
       {alerts.length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, color: '#111827', fontSize: F.sectionHead, marginBottom: 14 }}>

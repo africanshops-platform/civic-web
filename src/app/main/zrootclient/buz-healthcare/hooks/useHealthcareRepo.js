@@ -105,3 +105,45 @@ export function useRevokeFacility() {
     onError: (e) => toast.error(say(e, 'Could not remove access.')),
   });
 }
+
+// Enrolment with a primary facility, the custodian of my record (civic-68 H3-b/H3-d). `enabled: false` means the feature is
+// switched off in this environment, and every enrolment control stays hidden.
+export function useMyEnrolment() {
+  return useQuery(['healthcare-enrolment'], () => AuthApi().get('/healthcare/enrolment'), {
+    staleTime: 30 * 1000,
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
+/** Primary facilities in the local government where I live. Only asked for once enrolment is switched on. */
+export function useEnrolmentOptions(enabled) {
+  return useQuery(['healthcare-enrolment-options'], () => AuthApi().get('/healthcare/enrolment/options'), {
+    enabled: Boolean(enabled),
+    staleTime: 60 * 1000,
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
+export function useEnrol() {
+  const qc = useQueryClient();
+  return useMutation((facilityId) => AuthApi().post('/healthcare/enrolment', { facilityId }), {
+    onSuccess: () => {
+      toast.success('You are enrolled. This facility is now the custodian of your health record.');
+      qc.invalidateQueries(['healthcare-enrolment']);
+    },
+    onError: (e) => toast.error(say(e, 'Could not enrol. Please try again.')),
+  });
+}
+
+export function useLeaveEnrolment() {
+  const qc = useQueryClient();
+  return useMutation(() => AuthApi().delete('/healthcare/enrolment'), {
+    onSuccess: () => {
+      toast.success('You have left your primary facility.');
+      qc.invalidateQueries(['healthcare-enrolment']);
+    },
+    onError: (e) => toast.error(say(e, 'Could not leave. Please try again.')),
+  });
+}

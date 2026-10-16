@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { FormControl, InputLabel, Select, MenuItem, Divider, Button } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Divider, Button, FormControlLabel, Switch } from '@mui/material';
 import { FilterList, Clear } from '@mui/icons-material';
 import { FACILITY_TYPES } from '../../constants';
+import { useMyEnrolment, useLeaveEnrolment } from '../../hooks/useHealthcareRepo';
 
 const LINKS = [
   { label: 'Find a facility', path: '/healthcare/dashboard', icon: '🏥' },
@@ -13,10 +14,34 @@ const LINKS = [
 ];
 
 /** Type filter (only on the facility list, where the page passes one in) and the quick links. */
-function HealthcareSidebarLeft({ typeFilter, onTypeChange }) {
+function MyPrimaryCard() {
+  const { data } = useMyEnrolment();
+  const leave = useLeaveEnrolment();
+  if (!data?.enabled) return null;
+  const f = data.enrolment?.facility;
+  return (
+    <div style={{ padding: 16, borderRadius: 14, background: '#fffbeb', border: '1px solid #fde68a' }}>
+      <div style={{ fontSize: '1.4rem', color: '#92400e', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>My primary facility</div>
+      {f ? (
+        <>
+          <Link to={`/healthcare/facility/${f.id}`} style={{ display: 'block', marginTop: 6, fontSize: '1.76rem', fontWeight: 800, color: '#111827', textDecoration: 'none' }}>{f.name}</Link>
+          <div style={{ fontSize: '1.4rem', color: '#6b7280' }}>{f.address}, {f.lga}</div>
+          <Button size="small" disabled={leave.isLoading} onClick={() => leave.mutate()} sx={{ mt: 1, px: 0, textTransform: 'none', fontSize: '1.4rem', color: '#b91c1c' }}>Leave this facility</Button>
+        </>
+      ) : (
+        <div style={{ marginTop: 6, fontSize: '1.5rem', color: '#78350f', lineHeight: 1.5 }}>
+          You have not chosen one yet. Pick a primary facility near you from the list or the map and tap Enrol here.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HealthcareSidebarLeft({ typeFilter, onTypeChange, primaryOnly, onPrimaryOnlyChange }) {
   const canFilter = typeof onTypeChange === 'function';
   return (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <MyPrimaryCard />
       {canFilter && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -41,6 +66,12 @@ function HealthcareSidebarLeft({ typeFilter, onTypeChange }) {
               ))}
             </Select>
           </FormControl>
+          {typeof onPrimaryOnlyChange === 'function' && (
+            <FormControlLabel
+              control={<Switch checked={Boolean(primaryOnly)} onChange={(e) => onPrimaryOnlyChange(e.target.checked)} />}
+              label={<span style={{ fontSize: '1.6rem' }}>Primary facilities for my area</span>}
+            />
+          )}
           <Divider />
         </>
       )}

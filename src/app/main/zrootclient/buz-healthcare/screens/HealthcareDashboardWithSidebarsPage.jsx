@@ -1,10 +1,11 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useGetUserAppSetting from 'app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain';
 import ServiceStatusLandingPage from '../../aapp-settings-from-admin/ServiceStatusLandingPage';
 import HealthcareDashboardContent from './shared-components/HealthcareDashboardContent';
 import HealthcarePageShell from './shared-components/HealthcarePageShell';
-import { useFacilities, useHealthAlerts } from '../hooks/useHealthcareRepo';
+import { useEnrolmentOptions, useFacilities, useHealthAlerts, useMyEnrolment } from '../hooks/useHealthcareRepo';
+import EnrolDialog from '../components/EnrolDialog';
 
 const LIMIT = 20;
 
@@ -12,6 +13,7 @@ function ActiveHealthcareDashboardPage() {
   // The kind of facility and the page live in the address, so a link or a refresh keeps them.
   const [sp, setSp] = useSearchParams();
   const type = sp.get('type') || '';
+  const primaryOnly = sp.get('primary') === '1';
   const page = Math.max(Number(sp.get('page')) || 1, 1);
   const setParams = (patch) => {
     const next = new URLSearchParams(sp);
@@ -23,6 +25,17 @@ function ActiveHealthcareDashboardPage() {
   const { data: alerts } = useHealthAlerts({ limit: 1 });
   const body = data?.data;
 
+  // Enrolment (civic-68): only when the feature is switched on for this environment.
+  const { data: mine } = useMyEnrolment();
+  const enabled = Boolean(mine?.enabled);
+  const { data: options } = useEnrolmentOptions(enabled);
+  const primaryFacilities = (options?.items ?? []).map((i) => i.facility);
+  const primaryIds = primaryFacilities.map((f) => f.id);
+  const mineId = mine?.enrolment?.facility?.id ?? null;
+  const [enrolling, setEnrolling] = useState(null);
+
+  const listed = primaryOnly && enabled ? primaryFacilities.filter((f) => !type || f.type === type) : body?.data;
+
   return (
     <HealthcarePageShell
       title="Healthcare"
@@ -30,17 +43,22 @@ function ActiveHealthcareDashboardPage() {
       hasAlerts={(alerts?.data?.total ?? 0) > 0}
       typeFilter={type}
       onTypeChange={(t) => setParams({ type: t, page: '' })}
+      primaryOnly={primaryOnly}
+      onPrimaryOnlyChange={enabled ? (on) => setParams({ primary: on ? '1' : '', page: '' }) : undefined}
+      mapFacilities={listed ?? []}
     >
       <HealthcareDashboardContent
-        facilities={body?.data}
-        total={body?.total ?? 0}
+        facilities={listed}
+        total={primaryOnly && enabled ? (listed?.length ?? 0) : body?.total ?? 0}
         page={body?.page ?? page}
-        totalPages={body?.totalPages ?? 1}
+        totalPages={primaryOnly && enabled ? 1 : body?.totalPages ?? 1}
         onPage={(p) => setParams({ page: p > 1 ? String(p) : '' })}
         isLoading={isLoading}
         isError={isError}
-        filtered={Boolean(type)}
+        filtered={Boolean(type) || (primaryOnly && enabled)}
+        enrolment={{ enabled, mineId, primaryIds, onEnrol: setEnrolling }}
       />
+      {enrolling && <EnrolDialog facility={enrolling} replacing={Boolean(mineId)} onClose={() => setEnrolling(null)} />}
     </HealthcarePageShell>
   );
 }

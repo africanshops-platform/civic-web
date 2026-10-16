@@ -3,7 +3,9 @@ import { Button, Chip, CircularProgress, Divider } from '@mui/material';
 import { ArrowBack, Phone, Email, LocalHospital } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import HealthcarePageShell from './shared-components/HealthcarePageShell';
-import { useFacilityDetail } from '../hooks/useHealthcareRepo';
+import { useState } from 'react';
+import { useEnrolmentOptions, useFacilityDetail, useMyEnrolment } from '../hooks/useHealthcareRepo';
+import EnrolDialog from '../components/EnrolDialog';
 import { AVAILABILITY, typeInfo } from '../constants';
 
 const card = { background: 'white', borderRadius: 22, padding: 28, border: '1px solid #e5e7eb' };
@@ -12,6 +14,11 @@ export default function FacilityDetailPage() {
   const { facilityId } = useParams();
   const { data, isLoading, isError } = useFacilityDetail(facilityId);
   const facility = data?.data;
+  const { data: mine } = useMyEnrolment();
+  const { data: options } = useEnrolmentOptions(mine?.enabled);
+  const isPrimaryForMe = (options?.items ?? []).some((i) => i.facility.id === facility?.id);
+  const isMine = mine?.enrolment?.facility?.id === facility?.id;
+  const [enrolling, setEnrolling] = useState(false);
 
   let body;
   if (isLoading) {
@@ -59,6 +66,13 @@ export default function FacilityDetailPage() {
                   Show on the map
                 </a>
               )}
+              {mine?.enabled && isMine && <Chip label="Your primary facility" sx={{ mt: 1.5, fontWeight: 800, background: '#fef3c7', color: '#92400e' }} />}
+              {mine?.enabled && !isMine && isPrimaryForMe && (
+                <Button variant="contained" onClick={() => setEnrolling(true)} sx={{ mt: 1.5, display: 'block', background: '#16a34a', fontWeight: 800, textTransform: 'none', fontSize: '1.7rem', borderRadius: '12px' }}>
+                  Enrol here
+                </Button>
+              )}
+              {enrolling && <EnrolDialog facility={facility} replacing={Boolean(mine?.enrolment)} onClose={() => setEnrolling(false)} />}
             </div>
           </div>
         </div>
@@ -139,7 +153,7 @@ export default function FacilityDetailPage() {
   }
 
   return (
-    <HealthcarePageShell title="Facility" subtitle="Healthcare · Facilities">
+    <HealthcarePageShell title="Facility" subtitle="Healthcare · Facilities" mapFacilities={facility ? [facility] : []}>
       {body}
     </HealthcarePageShell>
   );
