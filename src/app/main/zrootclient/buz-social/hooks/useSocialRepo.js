@@ -26,6 +26,7 @@ const api = {
   block:        (body)   => AuthApi().post('/community/blocks', body),
   unblock:      (key)    => AuthApi().delete(`/community/blocks/${key}`),
   report:       (body)   => AuthApi().post('/community/reports', body),
+  issueMap:     ()       => AuthApi().get('/community/issues/map'),
 };
 
 // UI category ids <-> backend IssueCategory
@@ -380,5 +381,13 @@ export function useReportContent() {
   return useMutation((payload) => api.report(payload), {
     onSuccess: (res) => toast.success(res?.data?.alreadyReported ? 'You already reported this. Our moderators will review it.' : 'Thank you. Your report was sent to the moderators of this area.'),
     onError: (e) => toast.error(errText(e, 'Could not send your report.')),
+  });
+}
+
+/** Issues grouped by LGA with real centre points, for the map beside the forum. Public. */
+export function useIssueMap() {
+  return useQuery(['social-issue-map'], () => api.issueMap(), {
+    select: (res) => res.data,
+    staleTime: 2 * 60 * 1000,
   });
 }
