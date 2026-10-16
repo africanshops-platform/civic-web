@@ -13,11 +13,11 @@ const F = {
   subH:  'clamp(1.4rem,  2.2vw, 1.8rem)',
 };
 
+const naira = (v) => `₦${Number(v || 0).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`;
 function CommunityProjectCard({ project, index = 0 }) {
   if (!project) return null;
 
-  const budgetUsedPct = Math.round((project.spent / project.budget) * 100);
-  const milestonesCompleted = project.milestones.filter((m) => m.completed).length;
+  const milestonesCompleted = project.milestonesDone;
 
   return (
     <motion.div
@@ -32,7 +32,7 @@ function CommunityProjectCard({ project, index = 0 }) {
             {project.title}
           </div>
           <div style={{ fontSize: F.meta, color: '#9ca3af' }}>
-            {project.jurisdiction.lga}, {project.jurisdiction.state} · {project.contractor}
+            {project.jurisdiction.lga}, {project.jurisdiction.state}
           </div>
         </div>
         <StatusBadge status={project.status} />
@@ -65,9 +65,9 @@ function CommunityProjectCard({ project, index = 0 }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 'clamp(10px, 1.4vw, 14px)' }}>
         {[
-          { label: 'Budget', value: `₦${(project.budget / 1_000_000).toFixed(1)}M` },
-          { label: 'Spent', value: `₦${(project.spent / 1_000_000).toFixed(1)}M` },
-          { label: 'Milestones', value: `${milestonesCompleted}/${project.milestones.length}` },
+          { label: 'Target', value: naira(project.budget) },
+          { label: 'Raised', value: naira(project.raised) },
+          { label: 'Milestones', value: `${milestonesCompleted}/${project.milestonesTotal}` },
         ].map((s) => (
           <div key={s.label} style={{ textAlign: 'center', background: '#f9fafb', borderRadius: 10, padding: 'clamp(6px, 1vw, 10px) 4px' }}>
             <div style={{ fontWeight: 800, color: '#111827', fontSize: F.body }}>{s.value}</div>
@@ -80,7 +80,7 @@ function CommunityProjectCard({ project, index = 0 }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: 'clamp(6px, 1vw, 10px) clamp(10px, 1.4vw, 14px)', background: '#eff6ff', borderRadius: 10, marginBottom: 'clamp(10px, 1.4vw, 14px)', border: '1px solid #c7d2fe' }}>
           <Construction sx={{ fontSize: 'clamp(14px, 1.8vw, 18px)', color: '#1d4ed8' }} />
           <span style={{ fontSize: F.meta, color: '#1d4ed8', fontWeight: 600 }}>
-            Addressing: {project.issueTitle}
+            Born from a community issue vote
           </span>
         </div>
       )}
@@ -88,7 +88,7 @@ function CommunityProjectCard({ project, index = 0 }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b7280', fontSize: F.meta }}>
           <CheckCircle sx={{ fontSize: 'clamp(13px, 1.6vw, 17px)', color: '#16a34a' }} />
-          {project.watchersCount.toLocaleString()} watching
+          {project.milestonesDone} of {project.milestonesTotal} milestones done
         </div>
         <Button
           component={Link} to={`/community/projects/${project.id}`}

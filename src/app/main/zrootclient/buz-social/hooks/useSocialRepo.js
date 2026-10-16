@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { mockLeaders, mockProjects, PROJECT_STATS } from '../mock';
+import { useMemo } from 'react';
+import { useCampaigns, useCampaignDetail, useMyContributions } from '../../buz-civictax/hooks/useCivicTaxRepo';
 
-// Community issues, votes and comments are REAL (civic-19). Leaders, projects and the engagement summary are still mock.
-const USE_MOCK = true;
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
+// Everything here is real: issues, votes and comments (civic-19), and projects and the engagement summary, which come
+// from the funded campaigns and contributions in civictax-service (an approved issue becomes a campaign with a project).
 
 // ─── real API + normalizers ──────────────────────────────────────────────────────────────────────────
 
@@ -160,78 +160,92 @@ export function useResolvedIssues() {
   );
 }
 
-export function useLeaders(filters = {}) {
-  return useQuery(
-    ['social-leaders', filters],
-    async () => {
-      if (USE_MOCK) {
-        await delay(500);
-        const filtered = mockLeaders.filter((l) => {
-          if (filters.lgaId && l.jurisdiction?.lga?.toLowerCase().replace(' ', '-') !== filters.lgaId) return false;
-          return true;
-        });
-        return { data: { leaders: filtered } };
-      }
-    },
-    { keepPreviousData: true, staleTime: 5 * 60 * 1000 }
-  );
+const lower = (v) => String(v ?? '').toLowerCase();
+
+/** A funded project as the project cards expect it, from a campaign that carries a project. Money comes from the campaign. */
+export function projectFromCampaign(c) {
+  const p = c?.project;
+  if (!p) return null;
+  const ms = p.milestones ?? [];
+  const done = ms.filter((m) => lower(m.status) === 'completed').length;
+  const released = ms.some((m) => m.amountDisbursedKobo != null)
+    ? ms.reduce((n, m) => n + Number(m.amountDisbursedKobo || 0), 0) / 100
+    : null;
+  return {
+    id: c.id, // the route id is the campaign id, so the detail page reads one campaign
+    title: c.title,
+    description: p.description || c.description || '',
+    status: lower(p.status || 'PLANNED'),
+    jurisdiction: { country: c.country, state: c.state, lga: c.lga, lgaId: slug(c.lga), stateId: slug(c.state) },
+    budget: c.targetAmount,
+    raised: c.raisedAmount,
+    released,
+    milestonesDone: done,
+    milestonesTotal: ms.length,
+    completionPercentage: ms.length ? Math.round((done / ms.length) * 100) : 0,
+    milestones: ms.map((m) => ({
+      id: m.id,
+      title: m.title,
+      completed: lower(m.status) === 'completed',
+      status: lower(m.status),
+      date: m.completedAt || m.dueDate || null,
+      note: m.note ?? null,
+    })),
+    relatedIssueId: c.sourceIssueId ?? null,
+    startDate: p.startDate ?? null,
+    endDate: p.endDate ?? null,
+  };
 }
 
+/** Funded projects across the platform, newest first. Figures are sums of what the campaigns actually hold. */
 export function useCommunityProjects(filters = {}) {
-  return useQuery(
-    ['social-projects', filters],
-    async () => {
-      if (USE_MOCK) {
-        await delay(650);
-        const filtered = mockProjects.filter((p) => {
-          if (filters.status && p.status !== filters.status) return false;
-          if (filters.category && p.category !== filters.category) return false;
-          return true;
-        });
-        return { data: { projects: filtered, stats: PROJECT_STATS } };
-      }
-    },
-    { keepPreviousData: true, staleTime: 2 * 60 * 1000 }
-  );
+  const query = useCampaigns({ limit: 50 });
+  const data = useMemo(() => {
+    const all = (query.data?.data?.campaigns ?? []).map(projectFromCampaign).filter(Boolean);
+    const projects = filters.status ? all.filter((p) => p.status === filters.status) : all;
+    return {
+      data: {
+        projects,
+        stats: {
+          inProgressProjects: all.filter((p) => p.status === 'in_progress').length,
+          completedProjects: all.filter((p) => p.status === 'completed').length,
+          totalBudget: all.reduce((n, p) => n + (p.budget || 0), 0),
+          totalRaised: all.reduce((n, p) => n + (p.raised || 0), 0),
+        },
+      },
+    };
+  }, [query.data, filters.status]);
+  return { ...query, data: query.data ? data : undefined };
 }
 
-export function useProjectDetail(projectId) {
-  return useQuery(
-    ['social-project', projectId],
-    async () => {
-      if (USE_MOCK) {
-        await delay(400);
-        const project = mockProjects.find((p) => p.id === projectId) || mockProjects[0];
-        return { data: { project } };
-      }
-    },
-    { enabled: Boolean(projectId), staleTime: 3 * 60 * 1000 }
-  );
+export function useProjectDetail(campaignId) {
+  const query = useCampaignDetail(campaignId);
+  const project = useMemo(() => projectFromCampaign(query.data?.data?.campaign), [query.data]);
+  const issueId = project?.relatedIssueId;
+  const issue = useQuery(['social-issue-title', issueId], () => api.getIssue(issueId), {
+    enabled: Boolean(issueId),
+    select: (res) => res.data?.title ?? null,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+  return {
+    ...query,
+    data: project ? { data: { project: { ...project, issueTitle: issue.data ?? null } } } : undefined,
+    isError: query.isError || (query.isSuccess && !project),
+  };
 }
 
+/** What the signed-in citizen has put into funded projects. Reports, votes and comments are not summarised here yet:
+ *  the community service has no per-citizen activity endpoint, so nothing is invented in their place. */
 export function useMyEngagement() {
-  return useQuery(
-    ['social-my-engagement'],
-    async () => {
-      if (USE_MOCK) {
-        await delay(500);
-        return {
-          data: {
-            issuesReported: 3,
-            issuesUpvoted: 14,
-            commentsPosted: 7,
-            projectsWatched: 5,
-            recentActivity: [
-              { type: 'issue_reported', title: 'Admiralty Way flooding', date: '2026-05-18T09:24:00Z' },
-              { type: 'comment_posted', title: 'Commented on Opebi streetlights issue', date: '2026-05-16T11:00:00Z' },
-              { type: 'issue_upvoted', title: 'Upvoted: Agege refuse dump issue', date: '2026-05-10T14:00:00Z' },
-            ],
-          },
-        };
-      }
+  const query = useMyContributions(1, 10);
+  const data = useMemo(() => ({
+    data: {
+      contributionsMade: query.data?.data?.stats?.total ?? 0,
+      recent: query.data?.data?.contributions ?? [],
     },
-    { staleTime: 2 * 60 * 1000 }
-  );
+  }), [query.data]);
+  return { ...query, data: query.data ? data : undefined };
 }
 
 export function useReportIssue() {
