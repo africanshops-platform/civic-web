@@ -1,211 +1,224 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
-import {
-  mockElections, ELECTION_STATS,
-  mockCandidates,
-  mockCollationResults,
-  mockPetitions, PETITION_STATS,
-} from '../mock';
+import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 
-const USE_MOCK = true;
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
+// Everything here is real (civic-8 G1): elections, candidates, ward collation, audit trail, petitions and polls come from
+// the governance service through the gateway. Where the service has no data for a figure (registered voters, turnout
+// percentage, a citizen's voting history) the screens show nothing rather than invent it.
 
-function applyElectionFilters(items, filters = {}) {
-  return items.filter((item) => {
-    if (filters.type && item.type !== filters.type) return false;
-    if (filters.status && item.status !== filters.status) return false;
-    if (filters.stateId && item.jurisdiction?.stateId !== filters.stateId) return false;
-    if (filters.lgaId && item.jurisdiction?.lgaId !== filters.lgaId) return false;
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      if (!item.title.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+const api = {
+  listElections: (params) => AuthApi().get('/governance/elections', { params }),
+  getElection:   (id)     => AuthApi().get(`/governance/elections/${id}`),
+  getCollation:  (id)     => AuthApi().get(`/governance/elections/${id}/collation`),
+  getAudit:      (id)     => AuthApi().get(`/governance/elections/${id}/audit`),
+  listPetitions: (params) => AuthApi().get('/governance/petitions', { params }),
+  getPetition:   (id)     => AuthApi().get(`/governance/petitions/${id}`),
+  signPetition:  (body)   => AuthApi().post('/governance/petitions/sign', body),
+  castVote:      (body)   => AuthApi().post('/governance/vote', body),
+  submitWard:    (body)   => AuthApi().post('/governance/admin/collation', body),
+};
+
+const errText = (e, fallback) => e?.response?.data?.message || fallback;
+const slug = (v) => String(v ?? '').trim().toLowerCase().replace(/\s+/g, '-');
+
+const STATUS_TO_UI = {
+  DRAFT: 'upcoming', NOMINATIONS_OPEN: 'upcoming', VOTING_OPEN: 'ongoing', COLLATING: 'ongoing', CLOSED: 'completed', CANCELLED: 'cancelled',
+};
+
+/** A real election as the election screens read it. */
+export function normalizeElection(e) {
+  const approved = (e.candidates ?? []).filter((c) => c.isApproved !== false);
+  return {
+    id: e.id,
+    title: e.title,
+    description: e.description ?? '',
+    level: e.level,
+    type: e.level,
+    rawStatus: e.status,
+    status: STATUS_TO_UI[e.status] ?? 'upcoming',
+    jurisdiction: { country: e.country, state: e.state, stateId: slug(e.state), lga: e.lga ?? null, lgaId: slug(e.lga), ward: e.ward ?? null },
+    electionDate: e.electionDate,
+    nominationDeadline: e.nominationDeadline,
+    closedAt: e.closedAt ?? null,
+    isOnlineVotingEnabled: Boolean(e.isOnlineVotingEnabled),
+    // Citizens who voted online (one per person; the ballot itself is secret). The service has no registered-voter count.
+    votersParticipated: e._count?.voterParticipations ?? 0,
+    candidatesCount: approved.length,
+    wardsReported: e.wardCollations?.length ?? null,
+    candidates: approved.map((c, i) => ({ id: c.id, name: c.name, party: c.party ?? null, manifesto: c.manifesto ?? '', photoUrl: c.photoUrl ?? null, index: i })),
+    createdAt: e.createdAt,
+  };
+}
+
+function electionStats(items) {
+  const by = (st) => items.filter((i) => i.status === st).length;
+  return {
+    totalElections: items.length,
+    ongoingElections: by('ongoing'),
+    upcomingElections: by('upcoming'),
+    completedElections: by('completed'),
+    totalVotersParticipated: items.reduce((n, i) => n + (i.votersParticipated || 0), 0),
+  };
 }
 
 export function useElections(filters = {}) {
   return useQuery(
-    ['governance-elections', filters],
-    async () => {
-      if (USE_MOCK) {
-        await delay(700);
-        const filtered = applyElectionFilters(mockElections, filters);
-        return { data: { elections: filtered, stats: ELECTION_STATS } };
-      }
+    ['governance-elections', filters.level ?? filters.type ?? ''],
+    () => api.listElections({ limit: 50, ...((filters.level || filters.type) ? { level: filters.level || filters.type } : {}) }),
+    {
+      select: (res) => {
+        let elections = (res.data.items ?? []).map(normalizeElection);
+        if (filters.status) elections = elections.filter((e) => e.status === filters.status);
+        if (filters.stateId) elections = elections.filter((e) => e.jurisdiction.stateId === filters.stateId);
+        if (filters.lgaId) elections = elections.filter((e) => e.jurisdiction.lgaId === filters.lgaId);
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          elections = elections.filter((e) => e.title.toLowerCase().includes(q));
+        }
+        return { data: { elections, stats: electionStats(elections) } };
+      },
+      keepPreviousData: true,
+      staleTime: 60 * 1000,
     },
-    { keepPreviousData: true, staleTime: 2 * 60 * 1000 }
   );
 }
 
 export function useElectionDetail(electionId) {
-  return useQuery(
-    ['governance-election', electionId],
-    async () => {
-      if (USE_MOCK) {
-        await delay(450);
-        const election = mockElections.find((e) => e.id === electionId) || mockElections[0];
-        const candidates = mockCandidates.filter((c) => c.electionId === electionId);
-        return { data: { election, candidates } };
-      }
+  return useQuery(['governance-election', electionId], () => api.getElection(electionId), {
+    enabled: Boolean(electionId),
+    select: (res) => {
+      const election = normalizeElection(res.data);
+      return { data: { election, candidates: election.candidates, wards: res.data.wardCollations ?? [] } };
     },
-    { enabled: Boolean(electionId), staleTime: 3 * 60 * 1000 }
-  );
+    staleTime: 30 * 1000,
+  });
 }
 
+/**
+ * Results so far, from ward collation. Online ballots are encrypted and are not tallied here: this shows what the
+ * collation officers have reported, plus how many citizens voted online.
+ */
 export function useElectionCollation(electionId) {
-  return useQuery(
-    ['governance-collation', electionId],
-    async () => {
-      if (USE_MOCK) {
-        await delay(500);
-        const result = mockCollationResults.find((r) => r.electionId === electionId) || mockCollationResults[0];
-        const live = {
-          ...result,
-          candidates: result.candidates.map((c) => ({
-            ...c,
-            totalVotes: c.totalVotes + Math.floor(Math.random() * 120),
+  return useQuery(['governance-collation', electionId], () => api.getCollation(electionId), {
+    enabled: Boolean(electionId),
+    select: (res) => {
+      const d = res.data;
+      const total = (d.candidates ?? []).reduce((n, c) => n + (c.physicalVotes || 0), 0);
+      return {
+        data: {
+          electionId: d.electionId,
+          status: d.status,
+          summary: { wardsReported: d.wardsReported ?? 0, onlineVoters: d.onlineVoters ?? 0, totalVotesCounted: total },
+          candidates: (d.candidates ?? []).map((c, i) => ({
+            candidateId: c.id,
+            name: c.name,
+            party: c.party ?? null,
+            index: i,
+            totalVotes: c.physicalVotes ?? 0,
+            percentage: total ? Math.round(((c.physicalVotes ?? 0) / total) * 1000) / 10 : 0,
           })),
-        };
-        return { data: live };
-      }
+        },
+      };
     },
-    {
-      enabled: Boolean(electionId),
-      refetchInterval: USE_MOCK ? 5000 : 10000,
-      staleTime: 0,
-    }
-  );
+    refetchInterval: 15000,
+    staleTime: 0,
+  });
+}
+
+/** The election's tamper-evident audit trail (counts and events only; no voter or choice is ever recorded). */
+export function useElectionAudit(electionId) {
+  return useQuery(['governance-audit', electionId], () => api.getAudit(electionId), {
+    enabled: Boolean(electionId),
+    select: (res) => res.data,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function normalizePetition(p) {
+  const status = String(p.status ?? 'OPEN').toLowerCase();
+  return {
+    id: p.id,
+    title: p.title,
+    description: p.body ?? '',
+    status,
+    targetAuthority: p.targetAuthority,
+    targetSignatures: p.signatureThreshold,
+    currentSignatures: p._count?.signatures ?? 0,
+    jurisdiction: { country: p.country, state: p.state, lga: p.lga },
+    deadline: p.deadline ?? null,
+    deliveredAt: p.deliveredAt ?? null,
+    createdAt: p.createdAt,
+  };
 }
 
 export function usePetitions(filters = {}) {
-  return useQuery(
-    ['governance-petitions', filters],
-    async () => {
-      if (USE_MOCK) {
-        await delay(600);
-        const filtered = mockPetitions.filter((p) => {
-          if (filters.status && p.status !== filters.status) return false;
-          if (filters.category && p.category !== filters.category) return false;
-          return true;
-        });
-        return { data: { petitions: filtered, stats: PETITION_STATS } };
-      }
+  return useQuery(['governance-petitions', filters.status ?? ''], () => api.listPetitions({ limit: 50, ...(filters.status ? { status: String(filters.status).toUpperCase() } : {}) }), {
+    select: (res) => {
+      const petitions = (res.data.items ?? []).map(normalizePetition);
+      return {
+        data: {
+          petitions,
+          stats: {
+            totalPetitions: petitions.length,
+            openPetitions: petitions.filter((p) => p.status === 'open').length,
+            deliveredPetitions: petitions.filter((p) => p.status === 'delivered' || p.status === 'threshold_met').length,
+            totalSignatures: petitions.reduce((n, p) => n + p.currentSignatures, 0),
+          },
+        },
+      };
     },
-    { keepPreviousData: true, staleTime: 2 * 60 * 1000 }
-  );
+    keepPreviousData: true,
+    staleTime: 60 * 1000,
+  });
 }
 
 export function usePetitionDetail(petitionId) {
-  return useQuery(
-    ['governance-petition', petitionId],
-    async () => {
-      if (USE_MOCK) {
-        await delay(400);
-        const petition = mockPetitions.find((p) => p.id === petitionId) || mockPetitions[0];
-        return { data: { petition } };
-      }
-    },
-    { enabled: Boolean(petitionId), staleTime: 3 * 60 * 1000 }
-  );
+  return useQuery(['governance-petition', petitionId], () => api.getPetition(petitionId), {
+    enabled: Boolean(petitionId),
+    select: (res) => ({ data: { petition: normalizePetition(res.data) } }),
+    staleTime: 30 * 1000,
+  });
 }
 
+/** The service keeps only a one-way proof that a citizen voted (never which election history to list), so there is no history to show. */
 export function useMyVotingHistory() {
-  return useQuery(
-    ['governance-my-votes'],
-    async () => {
-      if (USE_MOCK) {
-        await delay(500);
-        return {
-          data: {
-            votes: [
-              { electionId: 'elec_002', electionTitle: 'Eti-Osa LGA Chairmanship Election 2026', votedAt: '2026-09-20T10:24:00Z', receiptCode: 'VRC-2026-844721' },
-            ],
-            totalVoted: 1,
-            electionsEligible: 3,
-          },
-        };
-      }
-    },
-    { staleTime: 5 * 60 * 1000 }
-  );
+  return useMemo(() => ({ data: { data: { votes: [], totalVoted: 0, unavailable: true } }, isLoading: false, isError: false }), []);
 }
 
 export function useCastVote() {
   const queryClient = useQueryClient();
-  return useMutation(
-    async (payload) => {
-      if (USE_MOCK) {
-        await delay(1600);
-        return {
-          data: {
-            success: true,
-            receiptCode: `VRC-${new Date().getFullYear()}-${Math.floor(Math.random() * 900000 + 100000)}`,
-            message: 'Your vote has been recorded securely. Thank you for participating.',
-            electionId: payload.electionId,
-            candidateId: payload.candidateId,
-          },
-        };
-      }
+  return useMutation((payload) => api.castVote({ electionId: payload.electionId, candidateId: payload.candidateId }).then((res) => ({ ...res, electionId: payload.electionId })), {
+    onSuccess: (res) => {
+      toast.success(res?.data?.message || 'Your vote has been recorded. Thank you for taking part.');
+      queryClient.invalidateQueries(['governance-election', res.electionId]);
+      queryClient.invalidateQueries(['governance-collation', res.electionId]);
     },
-    {
-      onSuccess: (data) => {
-        if (data?.data?.success) {
-          toast.success(data.data.message || 'Vote cast successfully!');
-          queryClient.invalidateQueries(['governance-my-votes']);
-          queryClient.invalidateQueries(['governance-election', data.data.electionId]);
-        }
-      },
-      onError: () => {
-        toast.error('Could not cast vote. Please try again.');
-      },
-    }
-  );
+    onError: (e) => toast.error(errText(e, 'Could not record your vote. Please try again.')),
+  });
 }
 
 export function useSignPetition() {
   const queryClient = useQueryClient();
-  return useMutation(
-    async (payload) => {
-      if (USE_MOCK) {
-        await delay(900);
-        return { data: { success: true, message: 'Your signature has been added to the petition.', petitionId: payload.petitionId } };
-      }
+  return useMutation((payload) => api.signPetition({ petitionId: payload.petitionId }).then((res) => ({ ...res, petitionId: payload.petitionId })), {
+    onSuccess: (res) => {
+      toast.success('Your signature has been added to the petition.');
+      queryClient.invalidateQueries(['governance-petitions']);
+      queryClient.invalidateQueries(['governance-petition', res.petitionId]);
     },
-    {
-      onSuccess: (data) => {
-        if (data?.data?.success) {
-          toast.success(data.data.message || 'Petition signed!');
-          queryClient.invalidateQueries(['governance-petitions']);
-          queryClient.invalidateQueries(['governance-petition', data.data.petitionId]);
-        }
-      },
-      onError: () => {
-        toast.error('Could not sign petition. Please try again.');
-      },
-    }
-  );
+    onError: (e) => toast.error(errText(e, 'Could not sign the petition.')),
+  });
 }
 
+/** Ward result entry is for election officers (admin accounts); a citizen account is refused by the service. */
 export function useSubmitCollationEntry() {
   const queryClient = useQueryClient();
-  return useMutation(
-    async (payload) => {
-      if (USE_MOCK) {
-        await delay(1200);
-        return { data: { success: true, message: `Ward "${payload.wardName}" collation recorded.` } };
-      }
+  return useMutation((payload) => api.submitWard(payload), {
+    onSuccess: () => {
+      toast.success('Ward result recorded.');
+      queryClient.invalidateQueries(['governance-collation']);
+      queryClient.invalidateQueries(['governance-election']);
     },
-    {
-      onSuccess: (data) => {
-        if (data?.data?.success) {
-          toast.success(data.data.message || 'Collation entry saved.');
-          queryClient.invalidateQueries(['governance-collation']);
-        }
-      },
-      onError: () => {
-        toast.error('Collation entry failed. Please try again.');
-      },
-    }
-  );
+    onError: (e) => toast.error(errText(e, 'Could not record the ward result.')),
+  });
 }

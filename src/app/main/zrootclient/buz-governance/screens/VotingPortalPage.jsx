@@ -60,7 +60,7 @@ function ActiveVotingPortalPage() {
       leftSidebarToggle={handleLeftToggle}
       rightSidebarToggle={handleRightToggle}
       title="Voting Portal"
-      subtitle="Digital Governance · Cast Your Vote"
+      subtitle="Community vote · Cast your vote"
       activeElection={election?.status === 'ongoing'}
     />
   ), [handleLeftToggle, handleRightToggle, election?.status]);
@@ -99,7 +99,7 @@ function ActiveVotingPortalPage() {
           {/* ── Back ── */}
           <Button component={Link} to="/governance/dashboard" startIcon={<ArrowBack sx={{ fontSize: F.icon }} />}
             sx={{ color: '#6b7280', textTransform: 'none', fontWeight: 600, mb: 2.5, px: 0, fontSize: F.body }}>
-            Back to Governance
+            Back to Community Votes
           </Button>
 
           {/* ── Election info card ── */}
@@ -118,7 +118,7 @@ function ActiveVotingPortalPage() {
                 </h1>
               </div>
               <Chip
-                label={election.status.toUpperCase()}
+                label={election.status === 'ongoing' ? 'VOTING OPEN' : election.status === 'completed' ? 'CLOSED' : election.status.toUpperCase()}
                 sx={{ height: F.chipH, fontSize: F.body, background: accent + '20', color: accent, fontWeight: 800, border: `1px solid ${accent}44` }}
               />
             </div>
@@ -131,10 +131,8 @@ function ActiveVotingPortalPage() {
             {/* ── Stats grid — full width ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: 'clamp(8px, 1.2vw, 14px)' }}>
               {[
-                { label: 'Registered Voters', value: (election.totalRegisteredVoters / 1_000_000).toFixed(1) + 'M' },
-                { label: 'Votes Cast',        value: election.totalVotesCast.toLocaleString()                      },
-                { label: 'Turnout',           value: `${election.turnoutPercentage}%`                             },
-                { label: 'Candidates',        value: election.candidatesCount                                      },
+                { label: 'Voted Online', value: election.votersParticipated.toLocaleString() },
+                { label: 'Candidates',   value: election.candidatesCount                     },
               ].map((s) => (
                 <div key={s.label} style={{ textAlign: 'center', background: 'white', borderRadius: 14, padding: 'clamp(12px, 1.6vw, 18px) 4px', border: '1px solid #c7d2fe' }}>
                   <div style={{ fontWeight: 900, color: '#1e1b4b', fontSize: F.statValue }}>{s.value}</div>
@@ -149,12 +147,18 @@ function ActiveVotingPortalPage() {
             <div style={{ fontWeight: 800, color: '#111827', fontSize: F.cardTitle, marginBottom: 'clamp(14px, 1.8vw, 20px)' }}>
               Cast Your Vote
             </div>
+            {election.status !== 'ongoing' || !election.isOnlineVotingEnabled ? (
+              <div style={{ color: '#6b7280', fontSize: F.body, lineHeight: 1.7 }}>
+                Online voting is not open for this community vote{election.status === 'completed' ? ' (it has closed)' : ''}.
+              </div>
+            ) : (
             <VotingBallot
               election={election}
               candidates={candidates}
               onSubmit={castVote}
               isSubmitting={isSubmitting}
             />
+            )}
           </div>
         </motion.div>
       </div>

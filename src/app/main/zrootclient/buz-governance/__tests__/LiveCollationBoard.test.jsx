@@ -1,41 +1,39 @@
 import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from 'react-query';
 import LiveCollationBoard from '../components/LiveCollationBoard';
-import { mockCollationResults } from '../mock';
 
 jest.mock('react-apexcharts', () => () => <div data-testid="apex-chart" />);
 
-const wrapper = ({ children }) => (
-  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    {children}
-  </QueryClientProvider>
-);
+const collation = {
+  electionId: 'e1',
+  status: 'COLLATING',
+  summary: { wardsReported: 2, onlineVoters: 5, totalVotesCounted: 300 },
+  candidates: [
+    { candidateId: 'c1', name: 'Amina Yusuf', party: null, index: 0, totalVotes: 200, percentage: 66.7 },
+    { candidateId: 'c2', name: 'Chidi Okafor', party: 'Independent', index: 1, totalVotes: 100, percentage: 33.3 },
+  ],
+};
 
 describe('LiveCollationBoard', () => {
-  const collation = mockCollationResults[0];
-
-  it('renders LIVE RESULTS heading', () => {
-    render(<LiveCollationBoard collation={collation} />, { wrapper });
-    expect(screen.getByText('LIVE RESULTS')).toBeInTheDocument();
+  it('renders the results heading and the ward and online counts from the service', () => {
+    render(<LiveCollationBoard collation={collation} />);
+    expect(screen.getByText('RESULTS SO FAR')).toBeInTheDocument();
+    expect(screen.getByText(/2 wards reported · 5 voted online/)).toBeInTheDocument();
   });
 
-  it('renders ward collation progress text', () => {
-    render(<LiveCollationBoard collation={collation} />, { wrapper });
-    expect(screen.getByText(/wards collated/i)).toBeInTheDocument();
+  it('renders every candidate with their real vote share', () => {
+    render(<LiveCollationBoard collation={collation} />);
+    expect(screen.getByText('Amina Yusuf')).toBeInTheDocument();
+    expect(screen.getByText('Chidi Okafor')).toBeInTheDocument();
+    expect(screen.getByText('66.7%')).toBeInTheDocument();
   });
 
-  it('renders all candidate rows', () => {
-    render(<LiveCollationBoard collation={collation} />, { wrapper });
-    collation.candidates.forEach((c) => {
-      // Component renders `{c.party} · {c.wardsWon} wards won` as sibling text
-      // nodes in one div, not a plain string — exact-match getByText can't find
-      // a substring of that, so match by regex instead.
-      expect(screen.getByText(new RegExp(c.party))).toBeInTheDocument();
-    });
+  it('says so, instead of showing zeros, when no ward has reported', () => {
+    render(<LiveCollationBoard collation={{ ...collation, summary: { wardsReported: 0, onlineVoters: 0, totalVotesCounted: 0 } }} />);
+    expect(screen.getByText(/No ward results have been reported yet/)).toBeInTheDocument();
   });
 
   it('renders loading skeleton when isLoading prop passed', () => {
-    render(<LiveCollationBoard isLoading />, { wrapper });
+    render(<LiveCollationBoard isLoading />);
     expect(screen.getByTestId('collation-board-skeleton')).toBeInTheDocument();
   });
 });

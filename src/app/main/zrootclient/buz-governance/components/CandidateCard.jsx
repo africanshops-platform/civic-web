@@ -1,8 +1,10 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Avatar, Chip, LinearProgress } from '@mui/material';
-import { EmojiEvents, HowToVote } from '@mui/icons-material';
+import { Avatar, Chip } from '@mui/material';
+import { HowToVote } from '@mui/icons-material';
+import { candidateColor } from '../constants';
 
+/** A candidate as the voter sees them: name, optional party and manifesto. Never an internal user id. */
 function CandidateCard({ candidate, rank, showVoteBtn, onVote, isLoading, compact = false }) {
   if (isLoading) {
     return (
@@ -13,100 +15,32 @@ function CandidateCard({ candidate, rank, showVoteBtn, onVote, isLoading, compac
       </div>
     );
   }
-
   if (!candidate) return null;
 
-  const { name, party, voteCount, percentage, status, runningMate, occupation } = candidate;
-  const isLeading = status === 'leading';
-  const isWinner = status === 'winner';
+  const { name, party, manifesto, photoUrl } = candidate;
+  const color = candidateColor(candidate.index ?? rank ?? 0);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: (rank || 0) * 0.08 }}
-      style={{
-        borderRadius: 20,
-        padding: compact ? '16px 18px' : '20px 24px',
-        background: isLeading || isWinner ? `${party.bgColor}` : 'white',
-        border: `2px solid ${isLeading || isWinner ? party.color : '#e5e7eb'}`,
-        boxShadow: isLeading || isWinner ? `0 8px 28px ${party.color}22` : '0 2px 8px rgba(0,0,0,0.06)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+      initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: (rank || 0) * 0.08 }}
+      style={{ borderRadius: 20, padding: compact ? '16px 18px' : '20px 24px', background: 'white', border: '2px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
     >
-      {(isLeading || isWinner) && (
-        <div style={{
-          position: 'absolute', top: 12, right: 14,
-          display: 'flex', alignItems: 'center', gap: 4,
-          background: party.color, color: 'white',
-          borderRadius: 999, padding: '3px 10px',
-          fontSize: '0.72rem', fontWeight: 700,
-        }}>
-          {isWinner ? <EmojiEvents sx={{ fontSize: 14 }} /> : null}
-          {isWinner ? 'WINNER' : 'LEADING'}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
-        <Avatar
-          sx={{ width: compact ? 44 : 56, height: compact ? 44 : 56, bgcolor: party.color, fontSize: compact ? '1.1rem' : '1.4rem', fontWeight: 700, flexShrink: 0 }}
-        >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: manifesto && !compact ? 12 : 0 }}>
+        <Avatar src={photoUrl || undefined} sx={{ width: compact ? 44 : 56, height: compact ? 44 : 56, bgcolor: color, fontSize: compact ? '1.1rem' : '1.4rem', fontWeight: 700, flexShrink: 0 }}>
           {name.charAt(0)}
         </Avatar>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: compact ? '0.95rem' : '1.05rem', color: '#111827', marginBottom: 3, lineHeight: 1.3 }}>
-            {name}
-          </div>
-          {runningMate && !compact && (
-            <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 4 }}>
-              Running mate: {runningMate}
-            </div>
-          )}
-          <Chip
-            label={party.abbreviation}
-            size="small"
-            sx={{ backgroundColor: party.bgColor, color: party.color, fontWeight: 700, fontSize: '0.7rem', height: 22, border: `1px solid ${party.color}44` }}
-          />
+          <div style={{ fontWeight: 800, fontSize: compact ? '0.95rem' : '1.05rem', color: '#111827', marginBottom: 4, lineHeight: 1.3 }}>{name}</div>
+          {party && <Chip label={party} size="small" sx={{ backgroundColor: `${color}14`, color, fontWeight: 700, fontSize: '0.7rem', height: 22, border: `1px solid ${color}44` }} />}
         </div>
       </div>
 
-      {!compact && occupation && (
-        <div style={{ fontSize: '0.82rem', color: '#6b7280', marginBottom: 12 }}>{occupation}</div>
-      )}
-
-      {voteCount !== undefined && (
-        <div style={{ marginBottom: compact ? 0 : 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>
-              {voteCount.toLocaleString()} votes
-            </span>
-            <span style={{ fontSize: '1rem', fontWeight: 900, color: party.color }}>{percentage}%</span>
-          </div>
-          <LinearProgress
-            variant="determinate"
-            value={Math.min(percentage, 100)}
-            sx={{
-              height: 8, borderRadius: 4,
-              backgroundColor: `${party.color}22`,
-              '& .MuiLinearProgress-bar': { backgroundColor: party.color, borderRadius: 4 },
-            }}
-          />
-        </div>
-      )}
+      {!compact && manifesto && <div style={{ fontSize: '0.85rem', color: '#4b5563', lineHeight: 1.6 }}>{manifesto}</div>}
 
       {showVoteBtn && (
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => onVote?.(candidate)}
-          style={{
-            marginTop: 14, width: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: party.color, color: 'white',
-            border: 'none', borderRadius: 12, padding: '10px 16px',
-            fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer',
-          }}
+          type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => onVote?.(candidate)}
+          style={{ marginTop: 14, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: color, color: 'white', border: 'none', borderRadius: 12, padding: '10px 16px', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer' }}
         >
           <HowToVote sx={{ fontSize: 18 }} />
           Vote for {name.split(' ')[0]}

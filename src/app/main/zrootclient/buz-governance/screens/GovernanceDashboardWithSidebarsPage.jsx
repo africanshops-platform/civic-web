@@ -64,8 +64,8 @@ function ActiveGovernanceDashboardPage() {
     <GovernanceHeader
       leftSidebarToggle={handleLeftToggle}
       rightSidebarToggle={handleRightToggle}
-      title="Digital Governance"
-      subtitle="Elections · Petitions · Citizen Participation"
+      title="Community Votes"
+      subtitle="Votes · Petitions · Citizen Participation (community-run)"
       activeElection={hasLiveElection}
     />
   ), [handleLeftToggle, handleRightToggle, hasLiveElection]);
@@ -128,7 +128,7 @@ function GovernanceDashboardWithSidebarsPage() {
       ActiveComponent={MemoizedActiveGovernanceDashboardPage}
       isLoading={isLoading}
       isError={isError}
-      serviceName="Digital Governance"
+      serviceName="Community Votes"
     />
   );
 }
