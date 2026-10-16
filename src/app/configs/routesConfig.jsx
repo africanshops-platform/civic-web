@@ -25,6 +25,7 @@ import userProfileAppConfig from "../main/zrootclient/profile/userProfileAppConf
 
 /***Civic Platform Module Configs */
 import KycManagePage from "../main/zrootclient/civic-shared/kyc/KycManagePage";
+import MyDetailsPage from "../main/zrootclient/civic-shared/profile/MyDetailsPage";
 import KycFaceCaptureBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycFaceCaptureBridgePage";
 import VoteFaceCheckBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/VoteFaceCheckBridgePage";
 import KycWebAuthnBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycWebAuthnBridgePage";
@@ -121,6 +122,22 @@ const routes = [
    * CIVIC PLATFORM — Public routes end
    * ##############################################################
    */
+
+  {
+    path: "/account/profile",
+    settings: {
+      layout: {
+        config: {
+          navbar: { display: false },
+          toolbar: { display: true },
+          footer: { display: false },
+          leftSidePanel: { display: false },
+          rightSidePanel: { display: false },
+        },
+      },
+    },
+    element: <MyDetailsPage />,
+  },
 
   {
     path: "/account/kyc",

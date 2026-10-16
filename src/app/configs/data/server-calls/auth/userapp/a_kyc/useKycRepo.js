@@ -51,6 +51,16 @@ export const ABOUT_YOU_KEY = ['civic-profile-about'];
 export function useAboutYou() {
   return useQuery(ABOUT_YOU_KEY, () => AuthApi().get('/civic-profile/about'), { staleTime: 60 * 1000, select: (res) => res.data });
 }
+export const CHANGE_REQUESTS_KEY = ['civic-profile-change-requests'];
+export function useMyChangeRequests() {
+  return useQuery(CHANGE_REQUESTS_KEY, () => AuthApi().get('/civic-profile/change-requests'), { staleTime: 30 * 1000, select: (res) => res.data });
+}
+export function useCreateChangeRequest() {
+  const qc = useQueryClient();
+  return useMutation((b) => AuthApi().post('/civic-profile/change-requests', b), {
+    onSuccess: () => { qc.invalidateQueries(CHANGE_REQUESTS_KEY); qc.invalidateQueries(ABOUT_YOU_KEY); },
+  });
+}
 export function useSaveAboutYou() {
   const qc = useQueryClient();
   return useMutation((b) => AuthApi().put('/civic-profile/about', b), { onSuccess: () => qc.invalidateQueries(ABOUT_YOU_KEY) });

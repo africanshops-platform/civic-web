@@ -3,6 +3,7 @@ import { useGetKycStatus } from 'app/configs/data/server-calls/auth/userapp/a_ky
 import { getIsCivicUser } from 'app/configs/data/server-calls/auth/userapp/a_civic_user/useCivicUserRepo';
 import KycWizardPage      from '../kyc/KycWizardPage';
 import CivicActivationPage from './CivicActivationPage';
+import DobGate from '../profile/DobGate';
 
 export default function CivicUserGuard({ children }) {
   const [showKycManager, setShowKycManager] = useState(false);
@@ -18,7 +19,7 @@ export default function CivicUserGuard({ children }) {
     );
   }
 
-  if (getIsCivicUser()) return children;
+  if (getIsCivicUser()) return <DobGate>{children}</DobGate>;
 
   return (
     <CivicActivationPage
