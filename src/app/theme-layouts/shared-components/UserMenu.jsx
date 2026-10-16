@@ -247,6 +247,18 @@ function UserMenu({ user }) {
 
             <MenuItem
               component={Link}
+              to="/account/household"
+              onClick={userMenuClose}
+              role="button"
+            >
+              <ListItemIcon className="min-w-40">
+                <FuseSvgIcon>heroicons-outline:users</FuseSvgIcon>
+              </ListItemIcon>
+              <ListItemText primary="My household" />
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
               to="/account/kyc"
               onClick={userMenuClose}
               role="button"

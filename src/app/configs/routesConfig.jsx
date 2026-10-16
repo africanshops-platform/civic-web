@@ -26,6 +26,7 @@ import userProfileAppConfig from "../main/zrootclient/profile/userProfileAppConf
 /***Civic Platform Module Configs */
 import KycManagePage from "../main/zrootclient/civic-shared/kyc/KycManagePage";
 import MyDetailsPage from "../main/zrootclient/civic-shared/profile/MyDetailsPage";
+import MyHouseholdPage from "../main/zrootclient/civic-shared/profile/MyHouseholdPage";
 import KycFaceCaptureBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycFaceCaptureBridgePage";
 import VoteFaceCheckBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/VoteFaceCheckBridgePage";
 import KycWebAuthnBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycWebAuthnBridgePage";
@@ -137,6 +138,22 @@ const routes = [
       },
     },
     element: <MyDetailsPage />,
+  },
+
+  {
+    path: "/account/household",
+    settings: {
+      layout: {
+        config: {
+          navbar: { display: false },
+          toolbar: { display: true },
+          footer: { display: false },
+          leftSidePanel: { display: false },
+          rightSidePanel: { display: false },
+        },
+      },
+    },
+    element: <MyHouseholdPage />,
   },
 
   {

@@ -249,6 +249,13 @@ export default function MyDetailsPage() {
 				Back
 			</Button>
 			<Typography className="text-24 md:text-32 font-extrabold tracking-tight">My details</Typography>
+			<Button
+				component={Link}
+				to="/account/household"
+				sx={{ alignSelf: 'flex-start', textTransform: 'none' }}
+			>
+				My household: spouse and children
+			</Button>
 			<Typography color="text.secondary">
 				These come from your identity check. Once a detail has been checked against your ID it is locked, and a
 				change needs a reviewer to approve it.
