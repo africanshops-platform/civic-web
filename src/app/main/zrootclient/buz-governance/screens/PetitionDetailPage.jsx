@@ -5,8 +5,9 @@ import { Button, LinearProgress, Chip } from '@mui/material';
 import { ArrowBack, CheckCircle, LocationOn } from '@mui/icons-material';
 import { usePetitionDetail, useSignPetition } from '../hooks/useGovernanceRepo';
 import { CivicLoadingSkeleton } from '../../civic-shared';
+import GovernanceShell from './shared-components/GovernanceShell';
 
-export default function PetitionDetailPage() {
+function PetitionDetailPageBody() {
   const { petitionId } = useParams();
   const { data, isLoading, isError } = usePetitionDetail(petitionId);
   const { mutate: signPetition, isLoading: isSigning, isSuccess } = useSignPetition();
@@ -97,5 +98,14 @@ export default function PetitionDetailPage() {
         A petition is a community request. When it reaches its signature goal it is marked as having met its threshold and is delivered to the party it is addressed to. This platform is independent and does not act for any government body.
       </p>
     </motion.div>
+  );
+}
+
+
+export default function PetitionDetailPage() {
+  return (
+    <GovernanceShell title="Citizen Participation" subtitle="Petition">
+      <PetitionDetailPageBody />
+    </GovernanceShell>
   );
 }

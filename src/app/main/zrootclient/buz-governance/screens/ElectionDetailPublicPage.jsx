@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button, Chip } from '@mui/material';
@@ -9,15 +9,18 @@ import VotingLocationsMap from '../components/VotingLocationsMap';
 import LiveCollationBoard from '../components/LiveCollationBoard';
 import CandidateCard from '../components/CandidateCard';
 import WardResultsList from '../components/WardResultsList';
+import { NominateDialog } from '../components/ParticipationDialogs';
 import { COMMUNITY_VOTE_NOTICE } from '../constants';
 import { CivicLoadingSkeleton } from '../../civic-shared';
+import GovernanceShell from './shared-components/GovernanceShell';
 
-export default function ElectionDetailPublicPage() {
+function ElectionDetailPublicPageBody() {
   const { isAuthenticated } = useCivicWebAuth();
   const { electionId } = useParams();
   const { data: elecData, isLoading: elecLoading } = useElectionDetail(electionId);
   const { data: collData, isLoading: collLoading } = useElectionCollation(electionId);
   const { data: locations = [] } = useElectionLocations(electionId);
+  const [nominating, setNominating] = useState(false);
 
   const election = useMemo(() => elecData?.data?.election, [elecData]);
   const candidates = useMemo(() => elecData?.data?.candidates || [], [elecData]);
@@ -67,6 +70,12 @@ export default function ElectionDetailPublicPage() {
             </div>
           ))}
         </div>
+        {election.rawStatus === 'NOMINATIONS_OPEN' && (
+          <Button onClick={() => (isAuthenticated ? setNominating(true) : window.location.assign('/sign-in'))} variant="outlined"
+            sx={{ fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 4, py: 1.5, mr: 1.5 }}>
+            {isAuthenticated ? 'Put Yourself Forward' : 'Sign In to Put Yourself Forward'}
+          </Button>
+        )}
         {canVote && (
           <Button component={Link} to={isAuthenticated ? `/governance/elections/${election.id}/vote` : '/sign-in'} variant="contained" startIcon={<HowToVote />}
             sx={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)', color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 4, py: 1.5, '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' } }}>
@@ -93,6 +102,7 @@ export default function ElectionDetailPublicPage() {
         </div>
       </div>
 
+      {nominating && <NominateDialog election={election} onClose={() => setNominating(false)} />}
       <p style={{ color: '#9ca3af', fontSize: '0.8rem', margin: '0 0 20px' }}>{COMMUNITY_VOTE_NOTICE}</p>
 
       {/* Candidate profiles */}
@@ -105,5 +115,14 @@ export default function ElectionDetailPublicPage() {
         </div>
       )}
     </motion.div>
+  );
+}
+
+
+export default function ElectionDetailPublicPage() {
+  return (
+    <GovernanceShell title="Community Votes" subtitle="Vote details">
+      <ElectionDetailPublicPageBody />
+    </GovernanceShell>
   );
 }

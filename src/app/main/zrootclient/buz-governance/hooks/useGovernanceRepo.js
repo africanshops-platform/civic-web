@@ -19,6 +19,12 @@ const api = {
   signPetition:  (body)   => AuthApi().post('/governance/petitions/sign', body),
   castVote:      (body)   => AuthApi().post('/governance/vote', body),
   faceCheck:     (id, faceDescriptor) => AuthApi().post(`/governance/elections/${id}/face-check`, { faceDescriptor }),
+  createPetition: (body) => AuthApi().post('/governance/petitions', body),
+  listPolls:     (params) => AuthApi().get('/governance/polls', { params }),
+  pollResults:   (id)     => AuthApi().get(`/governance/polls/${id}/results`),
+  createPoll:    (body)   => AuthApi().post('/governance/polls', body),
+  votePoll:      (body)   => AuthApi().post('/governance/polls/vote', body),
+  nominate:      (id, body) => AuthApi().post(`/governance/elections/${id}/nominate`, body),
   submitWard:    (body)   => AuthApi().post('/governance/admin/collation', body),
 };
 
@@ -264,5 +270,61 @@ export function useSubmitCollationEntry() {
       queryClient.invalidateQueries(['governance-election']);
     },
     onError: (e) => toast.error(errText(e, 'Could not record the ward result.')),
+  });
+}
+
+/** Start a petition. Its area is the citizen's own, taken from their civic profile by the server. */
+export function useCreatePetition() {
+  const queryClient = useQueryClient();
+  return useMutation((body) => api.createPetition(body), {
+    onSuccess: () => {
+      toast.success('Your petition has been started.');
+      queryClient.invalidateQueries(['governance-petitions']);
+    },
+    onError: (e) => toast.error(errText(e, 'Could not start the petition.')),
+  });
+}
+
+/** Polls in the citizen's area, each with its live results (a poll shows results to anyone). */
+export function usePolls() {
+  return useQuery(['governance-polls'], async () => {
+    const list = await api.listPolls({ limit: 20, status: 'ACTIVE' });
+    const items = list.data.items ?? [];
+    const results = await Promise.all(items.map((p) => api.pollResults(p.id).then((r) => r.data).catch(() => null)));
+    return items.map((p, i) => ({ ...p, results: results[i] }));
+  }, { staleTime: 30 * 1000 });
+}
+
+export function useCreatePoll() {
+  const queryClient = useQueryClient();
+  return useMutation((body) => api.createPoll(body), {
+    onSuccess: () => {
+      toast.success('Your poll is open.');
+      queryClient.invalidateQueries(['governance-polls']);
+    },
+    onError: (e) => toast.error(errText(e, 'Could not start the poll.')),
+  });
+}
+
+export function useVoteOnPoll() {
+  const queryClient = useQueryClient();
+  return useMutation((body) => api.votePoll(body), {
+    onSuccess: () => {
+      toast.success('Your answer has been recorded.');
+      queryClient.invalidateQueries(['governance-polls']);
+    },
+    onError: (e) => toast.error(errText(e, 'Could not record your answer.')),
+  });
+}
+
+/** Put yourself forward as a candidate while nominations are open; the admin reviews it before it reaches the ballot. */
+export function useNominate(electionId) {
+  const queryClient = useQueryClient();
+  return useMutation((body) => api.nominate(electionId, body), {
+    onSuccess: () => {
+      toast.success('Your nomination was sent for review.');
+      queryClient.invalidateQueries(['governance-election', electionId]);
+    },
+    onError: (e) => toast.error(errText(e, 'Could not send your nomination.')),
   });
 }

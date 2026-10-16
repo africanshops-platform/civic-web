@@ -9,7 +9,8 @@ import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import GovernanceHeader from './shared-components/GovernanceHeader';
 import GovernanceSidebarLeft from './shared-components/GovernanceSidebarLeft';
 import GovernanceSidebarRight from './shared-components/GovernanceSidebarRight';
-import { usePetitions, useSignPetition } from '../hooks/useGovernanceRepo';
+import { usePetitions, useSignPetition, usePolls, useVoteOnPoll } from '../hooks/useGovernanceRepo';
+import { StartPetitionDialog, StartPollDialog } from '../components/ParticipationDialogs';
 import { CivicLoadingSkeleton, CivicEmptyState } from '../../civic-shared';
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
@@ -85,6 +86,28 @@ function PetitionCard({ petition, onSign, isSigning }) {
   );
 }
 
+function PollCard({ poll, onVote, isVoting }) {
+  const total = poll.results?.totalVotes ?? 0;
+  return (
+    <div style={{ borderRadius: 22, padding: 'clamp(16px, 2.2vw, 24px)', background: 'white', border: '1px solid #e5e7eb' }}>
+      <h3 style={{ margin: '0 0 12px', fontWeight: 800, color: '#111827', fontSize: F.cardTitle, lineHeight: 1.35 }}>{poll.question}</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {(poll.results?.options ?? poll.options ?? []).map((o) => {
+          const pct = total ? Math.round(((o.votes ?? 0) / total) * 100) : 0;
+          return (
+            <button key={o.id} type="button" disabled={isVoting} onClick={() => onVote(poll.id, o.id)}
+              style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid #d1d5db', borderRadius: 12, padding: '10px 14px', background: `linear-gradient(90deg, #dbeafe ${pct}%, white ${pct}%)`, fontSize: F.body, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span>{o.text}</span>
+              {poll.results && <span style={{ fontWeight: 800 }}>{pct}%</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: F.small, color: '#9ca3af', marginTop: 8 }}>{total.toLocaleString()} {total === 1 ? 'answer' : 'answers'} so far</div>
+    </div>
+  );
+}
+
 function ActiveCitizenParticipationPage() {
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [leftSidebarOpen, setLeftSidebarOpen]   = useState(!isMobile);
@@ -96,6 +119,9 @@ function ActiveCitizenParticipationPage() {
 
   const { data, isLoading, isError } = usePetitions({ status: activeStatus });
   const { mutate: signPetition, isLoading: isSigning } = useSignPetition();
+  const { data: polls = [] } = usePolls();
+  const { mutate: voteOnPoll, isLoading: isVotingPoll } = useVoteOnPoll();
+  const [dialog, setDialog] = useState(null); // 'petition' | 'poll'
 
   const petitions = useMemo(() => {
     const all = data?.data?.petitions || [];
@@ -131,6 +157,10 @@ function ActiveCitizenParticipationPage() {
           <p style={{ margin: 0, color: '#6b7280', fontSize: F.subTitle }}>
             Sign petitions and speak up on what matters to your community.
           </p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
+            <Button variant="contained" onClick={() => setDialog('petition')} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: F.body }}>Start a petition</Button>
+            <Button variant="outlined" onClick={() => setDialog('poll')} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: F.body }}>Start a poll</Button>
+          </div>
         </div>
 
         {/* Stats strip */}
@@ -178,9 +208,19 @@ function ActiveCitizenParticipationPage() {
             ))}
           </div>
         )}
+        {polls.length > 0 && (
+          <div style={{ marginTop: 'clamp(24px, 3vw, 36px)' }}>
+            <h2 style={{ margin: '0 0 14px', fontWeight: 900, color: '#111827', fontSize: F.subTitle }}>Community polls</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.6vw, 18px)' }}>
+              {polls.map((p) => <PollCard key={p.id} poll={p} isVoting={isVotingPoll} onVote={(pollId, optionId) => voteOnPoll({ pollId, optionId })} />)}
+            </div>
+          </div>
+        )}
+        {dialog === 'petition' && <StartPetitionDialog onClose={() => setDialog(null)} />}
+        {dialog === 'poll' && <StartPollDialog onClose={() => setDialog(null)} />}
       </motion.div>
     </div>
-  ), [petitions, data, isLoading, isError, search, activeStatus, isSigning, signPetition]);
+  ), [petitions, data, isLoading, isError, search, activeStatus, isSigning, signPetition, polls, isVotingPoll, voteOnPoll, dialog]);
 
   return (
     <Root header={header} content={content}
