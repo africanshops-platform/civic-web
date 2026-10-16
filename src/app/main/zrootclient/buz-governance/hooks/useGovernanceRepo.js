@@ -96,27 +96,41 @@ export function useElectionDetail(electionId) {
 }
 
 /**
- * Results so far, from ward collation. Online ballots are encrypted and are not tallied here: this shows what the
- * collation officers have reported, plus how many citizens voted online.
+ * Results: ward-collated votes plus the online tally, which is published when voting closes (online ballots are secret
+ * until then). Each candidate carries both parts and the total.
  */
 export function useElectionCollation(electionId) {
   return useQuery(['governance-collation', electionId], () => api.getCollation(electionId), {
     enabled: Boolean(electionId),
     select: (res) => {
       const d = res.data;
-      const total = (d.candidates ?? []).reduce((n, c) => n + (c.physicalVotes || 0), 0);
+      const votesOf = (c) => (c.physicalVotes || 0) + (c.onlineVotes || 0);
+      const total = (d.candidates ?? []).reduce((n, c) => n + votesOf(c), 0);
+      const online = d.onlineTally ?? { status: 'AFTER_CLOSE' };
       return {
         data: {
           electionId: d.electionId,
           status: d.status,
-          summary: { wardsReported: d.wardsReported ?? 0, onlineVoters: d.onlineVoters ?? 0, totalVotesCounted: total },
+          summary: {
+            wardsReported: d.wardsReported ?? 0,
+            onlineVoters: d.onlineVoters ?? 0,
+            totalVotesCounted: total,
+            // 'AFTER_CLOSE' while voting is open, 'PENDING' if closed but not yet published, 'PUBLISHED' once counted.
+            onlineTallyStatus: online.status,
+            onlineValid: online.valid ?? 0,
+            onlineRejected: online.rejected ?? 0,
+            onlineMismatch: Boolean(online.mismatch),
+            onlineDigest: online.digest ?? null,
+          },
           candidates: (d.candidates ?? []).map((c, i) => ({
             candidateId: c.id,
             name: c.name,
             party: c.party ?? null,
             index: i,
-            totalVotes: c.physicalVotes ?? 0,
-            percentage: total ? Math.round(((c.physicalVotes ?? 0) / total) * 1000) / 10 : 0,
+            wardVotes: c.physicalVotes ?? 0,
+            onlineVotes: c.onlineVotes ?? null,
+            totalVotes: votesOf(c),
+            percentage: total ? Math.round((votesOf(c) / total) * 1000) / 10 : 0,
           })),
         },
       };

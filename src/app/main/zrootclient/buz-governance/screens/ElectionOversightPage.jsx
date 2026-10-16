@@ -128,12 +128,12 @@ function ActiveElectionOversightPage() {
                   Collation: {collation.summary.wardsReported} ward{collation.summary.wardsReported === 1 ? '' : 's'} reported
                 </div>
                 <div style={{ fontSize: F.body, color: '#6b7280', marginTop: 6 }}>
-                  Online ballots are secret and are not tallied here.
+                  Online ballots are secret while voting is open and are counted when it closes.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 'clamp(16px,2.5vw,32px)', flexWrap: 'wrap' }}>
                 {[
-                  { label: 'Votes Counted in Wards', value: collation.summary.totalVotesCounted.toLocaleString() },
+                  { label: 'Votes Counted', value: collation.summary.totalVotesCounted.toLocaleString() },
                   { label: 'Voted Online',           value: collation.summary.onlineVoters.toLocaleString()       },
                 ].map((s) => (
                   <div key={s.label} style={{ textAlign: 'center' }}>

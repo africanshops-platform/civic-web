@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { candidateColor } from '../constants';
 
 /**
- * Results so far from ward collation. Online ballots are secret and are not tallied here, so the board also says how many
- * citizens voted online. Nothing is shown that the governance service did not report.
+ * Results: ward-collated votes plus the online tally. Online ballots are secret while voting is open and are counted when the
+ * vote closes, so until then the board says how many citizens voted online. Nothing is shown that the service did not report.
  */
 function LiveCollationBoard({ collation, isLoading }) {
   const candidates = useMemo(() => collation?.candidates ?? [], [collation]);
@@ -42,15 +42,32 @@ function LiveCollationBoard({ collation, isLoading }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-        <span style={{ fontWeight: 800, color: '#111827', fontSize: '1.05rem' }}>RESULTS SO FAR</span>
+        <span style={{ fontWeight: 800, color: '#111827', fontSize: '1.05rem' }}>{collation.status === 'CLOSED' && summary.onlineTallyStatus === 'PUBLISHED' ? 'FINAL RESULTS' : 'RESULTS SO FAR'}</span>
         <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 600 }}>
           {summary.wardsReported} ward{summary.wardsReported === 1 ? '' : 's'} reported · {summary.onlineVoters.toLocaleString()} voted online
         </div>
       </div>
 
+      {summary.onlineTallyStatus === 'AFTER_CLOSE' && (
+        <div style={{ padding: '0 0 12px', color: '#6b7280', fontSize: '0.85rem' }}>
+          Online votes are secret and are counted when voting closes.
+        </div>
+      )}
+      {summary.onlineTallyStatus === 'PENDING' && (
+        <div style={{ padding: '0 0 12px', color: '#b45309', fontSize: '0.85rem' }}>
+          Voting has closed. The online count has not been published yet.
+        </div>
+      )}
+      {summary.onlineTallyStatus === 'PUBLISHED' && (
+        <div style={{ padding: '0 0 12px', color: '#6b7280', fontSize: '0.85rem' }}>
+          Online count published at close: {summary.onlineValid.toLocaleString()} valid{summary.onlineRejected ? `, ${summary.onlineRejected.toLocaleString()} rejected` : ''}.
+          {summary.onlineMismatch && <strong style={{ color: '#dc2626' }}> The number of ballots does not match the number of voters. This has been flagged for review.</strong>}
+        </div>
+      )}
+
       {!hasVotes && (
         <div style={{ padding: '20px 0', color: '#6b7280', fontSize: '0.9rem' }}>
-          No ward results have been reported yet. Votes cast online are secret and are not counted on this board.
+          No votes have been counted yet.
         </div>
       )}
 
@@ -75,7 +92,9 @@ function LiveCollationBoard({ collation, isLoading }) {
             {hasVotes && (
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontWeight: 900, color: colors[i], fontSize: '1rem' }}>{c.percentage}%</div>
-                <div style={{ fontSize: '0.76rem', color: '#6b7280' }}>{c.totalVotes.toLocaleString()}</div>
+                <div style={{ fontSize: '0.76rem', color: '#6b7280' }}>
+                  {c.totalVotes.toLocaleString()}{c.onlineVotes != null ? ` (${c.wardVotes.toLocaleString()} ward + ${c.onlineVotes.toLocaleString()} online)` : ''}
+                </div>
               </div>
             )}
           </motion.div>
