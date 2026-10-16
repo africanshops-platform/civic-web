@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { useMemo } from 'react';
 import { useCampaigns, useCampaignDetail, useMyContributions } from '../../buz-civictax/hooks/useCivicTaxRepo';
 
@@ -18,6 +19,13 @@ const api = {
   upvote:       (id)     => AuthApi().post(`/community/issues/${id}/upvote`),
   downvote:     (id)     => AuthApi().post(`/community/issues/${id}/downvote`),
   addComment:   (body)   => AuthApi().post('/community/comments', body),
+  // user-generated-content safety (civic-75 F2)
+  terms:        ()       => AuthApi().get('/community/terms'),
+  acceptTerms:  (version) => AuthApi().post('/community/terms/accept', { version }),
+  myBlocks:     ()       => AuthApi().get('/community/blocks/mine'),
+  block:        (body)   => AuthApi().post('/community/blocks', body),
+  unblock:      (key)    => AuthApi().delete(`/community/blocks/${key}`),
+  report:       (body)   => AuthApi().post('/community/reports', body),
 };
 
 // UI category ids <-> backend IssueCategory
@@ -39,6 +47,7 @@ export function normalizeIssue(i, votePolicy) {
   const policy = votePolicy || { supportThreshold: 0.6 };
   return {
     id: i.id,
+    authorKey: i.authorKey ?? null,
     title: i.title,
     description: i.description ?? '',
     category: CATEGORY_FROM_API[i.category] ?? 'other',
@@ -72,6 +81,7 @@ export function normalizeIssue(i, votePolicy) {
 function normalizeComment(c) {
   return {
     id: c.id,
+    authorKey: c.authorKey ?? null,
     issueId: c.issueId,
     author: { name: 'Community member' },
     body: c.content,
@@ -98,6 +108,7 @@ function issueStats(items) {
 }
 
 export function useIssues(filters = {}) {
+  const blocked = useBlockedKeys();
   return useQuery(
     ['social-issues', filters],
     () => api.listIssues({
@@ -108,7 +119,7 @@ export function useIssues(filters = {}) {
     {
       select: (res) => {
         const d = res.data;
-        let issues = (d.items ?? []).map((i) => normalizeIssue(i, d.votePolicy));
+        let issues = (d.items ?? []).map((i) => normalizeIssue(i, d.votePolicy)).filter((i) => !blocked.has(i.authorKey));
         if (filters.lgaId) issues = issues.filter((i) => i.jurisdiction.lgaId === filters.lgaId);
         if (filters.search) {
           const q = filters.search.toLowerCase();
@@ -123,6 +134,7 @@ export function useIssues(filters = {}) {
 }
 
 export function useIssueDetail(issueId) {
+  const blocked = useBlockedKeys();
   return useQuery(
     ['social-issue', issueId],
     async () => {
@@ -131,7 +143,19 @@ export function useIssueDetail(issueId) {
       const thread = threadRes.data?.thread ?? issueRes.data.comments ?? [];
       return { data: { issue, comments: thread.map(normalizeComment) } };
     },
-    { enabled: Boolean(issueId), staleTime: 30 * 1000 }
+    {
+      enabled: Boolean(issueId),
+      staleTime: 30 * 1000,
+      // Comments (and replies) by authors the citizen blocked stay out of their view.
+      select: (res) => ({
+        data: {
+          ...res.data,
+          comments: res.data.comments
+            .filter((c) => !blocked.has(c.authorKey))
+            .map((c) => ({ ...c, replies: (c.replies ?? []).filter((r) => !blocked.has(r.authorKey)) })),
+        },
+      }),
+    }
   );
 }
 
@@ -299,4 +323,62 @@ export function usePostComment() {
       onError: (e) => toast.error(errText(e, 'Could not post comment.')),
     }
   );
+}
+
+// ─── forum rules, report and block (civic-75 F2) ─────────────────────────────────────────────────────
+
+/** Has the signed-in citizen accepted the current forum rules? Undefined while loading or when signed out. */
+export function useForumTerms() {
+  const { isAuthenticated } = useCivicWebAuth();
+  return useQuery(['social-terms'], () => api.terms(), {
+    enabled: Boolean(isAuthenticated),
+    select: (res) => res.data,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
+export function useAcceptForumTerms() {
+  const queryClient = useQueryClient();
+  return useMutation((version) => api.acceptTerms(version), {
+    onSuccess: () => queryClient.invalidateQueries(['social-terms']),
+    onError: (e) => toast.error(errText(e, 'Could not record your acceptance. Please try again.')),
+  });
+}
+
+const NO_BLOCKS = new Set();
+
+/** Opaque keys of the authors the signed-in citizen blocked. The client never sees who they are. */
+export function useBlockedKeys() {
+  const { isAuthenticated } = useCivicWebAuth();
+  const { data } = useQuery(['social-blocks'], () => api.myBlocks(), {
+    enabled: Boolean(isAuthenticated),
+    select: (res) => res.data?.items ?? [],
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+  return useMemo(() => (data?.length ? new Set(data.map((b) => b.authorKey)) : NO_BLOCKS), [data]);
+}
+
+export function useBlockAuthor() {
+  const queryClient = useQueryClient();
+  return useMutation((payload) => api.block(payload), {
+    onSuccess: () => {
+      toast.success('Blocked. You will no longer see their posts or comments.');
+      queryClient.invalidateQueries(['social-blocks']);
+    },
+    onError: (e) => toast.error(errText(e, 'Could not block this author.')),
+  });
+}
+
+export function useUnblockAuthor() {
+  const queryClient = useQueryClient();
+  return useMutation((key) => api.unblock(key), { onSuccess: () => queryClient.invalidateQueries(['social-blocks']) });
+}
+
+export function useReportContent() {
+  return useMutation((payload) => api.report(payload), {
+    onSuccess: (res) => toast.success(res?.data?.alreadyReported ? 'You already reported this. Our moderators will review it.' : 'Thank you. Your report was sent to the moderators of this area.'),
+    onError: (e) => toast.error(errText(e, 'Could not send your report.')),
+  });
 }

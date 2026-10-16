@@ -7,6 +7,7 @@ import { CheckCircle, Send } from '@mui/icons-material';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import { useReportIssue } from '../hooks/useSocialRepo';
+import { useForumRulesGate } from '../components/ForumRulesGate';
 import CommunityHeader from './shared-components/CommunityHeader';
 import CommunityFeedSidebarLeft from './shared-components/CommunityFeedSidebarLeft';
 import CommunityFeedSidebarRight from './shared-components/CommunityFeedSidebarRight';
@@ -39,11 +40,12 @@ function ActiveCreateIssuePage() {
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
   const { mutate: reportIssue, isLoading, isSuccess } = useReportIssue();
+  const { guard, dialog: rulesDialog } = useForumRulesGate();
 
   function update(key, value) { setForm((prev) => ({ ...prev, [key]: value })); }
   function handleSubmit(e) {
     e.preventDefault();
-    reportIssue(form, { onSuccess: () => setTimeout(() => navigate('/community/my-feed'), 2200) });
+    guard(() => reportIssue(form, { onSuccess: () => setTimeout(() => navigate('/community/my-feed'), 2200) }));
   }
 
   const isValid = form.title.trim() && form.category && form.description.trim().length > 20;
@@ -133,10 +135,13 @@ function ActiveCreateIssuePage() {
   const rightSidebar = useMemo(() => <CommunityFeedSidebarRight />, []);
 
   return (
-    <Root header={header} content={content}
-      leftSidebarOpen={leftSidebarOpen} leftSidebarOnClose={handleLeftClose} leftSidebarContent={leftSidebar}
-      rightSidebarOpen={rightSidebarOpen} rightSidebarOnClose={handleRightClose} rightSidebarContent={rightSidebar}
-      scroll="content" />
+    <>
+      <Root header={header} content={content}
+        leftSidebarOpen={leftSidebarOpen} leftSidebarOnClose={handleLeftClose} leftSidebarContent={leftSidebar}
+        rightSidebarOpen={rightSidebarOpen} rightSidebarOnClose={handleRightClose} rightSidebarContent={rightSidebar}
+        scroll="content" />
+      {rulesDialog}
+    </>
   );
 }
 
