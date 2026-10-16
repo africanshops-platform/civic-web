@@ -10,6 +10,7 @@ const LINKS = [
   { label: 'Book an appointment', path: '/healthcare/book', icon: '📅' },
   { label: 'My appointments', path: '/healthcare/my-appointments', icon: '📋' },
   { label: 'My health record', path: '/healthcare/my-record', icon: '🔐' },
+  { label: 'My referrals', path: '/healthcare/my-referrals', icon: '➡️' },
   { label: 'Health alerts', path: '/healthcare/alerts', icon: '⚠️' },
 ];
 

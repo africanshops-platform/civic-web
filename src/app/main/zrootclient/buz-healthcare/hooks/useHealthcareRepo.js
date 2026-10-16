@@ -147,3 +147,48 @@ export function useLeaveEnrolment() {
     onError: (e) => toast.error(say(e, 'Could not leave. Please try again.')),
   });
 }
+
+// Referrals (civic-69 H3-c): a facility refers me, I approve (choosing what to share) or decline. A guardian passes the
+// child's dependant id as `forDependant`; the server checks guardianship every time.
+const forParams = (forDependant) => (forDependant ? { forDependant } : undefined);
+
+export function useMyReferrals(forDependant) {
+  return useQuery(['healthcare-referrals', forDependant ?? 'me'], () => AuthApi().get('/healthcare/my-referrals', { params: forParams(forDependant) }), {
+    staleTime: 15 * 1000,
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
+export function useApproveReferral(forDependant) {
+  const qc = useQueryClient();
+  return useMutation(({ id, sections }) => AuthApi().post(`/healthcare/my-referrals/${id}/approve`, { sections }, { params: forParams(forDependant) }), {
+    onSuccess: () => {
+      toast.success('Done. The receiving facility can now read what you chose, for a limited time.');
+      qc.invalidateQueries(['healthcare-referrals']);
+      qc.invalidateQueries(['healthcare-record-grants']);
+      qc.invalidateQueries(['healthcare-record-log']);
+    },
+    onError: (e) => toast.error(say(e, 'Could not approve the referral.')),
+  });
+}
+
+export function useDeclineReferral(forDependant) {
+  const qc = useQueryClient();
+  return useMutation((id) => AuthApi().post(`/healthcare/my-referrals/${id}/decline`, {}, { params: forParams(forDependant) }), {
+    onSuccess: () => {
+      toast.success('Referral declined. Nothing was shared.');
+      qc.invalidateQueries(['healthcare-referrals']);
+    },
+    onError: (e) => toast.error(say(e, 'Could not decline the referral.')),
+  });
+}
+
+/** My household's children who are under 18, for acting on their behalf. Empty when household features are off. */
+export function useChildrenIActFor() {
+  return useQuery(['healthcare-children'], () => AuthApi().get('/household/dependants'), {
+    staleTime: 60 * 1000,
+    retry: false,
+    select: (res) => (res.data?.items ?? []).filter((c) => !c.agedOut),
+  });
+}
