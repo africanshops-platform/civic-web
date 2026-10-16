@@ -12,6 +12,7 @@ const api = {
   getElection:   (id)     => AuthApi().get(`/governance/elections/${id}`),
   getCollation:  (id)     => AuthApi().get(`/governance/elections/${id}/collation`),
   getAudit:      (id)     => AuthApi().get(`/governance/elections/${id}/audit`),
+  eligibility:   (id)     => AuthApi().get(`/governance/elections/${id}/eligibility`),
   listPetitions: (params) => AuthApi().get('/governance/petitions', { params }),
   getPetition:   (id)     => AuthApi().get(`/governance/petitions/${id}`),
   signPetition:  (body)   => AuthApi().post('/governance/petitions/sign', body),
@@ -146,6 +147,16 @@ export function useElectionAudit(electionId) {
   return useQuery(['governance-audit', electionId], () => api.getAudit(electionId), {
     enabled: Boolean(electionId),
     select: (res) => res.data,
+    staleTime: 30 * 1000,
+  });
+}
+
+/** May the signed-in citizen vote in this election, and if not, every reason why (age, area, profile). */
+export function useVoterEligibility(electionId) {
+  return useQuery(['governance-eligibility', electionId], () => api.eligibility(electionId), {
+    enabled: Boolean(electionId),
+    select: (res) => res.data,
+    retry: false,
     staleTime: 30 * 1000,
   });
 }

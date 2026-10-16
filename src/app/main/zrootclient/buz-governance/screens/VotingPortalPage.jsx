@@ -9,7 +9,7 @@ import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import GovernanceHeader from './shared-components/GovernanceHeader';
 import GovernanceSidebarLeft from './shared-components/GovernanceSidebarLeft';
 import GovernanceSidebarRight from './shared-components/GovernanceSidebarRight';
-import { useElectionDetail, useCastVote } from '../hooks/useGovernanceRepo';
+import { useElectionDetail, useCastVote, useVoterEligibility } from '../hooks/useGovernanceRepo';
 import VotingBallot from '../components/VotingBallot';
 import { CivicLoadingSkeleton } from '../../civic-shared';
 
@@ -46,6 +46,7 @@ function ActiveVotingPortalPage() {
 
   const { data, isLoading, isError } = useElectionDetail(electionId);
   const { mutate: castVote, isLoading: isSubmitting } = useCastVote();
+  const { data: eligibility } = useVoterEligibility(electionId);
 
   const election   = useMemo(() => data?.data?.election,        [data]);
   const candidates = useMemo(() => data?.data?.candidates || [], [data]);
@@ -147,7 +148,14 @@ function ActiveVotingPortalPage() {
             <div style={{ fontWeight: 800, color: '#111827', fontSize: F.cardTitle, marginBottom: 'clamp(14px, 1.8vw, 20px)' }}>
               Cast Your Vote
             </div>
-            {election.status !== 'ongoing' || !election.isOnlineVotingEnabled ? (
+            {eligibility && !eligibility.eligible ? (
+              <div style={{ color: '#374151', fontSize: F.body, lineHeight: 1.7 }}>
+                <strong>You cannot vote in this community vote yet:</strong>
+                <ul style={{ margin: '8px 0 0', paddingLeft: 22, listStyle: 'disc' }}>
+                  {eligibility.reasons.map((r) => <li key={r.code}>{r.message}</li>)}
+                </ul>
+              </div>
+            ) : election.status !== 'ongoing' || !election.isOnlineVotingEnabled ? (
               <div style={{ color: '#6b7280', fontSize: F.body, lineHeight: 1.7 }}>
                 Online voting is not open for this community vote{election.status === 'completed' ? ' (it has closed)' : ''}.
               </div>
@@ -163,7 +171,7 @@ function ActiveVotingPortalPage() {
         </motion.div>
       </div>
     );
-  }, [election, candidates, isLoading, isError, isSubmitting, castVote, electionId]);
+  }, [election, candidates, eligibility, isLoading, isError, isSubmitting, castVote, electionId]);
 
   return (
     <Root header={header} content={content}

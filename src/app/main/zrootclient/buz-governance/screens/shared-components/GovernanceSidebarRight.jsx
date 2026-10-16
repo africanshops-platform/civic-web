@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Chip } from '@mui/material';
 import { BarChart, HowToVote, Campaign, CheckCircle } from '@mui/icons-material';
+import { useElections } from '../../hooks/useGovernanceRepo';
 
 const F = {
   sectionHead: 'clamp(1.76rem, 2.6vw, 2.2rem)',
@@ -28,8 +29,10 @@ function StatCard({ Icon, value, label, accent }) {
 }
 
 function GovernanceSidebarRight({ stats, elections }) {
-  const elStats = stats || { totalElections: 0, ongoingElections: 0, completedElections: 0, totalVotersParticipated: 0 };
-  const liveElections = elections?.filter((e) => e.status === 'ongoing') ?? [];
+  // Pages that do not pass their own figures get them from the same (cached) elections query.
+  const { data: fetched } = useElections({});
+  const elStats = stats || fetched?.data?.stats || { totalElections: 0, ongoingElections: 0, completedElections: 0, totalVotersParticipated: 0 };
+  const liveElections = (elections ?? fetched?.data?.elections)?.filter((e) => e.status === 'ongoing') ?? [];
 
   return (
     <div style={{ padding: 'clamp(16px, 2vw, 24px)', display: 'flex', flexDirection: 'column', gap: 'clamp(18px, 2.4vw, 26px)' }}>
