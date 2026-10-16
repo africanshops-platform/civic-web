@@ -7,6 +7,8 @@ const MyChildrenPage = lazy(() => import('./screens/MyChildrenPage'));
 const ChildPage = lazy(() => import('./screens/ChildPage'));
 const AnnouncementsPage = lazy(() => import('./screens/AnnouncementsPage'));
 const MyApplicationsPage = lazy(() => import('./screens/MyApplicationsPage'));
+const WardApplicationsPage = lazy(() => import('./screens/WardApplicationsPage'));
+const AptitudeTestPage = lazy(() => import('./screens/AptitudeTestPage'));
 
 const LAYOUT = {
   layout: {
@@ -37,6 +39,8 @@ const educationPagesConfig = {
     { path: 'education/child/:studentId', element: <ChildPage /> },
     { path: 'education/announcements', element: <AnnouncementsPage /> },
     { path: 'education/applications', element: <MyApplicationsPage /> },
+    { path: 'education/admissions', element: <WardApplicationsPage /> },
+    { path: 'education/admissions/:applicationId/test', element: <AptitudeTestPage /> },
   ]),
 };
 

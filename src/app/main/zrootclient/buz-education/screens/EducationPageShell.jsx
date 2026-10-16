@@ -16,6 +16,7 @@ const LINKS = [
   { label: 'My children', path: '/education/my-children', icon: '👨‍👩‍👧' },
   { label: 'School notices', path: '/education/announcements', icon: '📣' },
   { label: 'My applications', path: '/education/applications', icon: '📝' },
+  { label: 'Applications for my child', path: '/education/admissions', icon: '🧒' },
 ];
 
 /** The frame every education page shares: a header and the quick links on the left. */

@@ -58,3 +58,37 @@ export function useApply() {
 export function useFinderConfig() {
   return useQuery(['edu-finder-config'], () => Api().get('/education/finder-config'), { staleTime: 5 * 60 * 1000, retry: false, select: (res) => res.data });
 }
+
+// Admission for a ward (civic-61 E3-c): a guardian applies for a child in their household, takes the school's optional test and
+// answers an offer. `retry: false` so a 404 (the feature is switched off here) shows at once.
+export function useWardApplications() {
+  return useQuery(['edu-ward-applications'], () => AuthApi().get('/education/admissions'), { staleTime: 15 * 1000, retry: false, select: (res) => res.data });
+}
+
+/** My household's children under 18, to apply for. Empty when household features are off. */
+export function useChildrenToApplyFor() {
+  return useQuery(['edu-household-children'], () => AuthApi().get('/household/dependants'), { staleTime: 60 * 1000, retry: false, select: (res) => (res.data?.items ?? []).filter((c) => !c.agedOut) });
+}
+
+export function useApplyForWard() {
+  const qc = useQueryClient();
+  return useMutation((body) => AuthApi().post('/education/admissions', body), {
+    onSuccess: (res) => {
+      toast.success(res.data?.aptitudeRequired ? 'Application sent. The school asks for a short test: open it under Applications for my child.' : 'Application sent.');
+      qc.invalidateQueries(['edu-ward-applications']);
+    },
+    onError: (e) => toast.error(say(e, 'Could not send the application. Please try again.')),
+  });
+}
+
+export function useWardAction() {
+  const qc = useQueryClient();
+  return useMutation(({ id, action, body }) => AuthApi().post(`/education/admissions/${id}/${action}`, body ?? {}), {
+    onSuccess: () => qc.invalidateQueries(['edu-ward-applications']),
+    onError: (e) => toast.error(say(e, 'That did not work. Please try again.')),
+  });
+}
+
+export function useStartAptitude() {
+  return useMutation((id) => AuthApi().post(`/education/admissions/${id}/aptitude/start`), { onError: (e) => toast.error(say(e, 'Could not start the test.')) });
+}

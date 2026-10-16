@@ -4,7 +4,7 @@ import { Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, D
 import { ArrowBack } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import EducationPageShell from './EducationPageShell';
-import { useApply, useSchool } from '../hooks/useEducationRepo';
+import { useApply, useApplyForWard, useChildrenToApplyFor, useSchool, useWardApplications } from '../hooks/useEducationRepo';
 import { ACCENT, levelInfo } from '../constants';
 
 const card = { background: 'white', borderRadius: 22, padding: 28, border: '1px solid #e5e7eb', marginBottom: 20 };
@@ -15,6 +15,11 @@ export default function SchoolDetailPage() {
   const { data, isLoading, isError } = useSchool(schoolId);
   const school = data?.data;
   const apply = useApply();
+  const applyForWard = useApplyForWard();
+  const { data: ward } = useWardApplications();
+  const { data: children = [] } = useChildrenToApplyFor();
+  const wardOn = Boolean(ward) && children.length > 0;
+  const [forChild, setForChild] = useState('');
   const [open, setOpen] = useState(false);
   const [programId, setProgramId] = useState('');
   const [start, setStart] = useState('');
@@ -93,11 +98,21 @@ export default function SchoolDetailPage() {
               <TextField label="Class or level you are applying for" value={programId} onChange={(e) => setProgramId(e.target.value.slice(0, 40))} />
             )}
             <TextField type="date" label="When would you like to start?" value={start} onChange={(e) => setStart(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toLocaleDateString('en-CA') }} />
-            <Alert severity="info" sx={{ fontSize: '1.4rem' }}>Applications are made in the student's own account.</Alert>
+            {wardOn && (
+              <Select displayEmpty value={forChild} onChange={(e) => setForChild(e.target.value)} sx={{ borderRadius: '12px' }}>
+                <MenuItem value="">For myself</MenuItem>
+                {children.map((c) => <MenuItem key={c.id} value={c.id}>For my child: {c.fullName} ({c.age})</MenuItem>)}
+              </Select>
+            )}
+            <Alert severity="info" sx={{ fontSize: '1.4rem' }}>{forChild ? 'The school sees your child\'s name and date of birth from your household, and decides. If it asks for a short test you can take it from Applications for my child.' : 'Applications are made in the student\'s own account.'}</Alert>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setOpen(false)}>Back</Button>
-            <Button variant="contained" disabled={!programId || !start || apply.isLoading} onClick={() => apply.mutate({ schoolId: school.id, programId, intendedStartDate: new Date(`${start}T09:00:00`).toISOString() }, { onSuccess: () => setOpen(false) })}>
+            <Button variant="contained" disabled={!programId || !start || apply.isLoading} onClick={() => {
+              const body = { schoolId: school.id, programId, intendedStartDate: new Date(`${start}T09:00:00`).toISOString() };
+              if (forChild) applyForWard.mutate({ ...body, dependantId: forChild }, { onSuccess: () => setOpen(false) });
+              else apply.mutate(body, { onSuccess: () => setOpen(false) });
+            }}>
               Send application
             </Button>
           </DialogActions>
