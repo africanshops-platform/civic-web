@@ -2,7 +2,7 @@ import { styled } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { IconButton } from '@mui/material';
-import { Menu, School } from '@mui/icons-material';
+import { Map as MapIcon, Menu, School } from '@mui/icons-material';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import { ACCENT } from '../constants';
@@ -19,11 +19,15 @@ const LINKS = [
 ];
 
 /** The frame every education page shares: a header and the quick links on the left. */
-export default function EducationPageShell({ title, subtitle, children }) {
+export default function EducationPageShell({ title, subtitle, leftExtra, right, children }) {
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [open, setOpen] = useState(!isMobile);
+  const [rightOpen, setRightOpen] = useState(!isMobile);
   const { pathname } = useLocation();
-  useEffect(() => setOpen(!isMobile), [isMobile]);
+  useEffect(() => {
+    setOpen(!isMobile);
+    setRightOpen(!isMobile);
+  }, [isMobile]);
 
   const header = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 20px', height: 72, width: '100%' }}>
@@ -35,11 +39,13 @@ export default function EducationPageShell({ title, subtitle, children }) {
         <div style={{ fontWeight: 800, color: '#111827', fontSize: 'clamp(1.9rem, 3.2vw, 2.2rem)', lineHeight: 1.2 }}>{title || 'Education'}</div>
         {subtitle && <div style={{ fontSize: 'clamp(1.52rem, 2.4vw, 1.8rem)', color: '#6b7280', lineHeight: 1 }}>{subtitle}</div>}
       </div>
+      {right && <IconButton aria-label="Show the map" onClick={() => setRightOpen((v) => !v)} sx={{ marginLeft: 'auto' }}><MapIcon sx={{ fontSize: 28 }} /></IconButton>}
     </div>
   );
 
   const left = (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {leftExtra}
       <div style={{ fontSize: '1.56rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Education</div>
       {LINKS.map((l) => {
         const on = pathname === l.path;
@@ -60,6 +66,7 @@ export default function EducationPageShell({ title, subtitle, children }) {
       leftSidebarOpen={open}
       leftSidebarOnClose={() => setOpen(false)}
       leftSidebarContent={left}
+      {...(right ? { rightSidebarOpen: rightOpen, rightSidebarOnClose: () => setRightOpen(false), rightSidebarContent: <div style={{ padding: 20 }}>{right}</div> } : {})}
       scroll="content"
     />
   );

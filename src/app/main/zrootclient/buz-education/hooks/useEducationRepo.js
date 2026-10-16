@@ -53,3 +53,8 @@ export function useApply() {
     onError: (e) => toast.error(say(e, 'Could not send the application. Please try again.')),
   });
 }
+
+/** Is the school finder (map, facility and boarding filters, distance search) switched on in this environment? */
+export function useFinderConfig() {
+  return useQuery(['edu-finder-config'], () => Api().get('/education/finder-config'), { staleTime: 5 * 60 * 1000, retry: false, select: (res) => res.data });
+}

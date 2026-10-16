@@ -1,9 +1,12 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button, Chip, CircularProgress, FormControl, InputLabel, MenuItem, Pagination, Select } from '@mui/material';
+import { useState } from 'react';
+import { Button, Checkbox, Chip, CircularProgress, FormControl, FormControlLabel, InputLabel, MenuItem, Pagination, Select, Switch } from '@mui/material';
 import { ArrowForward } from '@mui/icons-material';
 import EducationPageShell from './EducationPageShell';
-import { useSchools } from '../hooks/useEducationRepo';
-import { ACCENT, LEVELS, levelInfo } from '../constants';
+import { useFinderConfig, useSchools } from '../hooks/useEducationRepo';
+import { ACCENT, FACILITY_LABELS, LEVELS, levelInfo } from '../constants';
+import SchoolMap from '../components/SchoolMap';
+import CompareDialog from '../components/CompareDialog';
 
 const LIMIT = 20;
 
@@ -17,12 +20,75 @@ export default function SchoolsPage() {
     Object.entries(patch).forEach(([k, v]) => (v ? n.set(k, v) : n.delete(k)));
     setSp(n, { replace: true });
   };
-  const { data, isLoading, isError } = useSchools({ level: level || undefined, page, limit: LIMIT });
+  const { data: finder } = useFinderConfig();
+  const finderOn = Boolean(finder?.enabled);
+  const facility = finderOn ? sp.get('facility') || '' : '';
+  const boarding = finderOn && sp.get('boarding') === '1';
+  const radius = finderOn ? Number(sp.get('radius')) || 0 : 0;
+  const lat = Number(sp.get('lat'));
+  const lng = Number(sp.get('lng'));
+  const near = radius > 0 && Number.isFinite(lat) && Number.isFinite(lng) && sp.get('lat') && sp.get('lng');
+  const { data, isLoading, isError } = useSchools({
+    level: level || undefined,
+    facility: facility || undefined,
+    boarding: boarding ? 'true' : undefined,
+    ...(near ? { lat, lng, radiusKm: radius } : {}),
+    page,
+    limit: LIMIT,
+  });
   const body = data?.data;
   const rows = body?.data ?? [];
+  const [picked, setPicked] = useState([]);
+  const [comparing, setComparing] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const toggle = (school) =>
+    setPicked((p) => {
+      if (p.some((x) => x.id === school.id)) return p.filter((x) => x.id !== school.id);
+      return p.length < 3 ? [...p, school] : p;
+    });
+  const locate = (km) => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        set({ lat: pos.coords.latitude.toFixed(5), lng: pos.coords.longitude.toFixed(5), radius: String(km), page: '' });
+      },
+      () => setLocating(false),
+      { timeout: 10000 },
+    );
+  };
+
+  const filters = finderOn && (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 14, borderBottom: '1px solid #e5e7eb' }}>
+      <div style={{ fontWeight: 800, color: '#111827', fontSize: '1.9rem' }}>Filter</div>
+      <FormControl size="small" fullWidth>
+        <InputLabel sx={{ fontSize: '1.6rem' }}>Facility</InputLabel>
+        <Select value={facility} label="Facility" onChange={(e) => set({ facility: e.target.value, page: '' })} sx={{ borderRadius: '12px', fontSize: '1.6rem' }}>
+          <MenuItem value="" sx={{ fontSize: '1.6rem' }}>Any</MenuItem>
+          {Object.entries(FACILITY_LABELS).map(([code, label]) => <MenuItem key={code} value={code} sx={{ fontSize: '1.6rem' }}>{label}</MenuItem>)}
+        </Select>
+      </FormControl>
+      <FormControlLabel control={<Switch checked={boarding} onChange={(e) => set({ boarding: e.target.checked ? '1' : '', page: '' })} />} label={<span style={{ fontSize: '1.6rem' }}>Boarding schools only</span>} />
+      <FormControl size="small" fullWidth>
+        <InputLabel sx={{ fontSize: '1.6rem' }}>Near me</InputLabel>
+        <Select value={near ? String(radius) : ''} label="Near me" disabled={locating} onChange={(e) => (e.target.value ? locate(Number(e.target.value)) : set({ lat: '', lng: '', radius: '', page: '' }))} sx={{ borderRadius: '12px', fontSize: '1.6rem' }}>
+          <MenuItem value="" sx={{ fontSize: '1.6rem' }}>Anywhere</MenuItem>
+          {[2, 5, 10, 25, 50].map((km) => <MenuItem key={km} value={String(km)} sx={{ fontSize: '1.6rem' }}>Within {km} km</MenuItem>)}
+        </Select>
+      </FormControl>
+      {picked.length >= 2 && <Button variant="contained" onClick={() => setComparing(true)} sx={{ textTransform: 'none', fontWeight: 800, fontSize: '1.6rem', background: '#4f46e5' }}>Compare {picked.length} schools</Button>}
+      {picked.length === 1 && <div style={{ fontSize: '1.4rem', color: '#6b7280' }}>Tick one more school to compare.</div>}
+    </div>
+  );
 
   return (
-    <EducationPageShell title="Schools" subtitle="Education · Approved by your community">
+    <EducationPageShell
+      title="Schools"
+      subtitle="Education · Approved by your community"
+      leftExtra={filters || undefined}
+      right={finderOn ? <SchoolMap schools={rows} origin={near ? { lat, lng } : null} /> : undefined}
+    >
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
           <div>
@@ -56,9 +122,13 @@ export default function SchoolsPage() {
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={{ fontWeight: 800, color: '#111827', fontSize: '1.96rem' }}>{s.name}</div>
               <div style={{ fontSize: '1.64rem', color: '#6b7280', marginTop: 4 }}>{s.address}, {s.lga}</div>
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 <Chip label={levelInfo(s.level).label} size="small" sx={{ background: '#eef2ff', color: '#4338ca', fontWeight: 700, fontSize: '1.3rem' }} />
+                {finderOn && s.isBoarding && <Chip label="Boarding" size="small" sx={{ background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: '1.3rem' }} />}
+                {finderOn && s.distanceKm != null && <Chip label={`${s.distanceKm} km away`} size="small" sx={{ background: '#dcfce7', color: '#166534', fontWeight: 700, fontSize: '1.3rem' }} />}
+                {finderOn && (s.facilities ?? []).map((f) => <Chip key={f} label={FACILITY_LABELS[f] ?? f} size="small" variant="outlined" sx={{ fontSize: '1.3rem' }} />)}
               </div>
+              {finderOn && <FormControlLabel sx={{ mt: 0.5 }} control={<Checkbox size="small" checked={picked.some((x) => x.id === s.id)} onChange={() => toggle(s)} />} label={<span style={{ fontSize: '1.4rem', color: '#6b7280' }}>Compare</span>} />}
             </div>
             <Button component={Link} to={`/education/school/${s.id}`} endIcon={<ArrowForward />} sx={{ background: ACCENT, color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.56rem', px: 2.5, py: 1.25 }}>
               View
@@ -72,6 +142,7 @@ export default function SchoolsPage() {
           </div>
         )}
       </div>
+      {comparing && <CompareDialog schools={picked} onClose={() => setComparing(false)} />}
     </EducationPageShell>
   );
 }
