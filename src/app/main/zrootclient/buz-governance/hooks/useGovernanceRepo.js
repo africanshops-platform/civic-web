@@ -18,6 +18,7 @@ const api = {
   getPetition:   (id)     => AuthApi().get(`/governance/petitions/${id}`),
   signPetition:  (body)   => AuthApi().post('/governance/petitions/sign', body),
   castVote:      (body)   => AuthApi().post('/governance/vote', body),
+  faceCheck:     (id, faceDescriptor) => AuthApi().post(`/governance/elections/${id}/face-check`, { faceDescriptor }),
   submitWard:    (body)   => AuthApi().post('/governance/admin/collation', body),
 };
 
@@ -161,6 +162,13 @@ export function useElectionLocations(electionId) {
   });
 }
 
+/** Accredit the voter by face: the captured face is compared with the one registered at identity verification. Returns a one-time token for the vote. */
+export function useFaceCheck(electionId) {
+  return useMutation((faceDescriptor) => api.faceCheck(electionId, faceDescriptor).then((res) => res.data), {
+    onError: (e) => toast.error(errText(e, 'Face check failed. Please try again.')),
+  });
+}
+
 /** May the signed-in citizen vote in this election, and if not, every reason why (age, area, profile). */
 export function useVoterEligibility(electionId) {
   return useQuery(['governance-eligibility', electionId], () => api.eligibility(electionId), {
@@ -224,7 +232,7 @@ export function useMyVotingHistory() {
 
 export function useCastVote() {
   const queryClient = useQueryClient();
-  return useMutation((payload) => api.castVote({ electionId: payload.electionId, candidateId: payload.candidateId }).then((res) => ({ ...res, electionId: payload.electionId })), {
+  return useMutation((payload) => api.castVote({ electionId: payload.electionId, candidateId: payload.candidateId, faceActionToken: payload.faceActionToken }).then((res) => ({ ...res, electionId: payload.electionId })), {
     onSuccess: (res) => {
       toast.success(res?.data?.message || 'Your vote has been recorded. Thank you for taking part.');
       queryClient.invalidateQueries(['governance-election', res.electionId]);

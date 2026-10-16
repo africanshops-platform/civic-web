@@ -165,6 +165,7 @@ function ActiveVotingPortalPage() {
               candidates={candidates}
               onSubmit={castVote}
               isSubmitting={isSubmitting}
+              faceCheckRequired={Boolean(eligibility?.faceCheckRequired)}
             />
             )}
           </div>

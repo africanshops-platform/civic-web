@@ -26,6 +26,7 @@ import userProfileAppConfig from "../main/zrootclient/profile/userProfileAppConf
 /***Civic Platform Module Configs */
 import KycManagePage from "../main/zrootclient/civic-shared/kyc/KycManagePage";
 import KycFaceCaptureBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycFaceCaptureBridgePage";
+import VoteFaceCheckBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/VoteFaceCheckBridgePage";
 import KycWebAuthnBridgePage from "../main/zrootclient/civic-shared/kyc/bridge/KycWebAuthnBridgePage";
 import civicTaxPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPagesConfig";
 import civicTaxPublicPagesConfig from "../main/zrootclient/buz-civictax/civicTaxPublicPagesConfig";
@@ -158,6 +159,22 @@ const routes = [
       },
     },
     element: <KycFaceCaptureBridgePage />,
+  },
+  {
+    // Voter accreditation (civic-8): the same bare page, posting the face to the vote's face check.
+    path: "/kyc-bridge/vote-face-check",
+    settings: {
+      layout: {
+        config: {
+          navbar: { display: false },
+          toolbar: { display: false },
+          footer: { display: false },
+          leftSidePanel: { display: false },
+          rightSidePanel: { display: false },
+        },
+      },
+    },
+    element: <VoteFaceCheckBridgePage />,
   },
   {
     path: "/kyc-bridge/webauthn-register",

@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button, CircularProgress } from '@mui/material';
 import { CheckCircle, HowToVote, Warning } from '@mui/icons-material';
 import CandidateCard from './CandidateCard';
+import VoterFaceCheckDialog from './VoterFaceCheckDialog';
 import { candidateColor } from '../constants';
 
 const colorOf = (c) => candidateColor(c?.index ?? 0);
 
-function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
+function VotingBallot({ election, candidates = [], onSubmit, isSubmitting, faceCheckRequired = false }) {
+  const [faceOpen, setFaceOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [step, setStep] = useState('select'); // select | confirm | done
@@ -22,9 +24,11 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
   }
 
   // Only show "Vote Recorded" once the service has actually accepted the vote; a refusal puts the voter back on the ballot.
-  function handleSubmit() {
+  // With a face check required, submitting first opens the camera; the vote carries the one-time token it earns.
+  function handleSubmit(faceActionToken) {
+    setFaceOpen(false);
     onSubmit?.(
-      { electionId: election?.id, candidateId: selected?.id },
+      { electionId: election?.id, candidateId: selected?.id, faceActionToken },
       {
         onSuccess: () => { setStep('done'); setConfirmed(true); },
         onError: () => setStep('select'),
@@ -146,7 +150,7 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
                 Go Back
               </Button>
               <Button
-                variant="contained" size="large" onClick={handleSubmit} fullWidth
+                variant="contained" size="large" onClick={() => (faceCheckRequired ? setFaceOpen(true) : handleSubmit())} fullWidth
                 disabled={isSubmitting}
                 startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : <CheckCircle />}
                 sx={{
@@ -156,12 +160,13 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
                   '&:hover': { filter: 'brightness(0.9)' },
                 }}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit My Vote'}
+                {isSubmitting ? 'Submitting...' : faceCheckRequired ? 'Verify my face and vote' : 'Submit My Vote'}
               </Button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      <VoterFaceCheckDialog open={faceOpen} electionId={election?.id} onClose={() => setFaceOpen(false)} onAccredited={handleSubmit} />
     </div>
   );
 }
