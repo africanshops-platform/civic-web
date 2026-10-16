@@ -121,6 +121,7 @@ export function useElectionCollation(electionId) {
             onlineRejected: online.rejected ?? 0,
             onlineMismatch: Boolean(online.mismatch),
             onlineDigest: online.digest ?? null,
+            onlineMinimum: online.minimumVoters ?? null,
           },
           candidates: (d.candidates ?? []).map((c, i) => ({
             candidateId: c.id,

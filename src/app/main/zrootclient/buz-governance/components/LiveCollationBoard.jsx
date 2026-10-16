@@ -58,6 +58,11 @@ function LiveCollationBoard({ collation, isLoading }) {
           Voting has closed. The online count has not been published yet.
         </div>
       )}
+      {summary.onlineTallyStatus === 'WITHHELD' && (
+        <div style={{ padding: '0 0 12px', color: '#6b7280', fontSize: '0.85rem' }}>
+          {summary.onlineValid.toLocaleString()} online vote{summary.onlineValid === 1 ? ' was' : 's were'} cast. To keep every ballot secret, online results are only shown when at least {summary.onlineMinimum ?? 5} people voted online, so they are not included here.
+        </div>
+      )}
       {summary.onlineTallyStatus === 'PUBLISHED' && (
         <div style={{ padding: '0 0 12px', color: '#6b7280', fontSize: '0.85rem' }}>
           Online count published at close: {summary.onlineValid.toLocaleString()} valid{summary.onlineRejected ? `, ${summary.onlineRejected.toLocaleString()} rejected` : ''}.

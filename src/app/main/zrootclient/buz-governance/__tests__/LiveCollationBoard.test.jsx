@@ -49,6 +49,12 @@ describe('LiveCollationBoard', () => {
     expect(screen.getByText(/does not match the number of voters/)).toBeInTheDocument();
   });
 
+  it('explains why online results are not shown for a small electorate', () => {
+    const withheld = { ...collation, summary: { ...collation.summary, onlineTallyStatus: 'WITHHELD', onlineValid: 3, onlineMinimum: 5 } };
+    render(<LiveCollationBoard collation={withheld} />);
+    expect(screen.getByText(/at least 5 people voted online/)).toBeInTheDocument();
+  });
+
   it('renders loading skeleton when isLoading prop passed', () => {
     render(<LiveCollationBoard isLoading />);
     expect(screen.getByTestId('collation-board-skeleton')).toBeInTheDocument();
