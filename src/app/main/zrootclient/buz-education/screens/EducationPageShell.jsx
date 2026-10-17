@@ -13,6 +13,7 @@ const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
 
 const LINKS = [
   { label: 'Find a school', path: '/education/schools', icon: '🏫' },
+  { label: 'My school', path: '/education/my-school', icon: '🎒' },
   { label: 'My children', path: '/education/my-children', icon: '👨‍👩‍👧' },
   { label: 'School notices', path: '/education/announcements', icon: '📣' },
   { label: 'My applications', path: '/education/applications', icon: '📝' },

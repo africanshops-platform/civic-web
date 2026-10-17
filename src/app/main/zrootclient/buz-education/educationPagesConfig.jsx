@@ -9,6 +9,7 @@ const AnnouncementsPage = lazy(() => import('./screens/AnnouncementsPage'));
 const MyApplicationsPage = lazy(() => import('./screens/MyApplicationsPage'));
 const WardApplicationsPage = lazy(() => import('./screens/WardApplicationsPage'));
 const AptitudeTestPage = lazy(() => import('./screens/AptitudeTestPage'));
+const MySchoolPage = lazy(() => import('./MySchoolPage'));
 
 const LAYOUT = {
   layout: {
@@ -30,6 +31,14 @@ export const educationBrowseConfig = {
     { path: 'education/schools', element: <SchoolsPage /> },
     { path: 'education/school/:schoolId', element: <SchoolDetailPage /> },
   ],
+};
+
+/** Needs a signed-in account but not a verified one: a young adult who has just claimed their account can see their own school pages straight away. */
+export const educationMySchoolConfig = {
+  settings: {
+    layout: { config: { navbar: { display: false }, toolbar: { display: false }, footer: { display: false }, leftSidePanel: { display: false }, rightSidePanel: { display: false } } },
+  },
+  routes: [{ path: 'education/my-school', element: <MySchoolPage /> }],
 };
 
 const educationPagesConfig = {

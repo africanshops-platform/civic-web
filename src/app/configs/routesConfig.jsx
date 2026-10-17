@@ -40,7 +40,7 @@ import socialPagesConfig from "../main/zrootclient/buz-social/socialPagesConfig"
 import socialPublicPagesConfig from "../main/zrootclient/buz-social/socialPublicPagesConfig";
 import healthcarePagesConfig from "../main/zrootclient/buz-healthcare/healthcarePagesConfig";
 import healthcarePublicPagesConfig from "../main/zrootclient/buz-healthcare/healthcarePublicPagesConfig";
-import educationPagesConfig, { educationBrowseConfig } from "../main/zrootclient/buz-education/educationPagesConfig";
+import educationPagesConfig, { educationBrowseConfig, educationMySchoolConfig } from "../main/zrootclient/buz-education/educationPagesConfig";
 import educationPublicPagesConfig from "../main/zrootclient/buz-education/educationPublicPagesConfig";
 import studentPagesConfig from "../main/zrootclient/buz-education/studentPagesConfig";
 import youthsportsFloodlightsPagesConfig from "../main/zrootclient/buz-youthsports-floodlights/youthsportsFloodlightsPagesConfig";
@@ -92,6 +92,7 @@ const routeConfigs = [
   healthcarePagesConfig,
   educationPagesConfig,
   educationBrowseConfig,
+  educationMySchoolConfig,
   studentPagesConfig,
   youthsportsFloodlightsPagesConfig,
   /****

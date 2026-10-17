@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button, CircularProgress, TextField } from '@mui/material';
+import { useAppSelector } from 'app/store/hooks';
 import useAuth from '../../../../auth/useAuth';
+import { selectUser } from '../../../../auth/user/store/userSlice';
 import { GRADE_COLOR, fmtDate } from '../constants';
 import { isStudentSession, mustChangePassword, studentClaims } from './studentSession';
 import StudentClaimPage from './StudentClaimPage';
@@ -100,21 +102,26 @@ function Week({ timetable }) {
   );
 }
 
-/** A child's own page: their class today and this week, grades, attendance, arrivals and school notices. Nothing else on the platform. */
-function StudentHome() {
+/**
+ * A student's own page: their class today and this week, grades, attendance, arrivals and school notices. Nothing else on the platform.
+ * `adult` is the same page for an enrolled adult inside the normal civic app (no student session, no first-password step, a way back
+ * instead of "Sign out"); the server decides whose record it is from the signed-in account, never from the address.
+ */
+export function StudentHome({ adult = false }) {
   const { signOut } = useAuth();
+  const me = useAppSelector(selectUser);
   const student = isStudentSession();
   const record = useMyRecord();
   const timetable = useMyTimetable();
   const gate = useMyGate();
   const notices = useMyNotices();
 
-  if (!student) return <Navigate to="/student/sign-in" replace />;
-  if (mustChangePassword()) return <ChoosePassword />;
+  if (!adult && !student) return <Navigate to="/student/sign-in" replace />;
+  if (!adult && mustChangePassword()) return <ChoosePassword />;
 
   const r = record.data?.data;
   const att = r?.attendance?.summary;
-  const first = r?.enrollment?.studentName?.split(' ')[0];
+  const first = (r?.enrollment?.studentName ?? (adult ? me?.name : null))?.split(' ')[0];
 
   return (
     <div style={shell}>
@@ -125,7 +132,11 @@ function StudentHome() {
             <h1 style={{ margin: '4px 0 2px', fontWeight: 900, fontSize: 'clamp(2.8rem,5vw,3.8rem)' }}>{first ? `Hi, ${first}!` : 'Hi!'}</h1>
             {r && <div style={{ fontSize: '1.7rem', opacity: 0.9 }}>{[r.enrollment.school.name, r.enrollment.programId, r.enrollment.admissionNumber].filter(Boolean).join(' · ')}</div>}
           </div>
-          <Button onClick={signOut} sx={{ color: 'white', border: '1px solid rgba(255,255,255,.5)', textTransform: 'none', fontWeight: 700, fontSize: '1.5rem', borderRadius: '12px' }}>Sign out</Button>
+          {adult ? (
+            <Button component={Link} to="/education" sx={{ color: 'white', border: '1px solid rgba(255,255,255,.5)', textTransform: 'none', fontWeight: 700, fontSize: '1.5rem', borderRadius: '12px' }}>Back to Education</Button>
+          ) : (
+            <Button onClick={signOut} sx={{ color: 'white', border: '1px solid rgba(255,255,255,.5)', textTransform: 'none', fontWeight: 700, fontSize: '1.5rem', borderRadius: '12px' }}>Sign out</Button>
+          )}
         </div>
       </div>
 
@@ -133,8 +144,13 @@ function StudentHome() {
         {record.isLoading && <div style={{ ...card, textAlign: 'center' }}><CircularProgress /></div>}
         {record.isError && (
           <div style={card}>
-            <h3 style={h3}>Your school pages are not ready yet</h3>
+            <h3 style={h3}>{adult && record.error?.response?.status === 404 ? 'You are not enrolled at a school yet' : 'Your school pages are not ready yet'}</h3>
             <span style={muted}>{record.error?.response?.data?.message ?? 'Please try again in a moment.'}</span>
+            {adult && record.error?.response?.status === 404 && (
+              <div style={{ marginTop: 14 }}>
+                <Button component={Link} to="/education/schools" variant="contained" sx={{ background: '#4338ca', color: '#fff', '&:hover': { background: '#3730a3' }, textTransform: 'none', fontWeight: 800, fontSize: '1.6rem', borderRadius: '14px', px: 3 }}>Find a school</Button>
+              </div>
+            )}
           </div>
         )}
 
