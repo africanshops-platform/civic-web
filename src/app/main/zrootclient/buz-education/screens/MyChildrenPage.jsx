@@ -25,9 +25,9 @@ export default function MyChildrenPage() {
         {children.map((c) => (
           <div key={c.enrollmentId} style={{ ...card, display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ fontWeight: 800, color: '#111827', fontSize: '2rem' }}>{c.school.name}</div>
+              <div style={{ fontWeight: 800, color: '#111827', fontSize: '2rem' }}>{c.studentName ?? c.school.name}</div>
               <div style={{ color: '#6b7280', fontSize: '1.7rem', margin: '4px 0 10px' }}>
-                Student {String(c.studentId).slice(-6)} · {c.className ?? c.programId} · {levelInfo(c.school.level).label}
+                {[c.studentName ? c.school.name : `Student ${String(c.studentId).slice(-6)}`, c.className ?? c.programId, levelInfo(c.school.level).label].join(' · ')}
               </div>
               <Chip
                 label={c.attendance.percentage == null ? 'No attendance marked yet' : `${c.attendance.percentage}% present in the last 30 days (${c.attendance.present} of ${c.attendance.days} days)`}

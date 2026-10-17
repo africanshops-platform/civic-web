@@ -79,8 +79,8 @@ export default function ChildPage() {
     body = (
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <Button component={Link} to="/education/my-children" startIcon={<ArrowBack sx={{ fontSize: 28 }} />} sx={{ mb: 2, color: '#6b7280', textTransform: 'none', fontWeight: 600, fontSize: '1.7rem', px: 0 }}>My children</Button>
-        <h1 style={{ margin: '0 0 4px', fontWeight: 900, fontSize: 'clamp(2.8rem,4.5vw,4rem)', color: '#111827' }}>{r.enrollment.school.name}</h1>
-        <p style={{ margin: '0 0 24px', color: '#6b7280', fontSize: '1.8rem' }}>{r.enrollment.admissionNumber ? `Adm. no. ${r.enrollment.admissionNumber}` : `Student ${String(studentId).slice(-6)}`} · {r.enrollment.programId} · enrolled {fmtDate(r.enrollment.enrolledAt)}</p>
+        <h1 style={{ margin: '0 0 4px', fontWeight: 900, fontSize: 'clamp(2.8rem,4.5vw,4rem)', color: '#111827' }}>{r.enrollment.studentName ?? r.enrollment.school.name}</h1>
+        <p style={{ margin: '0 0 24px', color: '#6b7280', fontSize: '1.8rem' }}>{[r.enrollment.studentName ? r.enrollment.school.name : null, r.enrollment.admissionNumber ? `Adm. no. ${r.enrollment.admissionNumber}` : `Student ${String(studentId).slice(-6)}`, r.enrollment.programId].filter(Boolean).join(' · ')} · enrolled {fmtDate(r.enrollment.enrolledAt)}</p>
 
         <div style={card}>
           <h3 style={{ margin: '0 0 14px', fontWeight: 800, color: '#111827', fontSize: '2rem' }}>Grades</h3>
