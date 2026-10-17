@@ -3,7 +3,8 @@ import { Navigate } from 'react-router-dom';
 import { Button, CircularProgress, TextField } from '@mui/material';
 import useAuth from '../../../../auth/useAuth';
 import { GRADE_COLOR, fmtDate } from '../constants';
-import { isStudentSession, mustChangePassword } from './studentSession';
+import { isStudentSession, mustChangePassword, studentClaims } from './studentSession';
+import StudentClaimPage from './StudentClaimPage';
 import { useChangeStudentPassword, useMyGate, useMyNotices, useMyRecord, useMyTimetable } from './useStudentApi';
 
 const shell = { minHeight: '100vh', background: '#f5f3ff' };
@@ -49,7 +50,7 @@ function ChoosePassword() {
           helperText={again && again !== next ? 'The two passwords are not the same' : ' '}
           sx={{ mb: 1 }}
         />
-        <Button type="submit" fullWidth variant="contained" disabled={!ok || change.isLoading} sx={{ background: '#4338ca', textTransform: 'none', fontWeight: 800, fontSize: '1.8rem', borderRadius: '14px', py: 1.5 }}>
+        <Button type="submit" fullWidth variant="contained" disabled={!ok || change.isLoading} sx={{ background: '#4338ca', color: '#fff', '&:hover': { background: '#3730a3' }, '&.Mui-disabled': { color: '#fff', opacity: 0.45, background: '#4338ca' }, textTransform: 'none', fontWeight: 800, fontSize: '1.8rem', borderRadius: '14px', py: 1.5 }}>
           Save my password
         </Button>
       </form>
@@ -100,7 +101,7 @@ function Week({ timetable }) {
 }
 
 /** A child's own page: their class today and this week, grades, attendance, arrivals and school notices. Nothing else on the platform. */
-export default function StudentHomePage() {
+function StudentHome() {
   const { signOut } = useAuth();
   const student = isStudentSession();
   const record = useMyRecord();
@@ -210,3 +211,11 @@ export default function StudentHomePage() {
     </div>
   );
 }
+
+/** Signed in as a student: a student who turned 18 and has not claimed yet sees only the claim page (the server refuses the school pages for that token too, so nothing is even asked for). */
+export default function StudentHomePage() {
+  if (!isStudentSession()) return <Navigate to="/student/sign-in" replace />;
+  if (studentClaims()?.claimRequired) return <StudentClaimPage />;
+  return <StudentHome />;
+}
+

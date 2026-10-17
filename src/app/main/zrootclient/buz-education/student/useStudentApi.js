@@ -29,3 +29,18 @@ export const useMyRecord = get('record', '/education/me');
 export const useMyTimetable = get('timetable', '/education/me/timetable');
 export const useMyGate = get('gate', '/education/me/gate');
 export const useMyNotices = get('notices', '/education/me/notices');
+
+// A student who turned 18 claims the account as their own (civic-61 E3-d4).
+export const useClaimStatus = () => useQuery(['student', 'claim'], () => AuthApi().get('/auth-user/claim'), { staleTime: 60 * 1000, retry: false });
+
+export function useClaimStart() {
+  return useMutation((body) => AuthApi().post('/auth-user/claim/start', body), {
+    onError: (e) => toast.error(say(e, 'Could not send the code. Please try again.')),
+  });
+}
+
+export function useClaimComplete() {
+  return useMutation((body) => AuthApi().post('/auth-user/claim/complete', body), {
+    onError: (e) => toast.error(say(e, 'That did not work. Check the code and try again.')),
+  });
+}

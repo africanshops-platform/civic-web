@@ -43,7 +43,7 @@ export default function StudentSignInPage() {
           inputProps={{ style: { fontSize: '1.9rem' } }}
           sx={{ mb: 3 }}
         />
-        <Button type="submit" fullWidth variant="contained" disabled={!ready || signIn.isLoading} sx={{ background: '#4338ca', textTransform: 'none', fontWeight: 800, fontSize: '1.9rem', borderRadius: '14px', py: 1.6 }}>
+        <Button type="submit" fullWidth variant="contained" disabled={!ready || signIn.isLoading} sx={{ background: '#4338ca', color: '#fff', '&:hover': { background: '#3730a3' }, '&.Mui-disabled': { color: '#fff', opacity: 0.45, background: '#4338ca' }, textTransform: 'none', fontWeight: 800, fontSize: '1.9rem', borderRadius: '14px', py: 1.6 }}>
           {signIn.isLoading ? 'Signing in…' : 'Sign in'}
         </Button>
         <p style={{ margin: '22px 0 0', color: '#6b7280', fontSize: '1.45rem', textAlign: 'center' }}>
