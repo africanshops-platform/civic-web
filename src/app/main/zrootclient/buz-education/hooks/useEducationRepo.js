@@ -19,6 +19,15 @@ export function useMyChildren() {
   return useQuery(['edu-children'], () => AuthApi().get('/education/parent/children'), { staleTime: 30 * 1000 });
 }
 
+// Timetable and arrivals for one child (civic-62 E3-e). `retry: false`: a 404 means the school has not switched the feature on, and the sections hide.
+export function useChildTimetable(studentId) {
+  return useQuery(['edu-child-timetable', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/timetable`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
+}
+
+export function useChildGate(studentId) {
+  return useQuery(['edu-child-gate', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/gate`), { enabled: Boolean(studentId), staleTime: 30 * 1000, retry: false });
+}
+
 export function useChildRecord(studentId) {
   return useQuery(['edu-child', studentId], () => AuthApi().get(`/education/parent/child/${studentId}`), { enabled: Boolean(studentId), staleTime: 30 * 1000 });
 }
