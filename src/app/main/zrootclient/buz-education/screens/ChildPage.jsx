@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import EducationPageShell from './EducationPageShell';
+import StudentLoginSection from './StudentLoginSection';
 import { useChildGate, useChildRecord, useChildTimetable } from '../hooks/useEducationRepo';
 import { GRADE_COLOR, fmtDate } from '../constants';
 
@@ -128,6 +129,7 @@ export default function ChildPage() {
 
         <TimetableSection studentId={studentId} />
         <GateSection studentId={studentId} />
+        <StudentLoginSection studentId={studentId} childName={r.enrollment.studentName} />
       </div>
     );
   }

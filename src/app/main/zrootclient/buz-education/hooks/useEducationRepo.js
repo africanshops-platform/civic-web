@@ -101,3 +101,26 @@ export function useWardAction() {
 export function useStartAptitude() {
   return useMutation((id) => AuthApi().post(`/education/admissions/${id}/aptitude/start`), { onError: (e) => toast.error(say(e, 'Could not start the test.')) });
 }
+
+// A child's own school login, managed by the guardian (civic-61 E3-d2). `retry: false`: a 404 means the platform switch is off, and the card hides.
+export function useChildLogin(studentId) {
+  return useQuery(['edu-child-login', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/login`), { enabled: Boolean(studentId), staleTime: 15 * 1000, retry: false });
+}
+
+function useLoginAction(studentId, run, ok) {
+  const qc = useQueryClient();
+  return useMutation(run, {
+    onSuccess: (res) => {
+      if (ok) toast.success(ok);
+      qc.invalidateQueries(['edu-child-login', studentId]);
+      return res;
+    },
+    onError: (e) => toast.error(say(e, 'That did not work. Please try again.')),
+  });
+}
+
+export const useTurnOnChildLogin = (studentId) => useLoginAction(studentId, (consent) => AuthApi().post(`/education/parent/child/${studentId}/login`, { consent }));
+export const useResetChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().post(`/education/parent/child/${studentId}/login/reset`));
+export const usePauseChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().put(`/education/parent/child/${studentId}/login/suspend`), 'The login is paused. Your child is signed out.');
+export const useResumeChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().put(`/education/parent/child/${studentId}/login/resume`), 'The login is back on.');
+export const useDeleteChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().delete(`/education/parent/child/${studentId}/login`), 'The login was deleted.');
