@@ -52,6 +52,7 @@ export default function StudentClaimPage() {
           <p style={{ color: '#374151', fontSize: '1.7rem' }}>
             From now on you sign in with <b>{done.email}</b> and the password you just chose. Your school record is now under your own account, and your parent or guardian can no longer see it.
           </p>
+          <p style={{ color: '#4b5563', fontSize: '1.5rem' }}>The first time you sign in you will be asked for your date of birth and gender, exactly as they are on your ID, so have it ready.</p>
           {!done.schoolLinked && <p style={{ color: '#92400e', background: '#fffbeb', borderRadius: 12, padding: '10px 14px', fontSize: '1.5rem' }}>Your school record will move across within a day.</p>}
           <Button fullWidth variant="contained" onClick={signOut} sx={{ ...big, mt: 2 }}>Go to sign in</Button>
         </div>
