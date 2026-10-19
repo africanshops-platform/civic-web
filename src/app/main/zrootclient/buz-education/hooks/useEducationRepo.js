@@ -19,6 +19,12 @@ export function useMyChildren() {
   return useQuery(['edu-children'], () => AuthApi().get('/education/parent/children'), { staleTime: 30 * 1000 });
 }
 
+// Published class notes of one child's class (civic-63 E4-a). A 404 means the school has not switched notes on, and the section hides.
+export function useChildNotes(studentId) {
+  return useQuery(['edu-child-notes', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/notes`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
+}
+export const loadChildNote = (studentId, noteId) => AuthApi().get(`/education/parent/child/${studentId}/notes/${noteId}`).then((r) => r.data);
+
 // Timetable and arrivals for one child (civic-62 E3-e). `retry: false`: a 404 means the school has not switched the feature on, and the sections hide.
 export function useChildTimetable(studentId) {
   return useQuery(['edu-child-timetable', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/timetable`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
