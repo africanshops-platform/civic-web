@@ -24,6 +24,7 @@ const api = {
   getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
   getCheckoutReadiness:()       => AuthApi().get('/checkout-readiness/civic-subscriptions'),
+  getRateNotice:       ()       => AuthApi().get('/civic/subscriptions/rate-notice'),
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -188,6 +189,15 @@ export function useCivicSubscriptionsReadiness(enabled = true) {
     refetchOnWindowFocus: true,
     retry: 1,
     staleTime: 5000,
+    select: (res) => res?.data,
+  });
+}
+
+/** The monthly rate now and any scheduled change (civic-18); { currentAmountKobo, scheduled: { amountKobo, effectiveFrom } | null }. */
+export function useRateNotice() {
+  return useQuery(['civictax-rate-notice'], () => api.getRateNotice(), {
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
     select: (res) => res?.data,
   });
 }
