@@ -34,6 +34,7 @@ export function useHealthAlerts(params = {}) {
 }
 
 // The patient's own data.
+// `params.forDependant` (a guardian acting for a child) is passed through as a query parameter; the server checks guardianship every time.
 export function useMyAppointments(params = {}) {
   return useQuery(['healthcare-my-appointments', params], () => AuthApi().get('/healthcare/appointments/mine', { params }), {
     keepPreviousData: true,
@@ -54,7 +55,7 @@ export function useBookAppointment() {
 
 export function useCancelAppointment() {
   const qc = useQueryClient();
-  return useMutation(({ appointmentId, reason }) => AuthApi().delete('/healthcare/appointments/cancel', { data: { appointmentId, reason } }), {
+  return useMutation(({ appointmentId, reason, forDependant }) => AuthApi().delete('/healthcare/appointments/cancel', { data: { appointmentId, reason }, params: forDependant ? { forDependant } : undefined }), {
     onSuccess: () => {
       toast.success('Appointment cancelled.');
       qc.invalidateQueries(['healthcare-my-appointments']);
