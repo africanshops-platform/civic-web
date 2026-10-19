@@ -4,7 +4,7 @@ import {
   TextField, InputAdornment, Divider, Button,
 } from '@mui/material';
 import { Search, FilterList, Clear } from '@mui/icons-material';
-import { ELECTION_TYPES } from '../../mock';
+import { ELECTION_LEVELS } from '../../constants';
 
 /* ── Civic responsive font tokens ── */
 const F = {
@@ -85,7 +85,7 @@ function GovernanceSidebarLeft({ onFilterChange }) {
           sx={{ borderRadius: '12px', fontSize: F.label, '& .MuiSelect-select': { fontSize: F.label } }}
         >
           <MenuItem value="" sx={{ fontSize: F.label }}>All Types</MenuItem>
-          {ELECTION_TYPES.map((t) => (
+          {ELECTION_LEVELS.map((t) => (
             <MenuItem key={t.id} value={t.id} sx={{ fontSize: F.label }}>
               <span style={{ marginRight: 10, fontSize: F.body }}>{t.icon}</span>
               {t.label}
@@ -105,8 +105,8 @@ function GovernanceSidebarLeft({ onFilterChange }) {
         >
           <MenuItem value=""           sx={{ fontSize: F.label }}>All Statuses</MenuItem>
           <MenuItem value="upcoming"   sx={{ fontSize: F.label }}>Upcoming</MenuItem>
-          <MenuItem value="ongoing"    sx={{ fontSize: F.label }}>Ongoing / Live</MenuItem>
-          <MenuItem value="completed"  sx={{ fontSize: F.label }}>Completed</MenuItem>
+          <MenuItem value="ongoing"    sx={{ fontSize: F.label }}>Voting open</MenuItem>
+          <MenuItem value="completed"  sx={{ fontSize: F.label }}>Closed</MenuItem>
         </Select>
       </FormControl>
 

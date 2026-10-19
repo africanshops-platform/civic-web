@@ -1,41 +1,62 @@
 import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from 'react-query';
 import LiveCollationBoard from '../components/LiveCollationBoard';
-import { mockCollationResults } from '../mock';
 
 jest.mock('react-apexcharts', () => () => <div data-testid="apex-chart" />);
 
-const wrapper = ({ children }) => (
-  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    {children}
-  </QueryClientProvider>
-);
+const collation = {
+  electionId: 'e1',
+  status: 'COLLATING',
+  summary: { wardsReported: 2, onlineVoters: 5, totalVotesCounted: 300, onlineTallyStatus: 'AFTER_CLOSE', onlineValid: 0, onlineRejected: 0, onlineMismatch: false },
+  candidates: [
+    { candidateId: 'c1', name: 'Amina Yusuf', party: null, index: 0, wardVotes: 200, onlineVotes: null, totalVotes: 200, percentage: 66.7 },
+    { candidateId: 'c2', name: 'Chidi Okafor', party: 'Independent', index: 1, wardVotes: 100, onlineVotes: null, totalVotes: 100, percentage: 33.3 },
+  ],
+};
 
 describe('LiveCollationBoard', () => {
-  const collation = mockCollationResults[0];
-
-  it('renders LIVE RESULTS heading', () => {
-    render(<LiveCollationBoard collation={collation} />, { wrapper });
-    expect(screen.getByText('LIVE RESULTS')).toBeInTheDocument();
+  it('renders the results heading and the ward and online counts from the service', () => {
+    render(<LiveCollationBoard collation={collation} />);
+    expect(screen.getByText('RESULTS SO FAR')).toBeInTheDocument();
+    expect(screen.getByText(/2 wards reported · 5 voted online/)).toBeInTheDocument();
   });
 
-  it('renders ward collation progress text', () => {
-    render(<LiveCollationBoard collation={collation} />, { wrapper });
-    expect(screen.getByText(/wards collated/i)).toBeInTheDocument();
+  it('renders every candidate with their real vote share', () => {
+    render(<LiveCollationBoard collation={collation} />);
+    expect(screen.getByText('Amina Yusuf')).toBeInTheDocument();
+    expect(screen.getByText('Chidi Okafor')).toBeInTheDocument();
+    expect(screen.getByText('66.7%')).toBeInTheDocument();
   });
 
-  it('renders all candidate rows', () => {
-    render(<LiveCollationBoard collation={collation} />, { wrapper });
-    collation.candidates.forEach((c) => {
-      // Component renders `{c.party} · {c.wardsWon} wards won` as sibling text
-      // nodes in one div, not a plain string — exact-match getByText can't find
-      // a substring of that, so match by regex instead.
-      expect(screen.getByText(new RegExp(c.party))).toBeInTheDocument();
-    });
+  it('says so, instead of showing zeros, when no ward has reported', () => {
+    render(<LiveCollationBoard collation={{ ...collation, summary: { wardsReported: 0, onlineVoters: 0, totalVotesCounted: 0, onlineTallyStatus: 'AFTER_CLOSE', onlineValid: 0, onlineRejected: 0, onlineMismatch: false } }} />);
+    expect(screen.getByText(/No votes have been counted yet/)).toBeInTheDocument();
+  });
+
+  it('says online votes are secret until voting closes', () => {
+    render(<LiveCollationBoard collation={collation} />);
+    expect(screen.getByText(/counted when voting closes/)).toBeInTheDocument();
+  });
+
+  it('shows the published online count with each candidate\'s ward and online parts, and flags a mismatch', () => {
+    const published = {
+      ...collation,
+      summary: { ...collation.summary, onlineTallyStatus: 'PUBLISHED', onlineValid: 5, onlineRejected: 1, onlineMismatch: true },
+      candidates: [{ ...collation.candidates[0], wardVotes: 200, onlineVotes: 4, totalVotes: 204 }, collation.candidates[1]],
+    };
+    render(<LiveCollationBoard collation={published} />);
+    expect(screen.getByText(/5 valid, 1 rejected/)).toBeInTheDocument();
+    expect(screen.getByText(/200 ward \+ 4 online/)).toBeInTheDocument();
+    expect(screen.getByText(/does not match the number of voters/)).toBeInTheDocument();
+  });
+
+  it('explains why online results are not shown for a small electorate', () => {
+    const withheld = { ...collation, summary: { ...collation.summary, onlineTallyStatus: 'WITHHELD', onlineValid: 3, onlineMinimum: 5 } };
+    render(<LiveCollationBoard collation={withheld} />);
+    expect(screen.getByText(/at least 5 people voted online/)).toBeInTheDocument();
   });
 
   it('renders loading skeleton when isLoading prop passed', () => {
-    render(<LiveCollationBoard isLoading />, { wrapper });
+    render(<LiveCollationBoard isLoading />);
     expect(screen.getByTestId('collation-board-skeleton')).toBeInTheDocument();
   });
 });

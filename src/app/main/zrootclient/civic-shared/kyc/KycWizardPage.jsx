@@ -9,6 +9,7 @@ import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { toast } from 'react-toastify';
 import KycFaceCard from './steps/KycFaceCard';
+import KycAboutYouCard from './steps/KycAboutYouCard';
 import KycDocumentCard from './steps/KycDocumentCard';
 import KycWebAuthnCard from './steps/KycWebAuthnCard';
 import { useGiveConsent } from 'app/configs/data/server-calls/auth/userapp/a_kyc/useKycRepo';
@@ -303,6 +304,14 @@ export default function KycWizardPage({ kycData, onBack }) {
 
 						{!isVerified && consentGiven && (
 							<>
+								<DocumentSection
+									title="About You"
+									description="Your date of birth, gender and household details. Checked against your ID."
+									status="Required"
+								>
+									<KycAboutYouCard />
+								</DocumentSection>
+
 								<DocumentSection
 									title="Face Recognition"
 									description="Live camera capture used to verify your identity against your face."

@@ -1,89 +1,91 @@
-import { memo, useState } from 'react';
-import { FormControl, InputLabel, Select, MenuItem, TextField, InputAdornment, Divider, Button, Switch, FormControlLabel } from '@mui/material';
-import { Search, FilterList, Clear } from '@mui/icons-material';
-import { FACILITY_TYPES } from '../../mock';
+import { memo } from 'react';
+import { Link } from 'react-router-dom';
+import { FormControl, InputLabel, Select, MenuItem, Divider, Button, FormControlLabel, Switch } from '@mui/material';
+import { FilterList, Clear } from '@mui/icons-material';
+import { FACILITY_TYPES } from '../../constants';
+import { useMyEnrolment, useLeaveEnrolment } from '../../hooks/useHealthcareRepo';
 
-function HealthcareSidebarLeft({ onFilterChange }) {
-  const [filters, setFilters] = useState({ type: '', search: '', acceptsNHIS: false });
+const LINKS = [
+  { label: 'Find a facility', path: '/healthcare/dashboard', icon: '🏥' },
+  { label: 'Book an appointment', path: '/healthcare/book', icon: '📅' },
+  { label: 'My appointments', path: '/healthcare/my-appointments', icon: '📋' },
+  { label: 'My health record', path: '/healthcare/my-record', icon: '🔐' },
+  { label: 'My referrals', path: '/healthcare/my-referrals', icon: '➡️' },
+  { label: 'Health alerts', path: '/healthcare/alerts', icon: '⚠️' },
+];
 
-  function update(key, value) {
-    const next = { ...filters, [key]: value };
-    setFilters(next);
-    onFilterChange?.(next);
-  }
+/** Type filter (only on the facility list, where the page passes one in) and the quick links. */
+function MyPrimaryCard() {
+  const { data } = useMyEnrolment();
+  const leave = useLeaveEnrolment();
+  if (!data?.enabled) return null;
+  const f = data.enrolment?.facility;
+  return (
+    <div style={{ padding: 16, borderRadius: 14, background: '#fffbeb', border: '1px solid #fde68a' }}>
+      <div style={{ fontSize: '1.4rem', color: '#92400e', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>My primary facility</div>
+      {f ? (
+        <>
+          <Link to={`/healthcare/facility/${f.id}`} style={{ display: 'block', marginTop: 6, fontSize: '1.76rem', fontWeight: 800, color: '#111827', textDecoration: 'none' }}>{f.name}</Link>
+          <div style={{ fontSize: '1.4rem', color: '#6b7280' }}>{f.address}, {f.lga}</div>
+          <Button size="small" disabled={leave.isLoading} onClick={() => leave.mutate()} sx={{ mt: 1, px: 0, textTransform: 'none', fontSize: '1.4rem', color: '#b91c1c' }}>Leave this facility</Button>
+        </>
+      ) : (
+        <div style={{ marginTop: 6, fontSize: '1.5rem', color: '#78350f', lineHeight: 1.5 }}>
+          You have not chosen one yet. Pick a primary facility near you from the list or the map and tap Enrol here.
+        </div>
+      )}
+    </div>
+  );
+}
 
-  function clearFilters() {
-    const empty = { type: '', search: '', acceptsNHIS: false };
-    setFilters(empty);
-    onFilterChange?.(empty);
-  }
-
-  const hasFilters = filters.type || filters.search || filters.acceptsNHIS;
-
+function HealthcareSidebarLeft({ typeFilter, onTypeChange, primaryOnly, onPrimaryOnlyChange }) {
+  const canFilter = typeof onTypeChange === 'function';
   return (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, color: '#111827', fontSize: '1.9rem' }}>
-          <FilterList sx={{ fontSize: 32, color: '#16a34a' }} /> Filters
-        </div>
-        {hasFilters && (
-          <Button size="small" startIcon={<Clear sx={{ fontSize: 26 }} />} onClick={clearFilters}
-            sx={{ color: '#6b7280', textTransform: 'none', fontSize: '1.56rem', px: 1.5 }}>
-            Clear
-          </Button>
-        )}
-      </div>
-
-      <TextField
-        size="small" placeholder="Search facilities..."
-        value={filters.search} onChange={(e) => update('search', e.target.value)}
-        InputProps={{
-          startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 28, color: '#9ca3af' }} /></InputAdornment>,
-          style: { fontSize: '1.76rem' },
-        }}
-        InputLabelProps={{ style: { fontSize: '1.76rem' } }}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', fontSize: '1.76rem' } }}
-      />
-
-      <Divider />
-
-      <FormControl size="small" fullWidth>
-        <InputLabel sx={{ fontSize: '1.76rem' }}>Facility Type</InputLabel>
-        <Select value={filters.type} label="Facility Type" onChange={(e) => update('type', e.target.value)}
-          sx={{ borderRadius: '12px', fontSize: '1.76rem' }}>
-          <MenuItem value="" sx={{ fontSize: '1.76rem' }}>All Types</MenuItem>
-          {FACILITY_TYPES.map((t) => (
-            <MenuItem key={t.id} value={t.id} sx={{ fontSize: '1.76rem' }}>
-              <span style={{ marginRight: 10, fontSize: '1.6rem' }}>{t.icon}</span>{t.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <FormControlLabel
-        control={
-          <Switch
-            size="medium"
-            checked={filters.acceptsNHIS}
-            onChange={(e) => update('acceptsNHIS', e.target.checked)}
-            sx={{ '& .MuiSwitch-thumb': { backgroundColor: '#16a34a' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#bbf7d0' } }}
-          />
-        }
-        label={<span style={{ fontSize: '1.76rem', fontWeight: 600, color: '#374151' }}>NHIS Accepted</span>}
-      />
-
-      <Divider />
-      <div style={{ fontSize: '1.56rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Quick Links</div>
-      {[
-        { label: 'Find a Facility', path: '/healthcare/dashboard', icon: '🏥' },
-        { label: 'Book Appointment', path: '/healthcare/book', icon: '📅' },
-        { label: 'My Appointments', path: '/healthcare/my-appointments', icon: '📋' },
-        { label: 'Health Alerts', path: '/healthcare/alerts', icon: '⚠️' },
-        { label: 'Find Practitioners', path: '/healthcare/practitioners', icon: '👨‍⚕️' },
-      ].map((link) => (
-        <a key={link.path} href={link.path} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: '#f9fafb', color: '#374151', textDecoration: 'none', fontSize: '1.76rem', fontWeight: 600, border: '1px solid #e5e7eb' }}>
-          <span style={{ fontSize: '1.6rem' }}>{link.icon}</span>{link.label}
-        </a>
+      <MyPrimaryCard />
+      {canFilter && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, color: '#111827', fontSize: '1.9rem' }}>
+              <FilterList sx={{ fontSize: 32, color: '#16a34a' }} /> Filter
+            </div>
+            {typeFilter && (
+              <Button size="small" startIcon={<Clear sx={{ fontSize: 26 }} />} onClick={() => onTypeChange('')} sx={{ color: '#6b7280', textTransform: 'none', fontSize: '1.56rem', px: 1.5 }}>
+                Clear
+              </Button>
+            )}
+          </div>
+          <FormControl size="small" fullWidth>
+            <InputLabel sx={{ fontSize: '1.76rem' }}>Kind of facility</InputLabel>
+            <Select value={typeFilter || ''} label="Kind of facility" onChange={(e) => onTypeChange(e.target.value)} sx={{ borderRadius: '12px', fontSize: '1.76rem' }}>
+              <MenuItem value="" sx={{ fontSize: '1.76rem' }}>All kinds</MenuItem>
+              {FACILITY_TYPES.map((t) => (
+                <MenuItem key={t.id} value={t.id} sx={{ fontSize: '1.76rem' }}>
+                  <span style={{ marginRight: 10, fontSize: '1.6rem' }}>{t.icon}</span>
+                  {t.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {typeof onPrimaryOnlyChange === 'function' && (
+            <FormControlLabel
+              control={<Switch checked={Boolean(primaryOnly)} onChange={(e) => onPrimaryOnlyChange(e.target.checked)} />}
+              label={<span style={{ fontSize: '1.6rem' }}>Primary facilities for my area</span>}
+            />
+          )}
+          <Divider />
+        </>
+      )}
+      <div style={{ fontSize: '1.56rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Quick links</div>
+      {LINKS.map((link) => (
+        <Link
+          key={link.path}
+          to={link.path}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: '#f9fafb', color: '#374151', textDecoration: 'none', fontSize: '1.76rem', fontWeight: 600, border: '1px solid #e5e7eb' }}
+        >
+          <span style={{ fontSize: '1.6rem' }}>{link.icon}</span>
+          {link.label}
+        </Link>
       ))}
     </div>
   );

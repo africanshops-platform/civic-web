@@ -4,7 +4,7 @@ import { Button, Chip, LinearProgress } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { ArrowForward, HowToVote, Campaign } from '@mui/icons-material';
 import { CivicEmptyState, CivicLoadingSkeleton } from '../../../civic-shared';
-import { ELECTION_TYPES } from '../../mock';
+import { ELECTION_LEVELS } from '../../constants';
 
 /* ── Civic responsive font tokens ── */
 const F = {
@@ -27,11 +27,12 @@ const inView = (delay = 0) => ({
 });
 
 function ElectionCard({ election, index }) {
-  const typeInfo = ELECTION_TYPES.find((t) => t.id === election.type) || {};
+  const typeInfo = ELECTION_LEVELS.find((t) => t.id === election.level) || {};
   const statusColors = {
-    ongoing:   { bg: '#fef2f2', color: '#dc2626', label: 'LIVE'      },
+    ongoing:   { bg: '#fef2f2', color: '#dc2626', label: 'VOTING OPEN' },
     upcoming:  { bg: '#eff6ff', color: '#1d4ed8', label: 'UPCOMING'  },
-    completed: { bg: '#f0fdf4', color: '#16a34a', label: 'COMPLETED' },
+    completed: { bg: '#f0fdf4', color: '#16a34a', label: 'CLOSED' },
+    cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'CANCELLED' },
   };
   const statusStyle = statusColors[election.status] || statusColors.upcoming;
 
@@ -83,10 +84,10 @@ function ElectionCard({ election, index }) {
         marginBottom: 'clamp(14px, 1.8vw, 20px)',
       }}>
         {[
-          { label: 'Registered', value: (election.totalRegisteredVoters / 1_000_000).toFixed(1) + 'M' },
-          { label: 'Turnout',    value: `${election.turnoutPercentage}%` },
-          { label: 'Wards',      value: `${election.wardsCollated}/${election.wardsTotal}` },
-          { label: 'Candidates', value: election.candidatesCount },
+          { label: 'Voted online', value: election.votersParticipated.toLocaleString() },
+          { label: 'Candidates',  value: election.candidatesCount },
+          { label: 'Date',        value: new Date(election.electionDate).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) },
+          { label: 'Online vote', value: election.isOnlineVotingEnabled ? 'On' : 'Off' },
         ].map((s) => (
           <div key={s.label} style={{
             textAlign: 'center',
@@ -100,39 +101,18 @@ function ElectionCard({ election, index }) {
         ))}
       </div>
 
-      {/* Row 3: live progress bar */}
-      {election.status === 'ongoing' && election.wardsTotal > 0 && (
-        <div style={{ marginBottom: 'clamp(12px, 1.6vw, 18px)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: F.small, color: '#6b7280', fontWeight: 600 }}>Wards collated</span>
-            <span style={{ fontSize: F.small, fontWeight: 700, color: '#dc2626' }}>
-              {Math.round((election.wardsCollated / election.wardsTotal) * 100)}%
-            </span>
-          </div>
-          <LinearProgress
-            variant="determinate"
-            value={Math.round((election.wardsCollated / election.wardsTotal) * 100)}
-            sx={{
-              height: 8, borderRadius: 4,
-              background: '#fee2e2',
-              '& .MuiLinearProgress-bar': { background: '#dc2626', borderRadius: 4 },
-            }}
-          />
-        </div>
-      )}
-
       {/* Row 4: action buttons */}
       <div style={{ display: 'flex', gap: 'clamp(8px, 1.2vw, 14px)', flexWrap: 'wrap' }}>
         {election.status === 'ongoing' && (
           <Button
-            component={Link} to={`/governance/elections/${election.id}/live/manage`}
+            component={Link} to={`/governance/elections/${election.id}/live`}
             size="medium" variant="contained" endIcon={<ArrowForward />}
             sx={{ background: '#dc2626', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn }}
           >
-            View Live Results
+            View Details
           </Button>
         )}
-        {election.status !== 'completed' && (
+        {election.status === 'ongoing' && election.isOnlineVotingEnabled && (
           <Button
             component={Link} to={`/governance/elections/${election.id}/vote`}
             size="medium" variant="outlined" startIcon={<HowToVote />}
@@ -143,11 +123,11 @@ function ElectionCard({ election, index }) {
         )}
         {election.status === 'completed' && (
           <Button
-            component={Link} to={`/governance/elections/${election.id}/live/manage`}
+            component={Link} to={`/governance/elections/${election.id}/live`}
             size="medium" variant="outlined" endIcon={<ArrowForward />}
             sx={{ borderColor: '#16a34a', color: '#16a34a', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.btn }}
           >
-            Final Results
+            Results
           </Button>
         )}
       </div>

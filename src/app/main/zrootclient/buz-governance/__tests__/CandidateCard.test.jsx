@@ -1,34 +1,23 @@
 import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from 'react-query';
 import CandidateCard from '../components/CandidateCard';
-import { mockCandidates } from '../mock';
-
-const wrapper = ({ children }) => (
-  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-    {children}
-  </QueryClientProvider>
-);
 
 describe('CandidateCard', () => {
-  const candidate = mockCandidates[0];
+  const candidate = { id: 'c1', name: 'Amina Yusuf', party: 'Independent', manifesto: 'Cleaner drains, safer streets.', index: 0 };
 
-  it('renders candidate name', () => {
-    render(<CandidateCard candidate={candidate} />, { wrapper });
-    expect(screen.getByText(candidate.name)).toBeInTheDocument();
+  it('renders candidate name, party and manifesto', () => {
+    render(<CandidateCard candidate={candidate} />);
+    expect(screen.getByText('Amina Yusuf')).toBeInTheDocument();
+    expect(screen.getByText('Independent')).toBeInTheDocument();
+    expect(screen.getByText('Cleaner drains, safer streets.')).toBeInTheDocument();
   });
 
-  it('renders party abbreviation', () => {
-    render(<CandidateCard candidate={candidate} />, { wrapper });
-    expect(screen.getByText(candidate.party.abbreviation)).toBeInTheDocument();
-  });
-
-  it('renders vote percentage when provided', () => {
-    render(<CandidateCard candidate={candidate} />, { wrapper });
-    expect(screen.getByText(`${candidate.percentage}%`)).toBeInTheDocument();
+  it('renders without a party', () => {
+    render(<CandidateCard candidate={{ ...candidate, party: null }} />);
+    expect(screen.getByText('Amina Yusuf')).toBeInTheDocument();
   });
 
   it('renders loading skeleton when isLoading prop passed', () => {
-    render(<CandidateCard isLoading />, { wrapper });
+    render(<CandidateCard isLoading />);
     expect(screen.getByTestId('candidate-card-skeleton')).toBeInTheDocument();
   });
 });

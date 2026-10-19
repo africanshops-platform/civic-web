@@ -3,6 +3,7 @@ import { Forum, CheckCircle, TrendingUp, Group } from '@mui/icons-material';
 import { CivicStatCard, ActivityFeedItem } from '../../../civic-shared';
 import { useIssues } from '../../hooks/useSocialRepo';
 import { useCampaigns } from '../../../buz-civictax/hooks/useCivicTaxRepo';
+import CommunityIssuesMap from '../../components/CommunityIssuesMap';
 
 const F = {
   meta:    'clamp(1.2rem, 1.8vw, 1.5rem)',
@@ -42,6 +43,9 @@ function CommunityFeedSidebarRight() {
 
   return (
     <div style={{ padding: 'clamp(14px, 2vw, 20px)', display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 2.4vw, 22px)' }}>
+
+      {/* ── Where the issues are ── */}
+      <CommunityIssuesMap />
 
       {/* ── Community Stats ── */}
       <div>

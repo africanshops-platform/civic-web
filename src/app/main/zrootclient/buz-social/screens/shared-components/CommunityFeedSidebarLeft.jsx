@@ -139,7 +139,6 @@ function CommunityFeedSidebarLeft({ onFilterChange }) {
       {[
         { label: 'Report an Issue',     path: '/community/create-issue',   icon: '📝' },
         { label: 'Resolved Issues',     path: '/community/resolved',       icon: '✅' },
-        { label: 'Local Leaders',       path: '/community/leaders',        icon: '👤' },
         { label: 'Community Projects',  path: '/community/projects',       icon: '🏗️' },
         { label: 'My Engagement',       path: '/community/my-engagement',  icon: '📊' },
       ].map((link) => (

@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Chip } from '@mui/material';
 import { BarChart, HowToVote, Campaign, CheckCircle } from '@mui/icons-material';
-import { ELECTION_STATS, PETITION_STATS } from '../../mock';
+import { useElections } from '../../hooks/useGovernanceRepo';
 
 const F = {
   sectionHead: 'clamp(1.76rem, 2.6vw, 2.2rem)',
@@ -12,13 +12,6 @@ const F = {
   small:       'clamp(1.3rem,  1.8vw, 1.56rem)',
   icon:        'clamp(22px,    2.6vw, 28px)',
 };
-
-const ACTIVITY = [
-  { id: 1, text: 'Lagos Gov results: 187/245 wards collated', time: '2 min ago',  dot: '#1d4ed8' },
-  { id: 2, text: '342 new signatures on the Lekki-Epe petition', time: '15 min ago', dot: '#7c3aed' },
-  { id: 3, text: 'Eti-Osa LGA collation completed — APC wins', time: '3 hrs ago',  dot: '#16a34a' },
-  { id: 4, text: 'Ikeja By-Election: nominations close in 3 days', time: '1 day ago', dot: '#d97706' },
-];
 
 function StatCard({ Icon, value, label, accent }) {
   return (
@@ -36,22 +29,24 @@ function StatCard({ Icon, value, label, accent }) {
 }
 
 function GovernanceSidebarRight({ stats, elections }) {
-  const elStats = stats || ELECTION_STATS;
-  const liveElections = elections?.filter((e) => e.status === 'ongoing') ?? [];
+  // Pages that do not pass their own figures get them from the same (cached) elections query.
+  const { data: fetched } = useElections({});
+  const elStats = stats || fetched?.data?.stats || { totalElections: 0, ongoingElections: 0, completedElections: 0, totalVotersParticipated: 0 };
+  const liveElections = (elections ?? fetched?.data?.elections)?.filter((e) => e.status === 'ongoing') ?? [];
 
   return (
     <div style={{ padding: 'clamp(16px, 2vw, 24px)', display: 'flex', flexDirection: 'column', gap: 'clamp(18px, 2.4vw, 26px)' }}>
 
-      {/* ── Platform Stats ── */}
+      {/* ── At a glance ── */}
       <div>
         <div style={{ fontWeight: 800, color: '#111827', fontSize: F.sectionHead, marginBottom: 'clamp(10px, 1.4vw, 16px)' }}>
           Platform Stats
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(8px, 1.2vw, 12px)' }}>
-          <StatCard Icon={BarChart}     value={elStats.totalElections}                       label="Elections" />
-          <StatCard Icon={HowToVote}    value={elStats.ongoingElections}                      label="Live Now"   accent="#ef4444" />
-          <StatCard Icon={Campaign}     value={PETITION_STATS?.activePetitions || 24}         label="Petitions"  accent="#7c3aed" />
-          <StatCard Icon={CheckCircle}  value={`${elStats.averageTurnout}%`}                  label="Avg. Turnout" accent="#16a34a" />
+          <StatCard Icon={BarChart}     value={elStats.totalElections}                        label="Community Votes" />
+          <StatCard Icon={HowToVote}    value={elStats.ongoingElections}                      label="Open Now"   accent="#ef4444" />
+          <StatCard Icon={CheckCircle}  value={elStats.completedElections}                    label="Closed" accent="#16a34a" />
+          <StatCard Icon={Campaign}     value={(elStats.totalVotersParticipated ?? 0).toLocaleString()} label="Voted Online" accent="#7c3aed" />
         </div>
       </div>
 
@@ -60,7 +55,7 @@ function GovernanceSidebarRight({ stats, elections }) {
         <div>
           <div style={{ fontWeight: 800, color: '#111827', fontSize: F.sectionHead, marginBottom: 'clamp(10px, 1.4vw, 14px)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
-            Live Elections
+            Open Now
           </div>
           {liveElections.map((e) => (
             <motion.div
@@ -77,31 +72,13 @@ function GovernanceSidebarRight({ stats, elections }) {
                 {e.title}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: F.small, color: '#6b7280' }}>{e.wardsCollated}/{e.wardsTotal} wards</span>
-                <Chip label="LIVE" size="small" sx={{ background: '#ef4444', color: 'white', fontWeight: 800, fontSize: F.small, height: 28 }} />
+                <span style={{ fontSize: F.small, color: '#6b7280' }}>{e.votersParticipated.toLocaleString()} voted online</span>
+                <Chip label="OPEN" size="small" sx={{ background: '#ef4444', color: 'white', fontWeight: 800, fontSize: F.small, height: 28 }} />
               </div>
             </motion.div>
           ))}
         </div>
       )}
-
-      {/* ── Activity Feed ── */}
-      <div>
-        <div style={{ fontWeight: 800, color: '#111827', fontSize: F.sectionHead, marginBottom: 'clamp(10px, 1.4vw, 14px)' }}>
-          Activity
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2vw, 12px)' }}>
-          {ACTIVITY.map((item) => (
-            <div key={item.id} style={{ display: 'flex', gap: 'clamp(8px, 1.2vw, 12px)', alignItems: 'flex-start' }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.dot, flexShrink: 0, marginTop: 'clamp(4px, 0.6vw, 6px)' }} />
-              <div>
-                <div style={{ fontSize: F.body, color: '#374151', fontWeight: 600, lineHeight: 1.4 }}>{item.text}</div>
-                <div style={{ fontSize: F.small, color: '#9ca3af', marginTop: 2 }}>{item.time}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
     </div>
   );

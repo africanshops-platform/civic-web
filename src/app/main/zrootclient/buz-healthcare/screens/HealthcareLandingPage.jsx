@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowForward, CheckCircle } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
-import { mockHealthAlerts, FACILITY_TYPES, HEALTHCARE_STATS } from '../mock';
+import { FACILITY_TYPES } from '../constants';
+import { useFacilities, useHealthAlerts } from '../hooks/useHealthcareRepo';
 
 const GREEN_GRADIENT = 'linear-gradient(135deg, #16a34a 0%, #0d9488 50%, #0f766e 100%)';
 
@@ -21,23 +22,23 @@ const inViewUp = (delay = 0) => ({
 });
 
 const HOW_IT_WORKS = [
-  { step: '01', title: 'Find a Facility', desc: 'Search for primary health centres, general hospitals, or specialists near you across any LGA.' },
-  { step: '02', title: 'Book an Appointment', desc: 'Choose your preferred practitioner and time slot. Receive instant confirmation by SMS.' },
-  { step: '03', title: 'Stay Informed', desc: 'Get real-time health alerts for disease outbreaks and public health advisories in your area.' },
+  { step: '01', title: 'Find a Facility', desc: 'Look for health centres, hospitals, pharmacies and specialists that your community has approved.' },
+  { step: '02', title: 'Book an Appointment', desc: 'Pick a day and one of the times a practitioner has free. See the answer under My appointments.' },
+  { step: '03', title: 'Stay Informed', desc: 'Read the health alerts approved facilities publish for your area, and see who has opened your record.' },
 ];
 
-const TRUST_BADGES = ['NHIS Integrated', 'NCDC Partnered', 'Ministry Verified', 'Free to Access'];
-
-const PLATFORM_STATS = [
-  { emoji: '🏥', value: HEALTHCARE_STATS.totalFacilities, label: 'Facilities Listed' },
-  { emoji: '✅', value: HEALTHCARE_STATS.openNow, label: 'Open Right Now' },
-  { emoji: '⏱️', value: `${HEALTHCARE_STATS.avgWaitMinutes}min`, label: 'Avg Wait Time' },
-  { emoji: '💳', value: HEALTHCARE_STATS.nhisAccepted, label: 'NHIS Accepted' },
-];
+const TRUST_BADGES = ['Free to use', 'Facilities approved by your community', 'You control your record'];
 
 export default function HealthcareLandingPage() {
   const { isAuthenticated } = useCivicWebAuth();
-  const activeAlerts = mockHealthAlerts.filter((a) => a.active && a.severity === 'critical').slice(0, 2);
+  const { data: facs } = useFacilities({ limit: 1 });
+  const { data: alertData } = useHealthAlerts({ limit: 3 });
+  const activeAlerts = (alertData?.data?.data ?? []).filter((a) => a.severity === 'CRITICAL').slice(0, 2);
+  // Only figures that are true today: how many approved facilities there are and how many alerts are live.
+  const PLATFORM_STATS = [
+    { emoji: '🏥', value: facs?.data?.total ?? '—', label: 'Facilities listed' },
+    { emoji: '⚠️', value: alertData?.data?.total ?? '—', label: 'Live health alerts' },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden', backgroundColor: 'white' }}>
@@ -80,8 +81,8 @@ export default function HealthcareLandingPage() {
               </motion.div>
               <motion.div {...fadeUp(0.34)}>
                 <p style={{ color: 'rgba(255,255,255,0.92)', lineHeight: 1.82, margin: '0 0 40px', maxWidth: 580, fontSize: 'clamp(2.1rem, 3.6vw, 2.6rem)' }}>
-                  Find NHIS-accredited facilities, book appointments, and receive real-time health alerts — all in one place.{' '}
-                  <strong style={{ color: '#a7f3d0' }}>Free. Fast. Verified.</strong>
+                  Find facilities your community has approved, book a time that is really free, and read the health alerts for your area, all in one place.{' '}
+                  <strong style={{ color: '#a7f3d0' }}>Free. Simple. Approved by your community.</strong>
                 </p>
               </motion.div>
               <motion.div {...fadeUp(0.46)} style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 36 }}>
@@ -182,7 +183,7 @@ export default function HealthcareLandingPage() {
             Your Health Cannot Wait.
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(2.2rem, 4.4vw, 2.9rem)', margin: '0 auto 52px', maxWidth: 640, lineHeight: 1.75 }}>
-            Find an accredited facility, book an appointment, and stay ahead of health alerts — all for free.
+            Find a facility your community has approved, book an appointment, and stay ahead of health alerts, all for free.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 18 }}>
             <Button component={Link} to="/healthcare/dashboard" variant="contained" size="large"
