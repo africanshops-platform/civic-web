@@ -23,6 +23,11 @@ export function useMyChildren() {
 export function useChildNotes(studentId) {
   return useQuery(['edu-child-notes', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/notes`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
 }
+// The exams of one child's class, with the child's own state and score (civic-64 E4-c). A 404 means exams are not switched on.
+export function useChildExams(studentId) {
+  return useQuery(['edu-child-exams', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/exams`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
+}
+
 export const loadChildNote = (studentId, noteId) => AuthApi().get(`/education/parent/child/${studentId}/notes/${noteId}`).then((r) => r.data);
 
 // Timetable and arrivals for one child (civic-62 E3-e). `retry: false`: a 404 means the school has not switched the feature on, and the sections hide.

@@ -4,13 +4,20 @@ import { ArrowBack } from '@mui/icons-material';
 import EducationPageShell from './EducationPageShell';
 import StudentLoginSection from './StudentLoginSection';
 import ClassNotes from '../components/ClassNotes';
-import { loadChildNote, useChildGate, useChildNotes, useChildRecord, useChildTimetable } from '../hooks/useEducationRepo';
+import ExamList from '../components/ExamList';
+import { loadChildNote, useChildExams, useChildGate, useChildNotes, useChildRecord, useChildTimetable } from '../hooks/useEducationRepo';
 import { GRADE_COLOR, fmtDate } from '../constants';
 
 const card = { background: 'white', borderRadius: 22, padding: 28, border: '1px solid #e5e7eb', marginBottom: 20 };
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 7];
 const clock = (v) => new Date(v).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+
+/** The exams of the child's class and the score of each one handed in. Hidden when exams are off or there are none. */
+function ExamsSection({ studentId }) {
+  const { data, isError } = useChildExams(studentId);
+  return <ExamList exams={data?.data?.items} off={isError} card={card} />;
+}
 
 /** The published notes of the child's class. Hidden when notes are off or none are published. */
 function NotesSection({ studentId }) {
@@ -136,6 +143,7 @@ export default function ChildPage() {
 
         <TimetableSection studentId={studentId} />
         <NotesSection studentId={studentId} />
+        <ExamsSection studentId={studentId} />
         <GateSection studentId={studentId} />
         <StudentLoginSection studentId={studentId} childName={r.enrollment.studentName} />
       </div>

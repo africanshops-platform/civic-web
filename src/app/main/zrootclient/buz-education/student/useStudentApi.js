@@ -30,6 +30,7 @@ export const useMyTimetable = get('timetable', '/education/me/timetable');
 export const useMyGate = get('gate', '/education/me/gate');
 export const useMyNotices = get('notices', '/education/me/notices');
 export const useMyNotes = get('notes', '/education/me/notes');
+export const useMyExams = get('exams', '/education/me/exams');
 export const loadMyNote = (id) => AuthApi().get(`/education/me/notes/${id}`).then((r) => r.data);
 
 // A student who turned 18 claims the account as their own (civic-61 E3-d4).
