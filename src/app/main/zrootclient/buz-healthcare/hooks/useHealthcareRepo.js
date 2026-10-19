@@ -65,27 +65,29 @@ export function useCancelAppointment() {
   });
 }
 
-// My health record: who may see it, one-time codes to share it, and who has.
-export function useRecordGrants() {
-  return useQuery(['healthcare-record-grants'], () => AuthApi().get('/healthcare/my-record/grants'), { staleTime: 15 * 1000 });
+// My health record: who may see it, one-time codes to share it, and who has. Every call can act for a child (`forDependant`); the server
+// checks guardianship each time.
+const fdp = (forDependant) => (forDependant ? { forDependant } : undefined);
+export function useRecordGrants(forDependant) {
+  return useQuery(['healthcare-record-grants', forDependant ?? 'me'], () => AuthApi().get('/healthcare/my-record/grants', { params: fdp(forDependant) }), { staleTime: 15 * 1000 });
 }
 
-export function useRecordAccessLog(params = {}) {
+export function useRecordAccessLog(params = {}) { // params.forDependant acts for a child
   return useQuery(['healthcare-record-log', params], () => AuthApi().get('/healthcare/my-record/access-log', { params }), {
     keepPreviousData: true,
     staleTime: 15 * 1000,
   });
 }
 
-export function useCreateConsentCode() {
-  return useMutation(() => AuthApi().post('/healthcare/my-record/consent-code'), {
+export function useCreateConsentCode(forDependant) {
+  return useMutation(() => AuthApi().post('/healthcare/my-record/consent-code', undefined, { params: fdp(forDependant) }), {
     onError: (e) => toast.error(say(e, 'Could not make a code. Please try again.')),
   });
 }
 
-export function useGrantFacility() {
+export function useGrantFacility(forDependant) {
   const qc = useQueryClient();
-  return useMutation((body) => AuthApi().post('/healthcare/my-record/grant-facility', body), {
+  return useMutation((body) => AuthApi().post('/healthcare/my-record/grant-facility', body, { params: fdp(forDependant) }), {
     onSuccess: () => {
       toast.success('Access given.');
       qc.invalidateQueries(['healthcare-record-grants']);
@@ -95,9 +97,9 @@ export function useGrantFacility() {
   });
 }
 
-export function useRevokeFacility() {
+export function useRevokeFacility(forDependant) {
   const qc = useQueryClient();
-  return useMutation((facilityId) => AuthApi().delete(`/healthcare/my-record/facility/${facilityId}`), {
+  return useMutation((facilityId) => AuthApi().delete(`/healthcare/my-record/facility/${facilityId}`, { params: fdp(forDependant) }), {
     onSuccess: () => {
       toast.success('Access removed.');
       qc.invalidateQueries(['healthcare-record-grants']);
@@ -109,8 +111,8 @@ export function useRevokeFacility() {
 
 // Enrolment with a primary facility, the custodian of my record (civic-68 H3-b/H3-d). `enabled: false` means the feature is
 // switched off in this environment, and every enrolment control stays hidden.
-export function useMyEnrolment() {
-  return useQuery(['healthcare-enrolment'], () => AuthApi().get('/healthcare/enrolment'), {
+export function useMyEnrolment(forDependant) {
+  return useQuery(['healthcare-enrolment', forDependant ?? 'me'], () => AuthApi().get('/healthcare/enrolment', { params: fdp(forDependant) }), {
     staleTime: 30 * 1000,
     retry: false,
     select: (res) => res.data,
@@ -118,8 +120,8 @@ export function useMyEnrolment() {
 }
 
 /** Primary facilities in the local government where I live. Only asked for once enrolment is switched on. */
-export function useEnrolmentOptions(enabled) {
-  return useQuery(['healthcare-enrolment-options'], () => AuthApi().get('/healthcare/enrolment/options'), {
+export function useEnrolmentOptions(enabled, forDependant) {
+  return useQuery(['healthcare-enrolment-options', forDependant ?? 'me'], () => AuthApi().get('/healthcare/enrolment/options', { params: fdp(forDependant) }), {
     enabled: Boolean(enabled),
     staleTime: 60 * 1000,
     retry: false,
@@ -127,9 +129,9 @@ export function useEnrolmentOptions(enabled) {
   });
 }
 
-export function useEnrol() {
+export function useEnrol(forDependant) {
   const qc = useQueryClient();
-  return useMutation((facilityId) => AuthApi().post('/healthcare/enrolment', { facilityId }), {
+  return useMutation((facilityId) => AuthApi().post('/healthcare/enrolment', { facilityId }, { params: fdp(forDependant) }), {
     onSuccess: () => {
       toast.success('You are enrolled. This facility is now the custodian of your health record.');
       qc.invalidateQueries(['healthcare-enrolment']);
@@ -138,9 +140,9 @@ export function useEnrol() {
   });
 }
 
-export function useLeaveEnrolment() {
+export function useLeaveEnrolment(forDependant) {
   const qc = useQueryClient();
-  return useMutation(() => AuthApi().delete('/healthcare/enrolment'), {
+  return useMutation(() => AuthApi().delete('/healthcare/enrolment', { params: fdp(forDependant) }), {
     onSuccess: () => {
       toast.success('You have left your primary facility.');
       qc.invalidateQueries(['healthcare-enrolment']);

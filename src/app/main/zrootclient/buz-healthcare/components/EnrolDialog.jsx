@@ -2,8 +2,8 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typog
 import { useEnrol } from '../hooks/useHealthcareRepo';
 
 /** Enrol with a primary facility: says plainly what custody means before the person agrees. */
-export default function EnrolDialog({ facility, replacing, onClose }) {
-  const enrol = useEnrol();
+export default function EnrolDialog({ facility, replacing, onClose, forDependant }) {
+  const enrol = useEnrol(forDependant);
   return (
     <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ fontWeight: 800 }}>Enrol with {facility.name}?</DialogTitle>

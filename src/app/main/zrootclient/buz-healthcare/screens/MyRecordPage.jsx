@@ -4,6 +4,7 @@ import { Button, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, 
 import { motion } from 'framer-motion';
 import HealthcarePageShell from './shared-components/HealthcarePageShell';
 import {
+  useChildrenIActFor,
   useCreateConsentCode,
   useFacilities,
   useGrantFacility,
@@ -23,12 +24,14 @@ const LOG_LIMIT = 10;
 export default function MyRecordPage() {
   const [sp, setSp] = useSearchParams();
   const logPage = Math.max(Number(sp.get('page')) || 1, 1);
-  const code = useCreateConsentCode();
-  const { data: grantData, isLoading: grantsLoading } = useRecordGrants();
-  const { data: logData, isLoading: logLoading } = useRecordAccessLog({ page: logPage, limit: LOG_LIMIT });
+  const forDependant = sp.get('for') || '';
+  const { data: children = [] } = useChildrenIActFor();
+  const code = useCreateConsentCode(forDependant || undefined);
+  const { data: grantData, isLoading: grantsLoading } = useRecordGrants(forDependant || undefined);
+  const { data: logData, isLoading: logLoading } = useRecordAccessLog({ page: logPage, limit: LOG_LIMIT, forDependant: forDependant || undefined });
   const { data: facData } = useFacilities({ limit: 50 });
-  const grant = useGrantFacility();
-  const revoke = useRevokeFacility();
+  const grant = useGrantFacility(forDependant || undefined);
+  const revoke = useRevokeFacility(forDependant || undefined);
   const [facilityId, setFacilityId] = useState('');
   const [sections, setSections] = useState(['ALLERGIES']);
   const [until, setUntil] = useState('');
@@ -45,6 +48,13 @@ export default function MyRecordPage() {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 860, margin: '0 auto' }}>
         <h1 style={{ margin: '0 0 8px', fontWeight: 900, fontSize: 'clamp(2.8rem,4.5vw,4rem)', color: '#111827' }}>My health record</h1>
         <p style={{ ...p, fontSize: '1.9rem', marginBottom: 28 }}>Nobody can add to it or read it unless you allow it, and you can see everyone who has.</p>
+
+        {children.length > 0 && (
+          <TextField select size="small" label="Acting for" value={forDependant} onChange={(e) => setSp(e.target.value ? { for: e.target.value } : {})} sx={{ mb: 2, minWidth: 260 }}>
+            <MenuItem value="">Myself</MenuItem>
+            {children.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName} ({c.age})</MenuItem>)}
+          </TextField>
+        )}
 
         <div style={card}>
           <h3 style={h}>Let a facility add to your record</h3>
@@ -136,7 +146,7 @@ export default function MyRecordPage() {
           )}
           {logPages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-              <Pagination count={logPages} page={logPage} onChange={(_, pg) => setSp(pg > 1 ? { page: String(pg) } : {}, { replace: true })} />
+              <Pagination count={logPages} page={logPage} onChange={(_, pg) => setSp({ ...(forDependant ? { for: forDependant } : {}), ...(pg > 1 ? { page: String(pg) } : {}) }, { replace: true })} />
             </div>
           )}
         </div>
