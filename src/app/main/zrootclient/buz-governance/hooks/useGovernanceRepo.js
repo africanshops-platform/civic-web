@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
+import { electionInArea } from './electionArea';
 
 // Everything here is real (civic-8 G1): elections, candidates, ward collation, audit trail, petitions and polls come from
 // the governance service through the gateway. Where the service has no data for a figure (registered voters, turnout
@@ -14,6 +16,7 @@ const api = {
   getAudit:      (id)     => AuthApi().get(`/governance/elections/${id}/audit`),
   eligibility:   (id)     => AuthApi().get(`/governance/elections/${id}/eligibility`),
   locations:     (id)     => AuthApi().get(`/governance/elections/${id}/locations`),
+  myArea:        ()       => AuthApi().get('/governance/my-area'),
   listPetitions: (params) => AuthApi().get('/governance/petitions', { params }),
   getPetition:   (id)     => AuthApi().get(`/governance/petitions/${id}`),
   signPetition:  (body)   => AuthApi().post('/governance/petitions/sign', body),
@@ -81,6 +84,7 @@ export function useElections(filters = {}) {
         if (filters.status) elections = elections.filter((e) => e.status === filters.status);
         if (filters.stateId) elections = elections.filter((e) => e.jurisdiction.stateId === filters.stateId);
         if (filters.lgaId) elections = elections.filter((e) => e.jurisdiction.lgaId === filters.lgaId);
+        if (filters.area) elections = elections.filter((e) => electionInArea(e, filters.dwelling));
         if (filters.search) {
           const q = filters.search.toLowerCase();
           elections = elections.filter((e) => e.title.toLowerCase().includes(q));
@@ -91,6 +95,20 @@ export function useElections(filters = {}) {
       staleTime: 60 * 1000,
     },
   );
+}
+
+/**
+ * Where the signed-in citizen lives, by name ({ country, state, lga }), or null for a guest or someone who has not set it yet.
+ * Used by the "my area" filter and the voting-location highlight; it never leaves the browser.
+ */
+export function useMyArea() {
+  const { isAuthenticated } = useCivicWebAuth();
+  return useQuery(['governance-my-area'], () => api.myArea(), {
+    enabled: isAuthenticated,
+    select: (res) => res.data?.dwelling ?? null,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
 }
 
 export function useElectionDetail(electionId) {
