@@ -28,6 +28,7 @@ import {
 	useRespondChargee,
 	useSpouseLink
 } from './useHousehold';
+import SignInRequired from './SignInRequired';
 
 const errMsg = (e) => e?.response?.data?.message || 'Something went wrong. Please try again.';
 const day = (v) => (v ? new Date(v).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
@@ -426,7 +427,7 @@ function ChildrenCard({ data }) {
 }
 
 /** My household: spouse link and children (civic-55 CP-4). */
-export default function MyHouseholdPage() {
+function MyHouseholdPageContent() {
 	const spouse = useSpouseLink();
 	const dependants = useDependants();
 
@@ -475,5 +476,13 @@ export default function MyHouseholdPage() {
 				</>
 			)}
 		</Box>
+	);
+}
+
+export default function MyHouseholdPage() {
+	return (
+		<SignInRequired message="Sign in to see your household.">
+			<MyHouseholdPageContent />
+		</SignInRequired>
 	);
 }
