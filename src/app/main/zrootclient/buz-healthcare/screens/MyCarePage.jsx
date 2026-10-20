@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Alert, Button, Chip, CircularProgress, MenuItem, Tab, Tabs, TextField } from '@mui/material';
 import HealthcarePageShell from './shared-components/HealthcarePageShell';
+import HealthWalletCard from './HealthWalletCard';
+import PayInvoiceDialog from './PayInvoiceDialog';
 import {
-  useAddReading, useChildrenIActFor, useMyAdmissions, useMyEncounters, useMyHealthId, useMyImmunisation, useMyInvoices, useMyPlans, useMyPregnancy, useMyPrescriptions, useMyResults,
+  useAddReading, useChildrenIActFor, useHealthWallet, useHealthWalletReadiness, useMyAdmissions, useMyEncounters, useMyHealthId, useMyImmunisation, useMyInvoices, useMyPlans, useMyPregnancy, useMyPrescriptions, useMyResults,
 } from '../hooks/useHealthcareRepo';
-import { ANC_WORDS, CONDITION_WORDS, DOSE_WORDS, INVOICE_WORDS, dateOf, naira, nextSteps, readingFrom, readingReady, secondsLeft } from '../careRules';
+import { ANC_WORDS, CONDITION_WORDS, DOSE_WORDS, INVOICE_WORDS, WALLET_PAYMENT_WORDS, dateOf, naira, nextSteps, readingFrom, readingReady, secondsLeft } from '../careRules';
 
 const card = { background: 'white', borderRadius: 16, padding: 18, border: '1px solid #e5e7eb', marginBottom: 12 };
 const small = { color: '#6b7280', fontSize: '1.4rem' };
@@ -76,19 +78,34 @@ function Medicines({ fd }) {
 
 function Bills({ fd }) {
   const q = useMyInvoices(fd);
+  const wallet = useHealthWallet();
+  const walletOn = wallet.data?.enabled === true;
+  const ready = useHealthWalletReadiness(walletOn);
+  const [paying, setPaying] = useState(null);
   const items = q.data?.items ?? [];
   return (
     <>
+      <HealthWalletCard />
       <Load q={q} /><Off q={q} />
       {q.data && items.length === 0 && <Empty>No bills.</Empty>}
-      {items.map((i) => (
-        <div key={i.id} style={card}>
-          <b>{i.facilityName}</b> <span style={small}>{dateOf(i.createdAt)}</span> <Chip size="small" label={INVOICE_WORDS[i.status] ?? i.status} />
-          {i.lines.map((l) => <div key={l.id} style={small}>{l.description} × {l.qty} = {naira(l.lineKobo)}</div>)}
-          <div>Total {naira(i.totalKobo)} · Paid {naira(i.paidKobo)} · <b>Owed {naira(i.owedKobo)}</b></div>
-        </div>
-      ))}
-      {items.length > 0 && <div style={small}>You pay at the facility's counter. Payments are written down by the facility.</div>}
+      {items.map((i) => {
+        const canPay = walletOn && Number(i.walletPayableKobo ?? 0) > 0 && (i.status === 'OPEN' || i.status === 'PART_PAID');
+        return (
+          <div key={i.id} style={card} data-testid={`bill-${i.id}`}>
+            <b>{i.facilityName}</b> <span style={small}>{dateOf(i.createdAt)}</span> <Chip size="small" label={INVOICE_WORDS[i.status] ?? i.status} />
+            {i.lines.map((l) => <div key={l.id} style={small}>{l.description} × {l.qty} = {naira(l.lineKobo)}</div>)}
+            <div>Total {naira(i.totalKobo)} · Paid {naira(i.paidKobo)} · <b>Owed {naira(i.owedKobo)}</b></div>
+            {(i.walletPayments ?? []).map((w) => <div key={w.id} style={small}>{naira(w.amountKobo)} from your health wallet · {WALLET_PAYMENT_WORDS[w.status] ?? w.status}</div>)}
+            {canPay && (
+              <Button size="small" variant="contained" style={{ marginTop: 8 }} disabled={ready.data?.healthy === false} onClick={() => setPaying(i)}>
+                Pay from health wallet
+              </Button>
+            )}
+          </div>
+        );
+      })}
+      {items.length > 0 && <div style={small}>{walletOn ? 'You can pay from your health wallet or at the facility\'s counter. Counter payments are written down by the facility.' : 'You pay at the facility\'s counter. Payments are written down by the facility.'}</div>}
+      {paying && <PayInvoiceDialog invoice={paying} wallet={wallet.data} paymentsReady={ready.data?.healthy} forDependant={fd} onClose={() => setPaying(null)} />}
     </>
   );
 }

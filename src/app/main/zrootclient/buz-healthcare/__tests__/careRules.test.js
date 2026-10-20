@@ -1,4 +1,4 @@
-import { naira, nextSteps, readingFrom, readingReady, secondsLeft } from '../careRules';
+import { naira, nairaToKobo, nextSteps, readingFrom, readingReady, secondsLeft, walletPayState } from '../careRules';
 
 describe('careRules', () => {
   it('shows kobo as naira', () => {
@@ -29,5 +29,25 @@ describe('careRules', () => {
     const now = Date.now();
     expect(secondsLeft(new Date(now + 90_000).toISOString(), now)).toBe(90);
     expect(secondsLeft(new Date(now - 5_000).toISOString(), now)).toBe(0);
+  });
+
+  it('turns naira text into whole kobo, or nothing when it is not a positive amount', () => {
+    expect(nairaToKobo('1500')).toBe(150000);
+    expect(nairaToKobo('₦1,500.50')).toBe(150050);
+    expect(nairaToKobo('0.5')).toBe(50);
+    expect(nairaToKobo('12.345')).toBeNull();
+    expect(nairaToKobo('0')).toBeNull();
+    expect(nairaToKobo('-5')).toBeNull();
+    expect(nairaToKobo('abc')).toBeNull();
+    expect(nairaToKobo('')).toBeNull();
+  });
+
+  it('says why a wallet payment cannot start', () => {
+    expect(walletPayState({ paymentsReady: true, open: true, balanceKobo: '500000', wantKobo: 300000 })).toEqual({ ok: true, reason: null });
+    expect(walletPayState({ paymentsReady: false, open: true, balanceKobo: '500000', wantKobo: 1 }).reason).toMatch(/temporarily unavailable/);
+    expect(walletPayState({ paymentsReady: true, open: false, balanceKobo: '0', wantKobo: 1 }).reason).toMatch(/Open your health wallet/);
+    expect(walletPayState({ paymentsReady: true, open: true, balanceKobo: '1000', wantKobo: 5000 }).reason).toMatch(/has ₦10/);
+    expect(walletPayState({ paymentsReady: true, open: true, balanceKobo: '1000', wantKobo: 0 }).ok).toBe(false);
+    expect(walletPayState({ paymentsReady: undefined, open: true, balanceKobo: '5000', wantKobo: 100 }).ok).toBe(true);
   });
 });

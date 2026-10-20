@@ -222,3 +222,28 @@ export function useAddReading(forDependant) {
     onError: (e) => toast.error(say(e, 'Could not save the reading.')),
   });
 }
+
+
+// Health wallet (civic-72): the person's own earmarked wallet, and paying an invoice from it.
+export const useHealthWallet = () =>
+  useQuery(['healthcare-care', 'wallet'], () => AuthApi().get('/healthcare/health-wallet'), { retry: false, staleTime: 15 * 1000, select: (res) => res.data });
+
+/** Pre-flight: are healthcare-service and fintech-service up? Keeps every pay button disabled while they are not. */
+export const useHealthWalletReadiness = (enabled = true) =>
+  useQuery(['healthcare-wallet-readiness'], () => AuthApi().get('/checkout-readiness/health-wallet'), {
+    enabled, refetchInterval: 15000, refetchOnWindowFocus: true, retry: 1, staleTime: 5000, select: (res) => res?.data,
+  });
+
+function useWalletOp(call, ok) {
+  const qc = useQueryClient();
+  return useMutation(call, {
+    onSuccess: () => { toast.success(ok); qc.invalidateQueries(['healthcare-care', 'wallet']); qc.invalidateQueries(['healthcare-care', 'invoices']); },
+    onError: (e) => toast.error(say(e, 'That did not go through.')),
+  });
+}
+export const useOpenHealthWallet = () => useWalletOp(() => AuthApi().post('/healthcare/health-wallet/open'), 'Your health wallet is open.');
+export const useFundHealthWallet = () => useWalletOp((body) => AuthApi().post('/healthcare/health-wallet/fund', body), 'Money added to your health wallet.');
+export const useWithdrawHealthWallet = () => useWalletOp((body) => AuthApi().post('/healthcare/health-wallet/withdraw', body), 'Money moved back to your wallet.');
+/** `forDependant` pays a child's invoice from the guardian's own health wallet. */
+export const usePayInvoice = (forDependant) =>
+  useWalletOp(({ invoiceId, ...body }) => AuthApi().post(`/healthcare/my-invoices/${invoiceId}/pay`, body, { params: fdp(forDependant) }), 'Paid. The clinic is paid once the visit is closed.');

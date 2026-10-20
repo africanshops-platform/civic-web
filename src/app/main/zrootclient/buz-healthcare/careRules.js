@@ -3,6 +3,7 @@ export const naira = (kobo) => `₦${(Number(kobo ?? 0) / 100).toLocaleString('e
 export const dateOf = (v) => (v ? new Date(v).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 
 export const INVOICE_WORDS = { OPEN: 'Not paid yet', PART_PAID: 'Part paid', PAID: 'Paid', WAIVED: 'Waived by the facility' };
+export const WALLET_PAYMENT_WORDS = { PENDING: 'Being confirmed', HELD: 'Paid, held until the visit is closed', SETTLED: 'Paid to the clinic', REFUNDED: 'Returned to your health wallet' };
 export const DOSE_WORDS = { GIVEN: 'Given', DUE: 'Due now', OVERDUE: 'Overdue', UPCOMING: 'Coming up' };
 export const ANC_WORDS = { DONE: 'Done', DUE: 'Due', MISSED: 'Missed', UPCOMING: 'Coming up' };
 export const CONDITION_WORDS = { HYPERTENSION: 'High blood pressure', DIABETES: 'Diabetes', ASTHMA: 'Asthma', EPILEPSY: 'Epilepsy', OTHER: 'Long-term condition' };
@@ -36,3 +37,21 @@ export const readingReady = (r) => Object.values(r).some((v) => Number.isFinite(
 
 /** Seconds left on a health ID code (never negative). */
 export const secondsLeft = (expiresAt, now = Date.now()) => Math.max(0, Math.floor((new Date(expiresAt).getTime() - now) / 1000));
+
+/** Naira text ("1,500" or "₦1500.50") to whole kobo, or null when it is not a positive amount with at most two decimals. */
+export function nairaToKobo(text) {
+  const t = String(text ?? '').replace(/[₦,\s]/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  const [whole, frac = ''] = t.split('.');
+  const kobo = Number(whole) * 100 + Number(`${frac}00`.slice(0, 2));
+  return kobo > 0 ? kobo : null;
+}
+
+/** Whether a payment from the health wallet can be started, and if not, what to tell the person. */
+export function walletPayState({ paymentsReady, open, balanceKobo, wantKobo }) {
+  if (paymentsReady === false) return { ok: false, reason: 'Payments are temporarily unavailable. Please try again in a moment.' };
+  if (!open) return { ok: false, reason: 'Open your health wallet first.' };
+  if (!(wantKobo > 0)) return { ok: false, reason: 'Enter an amount.' };
+  if (Number(balanceKobo ?? 0) < wantKobo) return { ok: false, reason: `Your health wallet has ${naira(balanceKobo)}. Add money first.` };
+  return { ok: true, reason: null };
+}
