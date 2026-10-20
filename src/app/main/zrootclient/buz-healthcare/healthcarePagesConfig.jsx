@@ -8,6 +8,7 @@ const MyAppointmentsPage = lazy(() => import('./screens/MyAppointmentsPage'));
 const HealthAlertsPage = lazy(() => import('./screens/HealthAlertsPage'));
 const MyRecordPage = lazy(() => import('./screens/MyRecordPage'));
 const MyReferralsPage = lazy(() => import('./screens/MyReferralsPage'));
+const MyCarePage = lazy(() => import('./screens/MyCarePage'));
 
 const LAYOUT = {
   layout: {
@@ -31,6 +32,7 @@ const healthcarePagesConfig = {
     { path: 'healthcare/alerts', element: <HealthAlertsPage /> },
     { path: 'healthcare/my-record', element: <MyRecordPage /> },
     { path: 'healthcare/my-referrals', element: <MyReferralsPage /> },
+    { path: 'healthcare/my-care', element: <MyCarePage /> },
   ]),
 };
 

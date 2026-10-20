@@ -195,3 +195,30 @@ export function useChildrenIActFor() {
     select: (res) => (res.data?.items ?? []).filter((c) => !c.agedOut),
   });
 }
+
+// My care (civic-70/71): consultations, results, medicines, bills, stays, immunisation, pregnancy, long-term plans, health ID.
+// Every call can act for a child (`forDependant`); the server checks guardianship each time.
+const careQuery = (key, path) => (forDependant) =>
+  useQuery(['healthcare-care', key, forDependant ?? 'me'], () => AuthApi().get(`/healthcare/${path}`, { params: fdp(forDependant) }), { staleTime: 20 * 1000, retry: false });
+export const useMyEncounters = careQuery('encounters', 'my-encounters');
+export const useMyResults = careQuery('results', 'my-results');
+export const useMyPrescriptions = careQuery('rx', 'my-prescriptions');
+export const useMyInvoices = careQuery('invoices', 'my-invoices');
+export const useMyAdmissions = careQuery('admissions', 'my-admissions');
+export const useMyImmunisation = careQuery('imm', 'my-immunisation');
+export const useMyPregnancy = careQuery('pregnancy', 'my-pregnancy');
+export const useMyPlans = careQuery('plans', 'my-plans');
+
+export function useMyHealthId(forDependant, enabled) {
+  return useQuery(['healthcare-care', 'hid', forDependant ?? 'me'], () => AuthApi().get('/healthcare/my-health-id', { params: fdp(forDependant) }), {
+    enabled, retry: false, staleTime: 0, cacheTime: 0, refetchInterval: 9 * 60 * 1000,
+  });
+}
+
+export function useAddReading(forDependant) {
+  const qc = useQueryClient();
+  return useMutation(({ planId, ...body }) => AuthApi().post(`/healthcare/my-plans/${planId}/readings`, body, { params: fdp(forDependant) }), {
+    onSuccess: () => { toast.success('Reading saved.'); qc.invalidateQueries(['healthcare-care', 'plans']); },
+    onError: (e) => toast.error(say(e, 'Could not save the reading.')),
+  });
+}
