@@ -1,4 +1,4 @@
-import { naira, nairaToKobo, nextSteps, readingFrom, readingReady, secondsLeft, walletPayState } from '../careRules';
+import { naira, nairaToKobo, nextSteps, readingFrom, readingReady, secondsLeft, walletErrorMessage, walletPayState } from '../careRules';
 
 describe('careRules', () => {
   it('shows kobo as naira', () => {
@@ -49,5 +49,16 @@ describe('careRules', () => {
     expect(walletPayState({ paymentsReady: true, open: true, balanceKobo: '1000', wantKobo: 5000 }).reason).toMatch(/has ₦10/);
     expect(walletPayState({ paymentsReady: true, open: true, balanceKobo: '1000', wantKobo: 0 }).ok).toBe(false);
     expect(walletPayState({ paymentsReady: undefined, open: true, balanceKobo: '5000', wantKobo: 100 }).ok).toBe(true);
+  });
+
+  it('explains a wallet failure in plain words: a timeout is not called a failure, a refusal shows the server reason', () => {
+    expect(walletErrorMessage({ message: 'Network Error' })).toMatch(/may still have gone through.*will not charge you twice/);
+    expect(walletErrorMessage({ response: { status: 503, data: { message: 'x' } } })).toMatch(/temporarily unavailable/);
+    expect(walletErrorMessage({ response: { status: 400, data: { message: 'Invalid transaction PIN' } } })).toBe('Invalid transaction PIN');
+    expect(walletErrorMessage({ response: { status: 409, data: { message: 'A payment for this invoice is still being confirmed.' } } })).toMatch(/still being confirmed/);
+    expect(walletErrorMessage({ response: { status: 500, data: { message: 'Internal server error' } } })).toMatch(/our side/);
+    expect(walletErrorMessage({ response: { status: 401 } })).toMatch(/sign in again/);
+    expect(walletErrorMessage({ response: { status: 400, data: {} } })).toBe('That did not go through.');
+    expect(walletErrorMessage(undefined)).toMatch(/may still have gone through/);
   });
 });

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { Api } from 'app/configs/data/client/RepositoryClient';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
+import { walletErrorMessage } from '../careRules';
 
 const say = (e, fallback) => e?.response?.data?.message || fallback;
 
@@ -238,7 +239,11 @@ function useWalletOp(call, ok) {
   const qc = useQueryClient();
   return useMutation(call, {
     onSuccess: () => { toast.success(ok); qc.invalidateQueries(['healthcare-care', 'wallet']); qc.invalidateQueries(['healthcare-care', 'invoices']); },
-    onError: (e) => toast.error(say(e, 'That did not go through.')),
+    onError: (e) => {
+      toast.error(walletErrorMessage(e));
+      // No answer: the payment may have gone through, so show the real balance and bills rather than leave the screen guessing.
+      if (!e?.response) { qc.invalidateQueries(['healthcare-care', 'wallet']); qc.invalidateQueries(['healthcare-care', 'invoices']); }
+    },
   });
 }
 export const useOpenHealthWallet = () => useWalletOp(() => AuthApi().post('/healthcare/health-wallet/open'), 'Your health wallet is open.');

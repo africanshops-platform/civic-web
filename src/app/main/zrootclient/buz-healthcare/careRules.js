@@ -55,3 +55,17 @@ export function walletPayState({ paymentsReady, open, balanceKobo, wantKobo }) {
   if (Number(balanceKobo ?? 0) < wantKobo) return { ok: false, reason: `Your health wallet has ${naira(balanceKobo)}. Add money first.` };
   return { ok: true, reason: null };
 }
+
+/**
+ * What to tell the person when a wallet call fails. No answer at all (a timeout) is not called a failure: the payment crosses four
+ * services and may have gone through, so say that and send them to their bills instead of showing "Network Error".
+ */
+export function walletErrorMessage(err) {
+  const status = err?.response?.status ?? 0;
+  const said = String(err?.response?.data?.message ?? '').trim();
+  if (status === 0) return 'No answer came back in time. Your payment may still have gone through, so check your bills before trying again. Trying again is safe and will not charge you twice.';
+  if (status === 503) return 'Payments are temporarily unavailable. Please try again in a moment.';
+  if (status === 401) return 'Your session has ended. Please sign in again.';
+  if (status >= 500) return 'Something went wrong on our side. Check your bills before trying again.';
+  return said || 'That did not go through.';
+}
