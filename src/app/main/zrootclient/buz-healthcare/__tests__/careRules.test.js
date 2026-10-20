@@ -60,5 +60,9 @@ describe('careRules', () => {
     expect(walletErrorMessage({ response: { status: 401 } })).toMatch(/sign in again/);
     expect(walletErrorMessage({ response: { status: 400, data: {} } })).toBe('That did not go through.');
     expect(walletErrorMessage(undefined)).toMatch(/may still have gone through/);
+    // adding or moving money back cannot be retried blindly, so it never says a retry is safe
+    expect(walletErrorMessage({}, 'move')).toMatch(/check your balance before trying again/);
+    expect(walletErrorMessage({}, 'move')).not.toMatch(/safe|twice/);
+    expect(walletErrorMessage({ response: { status: 500 } }, 'move')).toMatch(/balance/);
   });
 });

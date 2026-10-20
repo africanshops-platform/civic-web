@@ -235,12 +235,12 @@ export const useHealthWalletReadiness = (enabled = true) =>
     enabled, refetchInterval: 15000, refetchOnWindowFocus: true, retry: 1, staleTime: 5000, select: (res) => res?.data,
   });
 
-function useWalletOp(call, ok) {
+function useWalletOp(call, ok, kind = 'move') {
   const qc = useQueryClient();
   return useMutation(call, {
     onSuccess: () => { toast.success(ok); qc.invalidateQueries(['healthcare-care', 'wallet']); qc.invalidateQueries(['healthcare-care', 'invoices']); },
     onError: (e) => {
-      toast.error(walletErrorMessage(e));
+      toast.error(walletErrorMessage(e, kind));
       // No answer: the payment may have gone through, so show the real balance and bills rather than leave the screen guessing.
       if (!e?.response) { qc.invalidateQueries(['healthcare-care', 'wallet']); qc.invalidateQueries(['healthcare-care', 'invoices']); }
     },
@@ -251,4 +251,4 @@ export const useFundHealthWallet = () => useWalletOp((body) => AuthApi().post('/
 export const useWithdrawHealthWallet = () => useWalletOp((body) => AuthApi().post('/healthcare/health-wallet/withdraw', body), 'Money moved back to your wallet.');
 /** `forDependant` pays a child's invoice from the guardian's own health wallet. */
 export const usePayInvoice = (forDependant) =>
-  useWalletOp(({ invoiceId, ...body }) => AuthApi().post(`/healthcare/my-invoices/${invoiceId}/pay`, body, { params: fdp(forDependant) }), 'Paid. The clinic is paid once the visit is closed.');
+  useWalletOp(({ invoiceId, ...body }) => AuthApi().post(`/healthcare/my-invoices/${invoiceId}/pay`, body, { params: fdp(forDependant) }), 'Paid. The clinic is paid once the visit is closed.', 'pay');

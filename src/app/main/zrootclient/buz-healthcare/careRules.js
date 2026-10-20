@@ -57,15 +57,20 @@ export function walletPayState({ paymentsReady, open, balanceKobo, wantKobo }) {
 }
 
 /**
- * What to tell the person when a wallet call fails. No answer at all (a timeout) is not called a failure: the payment crosses four
- * services and may have gone through, so say that and send them to their bills instead of showing "Network Error".
+ * What to tell the person when a wallet call fails. No answer at all (a timeout) is not called a failure: the call crosses several
+ * services and may have gone through. Only a PAYMENT is safe to retry (it keeps its request key); adding or moving money back is not,
+ * so for those the person is told to check the balance first.
  */
-export function walletErrorMessage(err) {
+export function walletErrorMessage(err, kind = 'pay') {
   const status = err?.response?.status ?? 0;
   const said = String(err?.response?.data?.message ?? '').trim();
-  if (status === 0) return 'No answer came back in time. Your payment may still have gone through, so check your bills before trying again. Trying again is safe and will not charge you twice.';
+  if (status === 0) {
+    return kind === 'pay'
+      ? 'No answer came back in time. Your payment may still have gone through, so check your bills before trying again. Trying again is safe and will not charge you twice.'
+      : 'No answer came back in time. The money may already have moved, so check your balance before trying again.';
+  }
   if (status === 503) return 'Payments are temporarily unavailable. Please try again in a moment.';
   if (status === 401) return 'Your session has ended. Please sign in again.';
-  if (status >= 500) return 'Something went wrong on our side. Check your bills before trying again.';
+  if (status >= 500) return kind === 'pay' ? 'Something went wrong on our side. Check your bills before trying again.' : 'Something went wrong on our side. Check your balance before trying again.';
   return said || 'That did not go through.';
 }
