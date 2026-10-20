@@ -4,7 +4,10 @@ import { Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { FormDots, Pill, TeamName, TeamIdentity, computeForm } from './shared/flHelpers';
-import { useTournamentDetail, useEnrollInTournament, useMyTournamentEnrollments } from '../hooks/useFloodlightsRepo';
+import { useTournamentDetail, useEnrollInTournament, useMyTournamentEnrollments, usePayAndEnrollInTournament, useTournamentPaymentsReadiness } from '../hooks/useFloodlightsRepo';
+import { useMyCivicWallet, useSpendingBalance } from '../../buz-civictax/hooks/useCivicTaxRepo';
+import PayEntryDialog from './PayEntryDialog';
+import { entryTerms, isPaid, naira, payState } from '../entryTerms';
 import { SPORT_ICONS } from '../mock';
 import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
 import { canEnter, stageText } from '../stage';
@@ -18,6 +21,12 @@ import { canEnter, stageText } from '../stage';
 function EnrollPanel({ tournament }) {
   const [justEnrolled, setJustEnrolled] = useState(false);
   const enrollMutation = useEnrollInTournament();
+  const payMutation = usePayAndEnrollInTournament();
+  const [payOpen, setPayOpen] = useState(false);
+  const paid = isPaid(tournament);
+  const { data: readiness } = useTournamentPaymentsReadiness(paid);
+  const { data: wallet } = useMyCivicWallet();
+  const { data: balanceNaira } = useSpendingBalance();
   const { guard, gateDialog } = useInteractGuard();
   // Multi-account retest finding (2026-08-30): the button must reflect a
   // pre-existing enrollment from a prior visit/session, not just this
@@ -41,9 +50,13 @@ function EnrollPanel({ tournament }) {
 
   const full = (tournament.currentTeams ?? 0) >= (tournament.maxTeams ?? 0);
   const closed = !canEnter(tournament);
-  let buttonLabel = 'Enroll';
+  const terms = entryTerms(tournament);
+  const pay = paid
+    ? payState({ paymentsReady: readiness ? readiness.healthy : undefined, hasAccount: Boolean(wallet?.accountNumber), balanceNaira, feeKobo: tournament.entryFeeKobo })
+    : { ok: true, reason: null };
+  let buttonLabel = paid ? `Pay ${naira(tournament.entryFeeKobo)} and enter` : 'Enroll';
   if (enrolled) buttonLabel = 'Enrolled';
-  else if (enrollMutation.isLoading) buttonLabel = 'Enrolling…';
+  else if (enrollMutation.isLoading || payMutation.isLoading) buttonLabel = paid ? 'Paying…' : 'Enrolling…';
 
   return (
     <div className="fl2-card fl2-row fl2-between" style={{ alignItems: 'center' }}>
@@ -54,15 +67,32 @@ function EnrollPanel({ tournament }) {
           {closed && ` — ${stageText(tournament).toLowerCase() || 'enrollment closed'}`}
           {!closed && full && ' — full'}
         </span>
+        {terms.map((x) => (
+          <span key={x.key} className="fl2-small" data-testid={`term-${x.key}`}>{x.text}</span>
+        ))}
+        {paid && !enrolled && !closed && !full && !pay.ok && <span className="fl2-small" style={{ color: '#b45309' }} data-testid="pay-blocked">{pay.reason}</span>}
       </div>
       <Button
         variant="contained"
-        disabled={enrolled || closed || full || enrollMutation.isLoading}
-        onClick={guard(() => enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setJustEnrolled(true) }))}
+        disabled={enrolled || closed || full || enrollMutation.isLoading || payMutation.isLoading || (paid && !pay.ok)}
+        onClick={guard(() => (paid ? setPayOpen(true) : enrollMutation.mutate({ tournamentId: tournament.id }, { onSuccess: () => setJustEnrolled(true) })))}
         sx={{ textTransform: 'none', fontWeight: 700 }}
       >
         {buttonLabel}
       </Button>
+      <PayEntryDialog
+        open={payOpen}
+        tournament={tournament}
+        busy={payMutation.isLoading}
+        balanceNaira={balanceNaira}
+        onClose={() => setPayOpen(false)}
+        onConfirm={(pin) =>
+          payMutation.mutate(
+            { tournamentId: tournament.id, senderAccountNumber: wallet?.accountNumber, transactionPin: pin },
+            { onSuccess: () => { setJustEnrolled(true); setPayOpen(false); } },
+          )
+        }
+      />
       {gateDialog}
     </div>
   );

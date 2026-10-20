@@ -8,6 +8,7 @@ export {
   usePrograms, useProgramDetail, useTalents,
   useTournaments, useTournamentDetail, useRequestMentorship,
   useEnrollInTournament, useMyTournamentEnrollments,
+  usePayAndEnrollInTournament, useTournamentPaymentsReadiness,
   useMyPrograms, useEnrollInProgram, useRegisterForTournament,
 } from './useYouthSportsRepo';
 
