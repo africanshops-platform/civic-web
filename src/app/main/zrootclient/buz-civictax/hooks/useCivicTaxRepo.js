@@ -26,6 +26,10 @@ const api = {
   getCheckoutReadiness:()       => AuthApi().get('/checkout-readiness/civic-subscriptions'),
   getRateNotice:       ()       => AuthApi().get('/civic/subscriptions/rate-notice'),
   getMyFeeLines:       (month)  => AuthApi().get('/civic/subscriptions/my-fee-lines', { params: { month } }),
+  getGoalAdoptions:    (params) => AuthApi().get('/civic/subscriptions/goal-adoptions', { params }),
+  getGoalProjects:     (id)     => AuthApi().get(`/civic/subscriptions/goal-adoptions/${id}/projects`),
+  giveToGoal:          (data)   => AuthApi().post('/civic/subscriptions/goal-contributions', data),
+  getMyGoalGifts:      (params) => AuthApi().get('/civic/subscriptions/goal-contributions/mine', { params }),
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -470,4 +474,45 @@ export function useProjectFunding(campaignId) {
     staleTime: 60 * 1000,
     retry: false,
   });
+}
+
+
+// ─── Development goals (civic-29): browse what an LGA is funding, and give to it ───
+
+/** Active goals with their funding picture (raised / passed on / held), optionally for one place. */
+export function useGoalAdoptions({ state, lga } = {}) {
+  return useQuery(['civictax-goals', state, lga], () => api.getGoalAdoptions(buildParams({ state, lga })), {
+    staleTime: 30 * 1000,
+    select: (res) => res?.data ?? [],
+  });
+}
+
+/** The real projects a goal funds, with milestones; fetched only when a card is opened. */
+export function useGoalProjects(adoptionId, enabled = true) {
+  return useQuery(['civictax-goal-projects', adoptionId], () => api.getGoalProjects(adoptionId), {
+    enabled: Boolean(adoptionId) && enabled,
+    staleTime: 30 * 1000,
+    select: (res) => res?.data ?? [],
+  });
+}
+
+export function useMyGoalGifts(page = 1) {
+  return useQuery(['civictax-my-goal-gifts', page], () => api.getMyGoalGifts({ ...paginate(page, 20) }), { select: (res) => res?.data });
+}
+
+/** A voluntary gift to a goal (adoptionId) or straight to an LGA (state + lga). Never refundable. */
+export function useGiveToGoal() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ adoptionId, state, lga, amount, note }) =>
+      api.giveToGoal({ adoptionId, state, lga, amountKobo: toKobo(amount), note: note || undefined, idempotencyKey: crypto.randomUUID() }),
+    {
+      onSuccess: () => {
+        toast.success('Thank you. Your gift has been received.');
+        queryClient.invalidateQueries(['civictax-goals']);
+        queryClient.invalidateQueries(['civictax-my-goal-gifts']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Your gift could not be made. Nothing was charged.'),
+    }
+  );
 }
