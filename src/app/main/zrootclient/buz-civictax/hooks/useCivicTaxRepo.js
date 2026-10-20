@@ -25,6 +25,7 @@ const api = {
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
   getCheckoutReadiness:()       => AuthApi().get('/checkout-readiness/civic-subscriptions'),
   getRateNotice:       ()       => AuthApi().get('/civic/subscriptions/rate-notice'),
+  getMyFeeLines:       (month)  => AuthApi().get('/civic/subscriptions/my-fee-lines', { params: { month } }),
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -197,6 +198,15 @@ export function useCivicSubscriptionsReadiness(enabled = true) {
 export function useRateNotice() {
   return useQuery(['civictax-rate-notice'], () => api.getRateNotice(), {
     staleTime: 5 * 60 * 1000,
+    retry: 1,
+    select: (res) => res?.data,
+  });
+}
+
+/** The household fee for a month (civic-57 CP-6): final fee, lines and the day-by-day build-up; { active: false } when not in use. */
+export function useMyFeeLines(month) {
+  return useQuery(['civictax-my-fee-lines', month], () => api.getMyFeeLines(month), {
+    staleTime: 60 * 1000,
     retry: 1,
     select: (res) => res?.data,
   });

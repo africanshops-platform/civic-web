@@ -14,10 +14,11 @@ import CampaignsBrowseSidebarRight from './shared-components/CampaignsBrowseSide
 import EditCivicSplitDialog from '../components/EditCivicSplitDialog';
 import CivicWalletCard from '../components/CivicWalletCard';
 import RateChangeBanner from '../components/RateChangeBanner';
+import FeeLinesCard from '../components/FeeLinesCard';
 import DeactivateCivicDialog from '../components/DeactivateCivicDialog';
 import {
   useMyObligations, usePayObligation, usePayObligations, useObligationHistory,
-  useMySplitSummary, useUpdateCivicSplit, useCivicSubscriptionsReadiness, useRateNotice,
+  useMySplitSummary, useUpdateCivicSplit, useCivicSubscriptionsReadiness, useRateNotice, useMyFeeLines,
 } from '../hooks/useCivicTaxRepo';
 import { CivicLoadingSkeleton, CivicPaginationBar } from '../../civic-shared';
 
@@ -303,6 +304,7 @@ function ActiveCivicTaxObligationsPage() {
   const readiness = useCivicSubscriptionsReadiness();
   const paymentSystemDown = readiness.data?.healthy === false;
   const { data: rateNotice } = useRateNotice();
+  const { data: feeLines } = useMyFeeLines(new Date().toISOString().slice(0, 7));
   const { data: splitData, isLoading: splitLoading } = useMySplitSummary();
   const { mutate: updateSplit, isLoading: isSavingSplit } = useUpdateCivicSplit();
 
@@ -386,6 +388,7 @@ function ActiveCivicTaxObligationsPage() {
       </AnimatePresence>
 
       <RateChangeBanner notice={rateNotice} />
+      <FeeLinesCard data={feeLines} />
 
       <CivicWalletCard />
       <DeactivateCivicDialog open={deactivating} onClose={() => setDeactivating(false)} onDone={() => { window.location.href = '/'; }} />
@@ -610,7 +613,7 @@ function ActiveCivicTaxObligationsPage() {
   ), [
     editingSplit, deactivating, summary, splitLoading, splitConfigured, isSavingSplit, updateSplit,
     overdueCount, totalOwed, obligations, history, oblLoading, histLoading, payingId, payObligation, oblPagination, histPagination,
-    rateNotice, paymentSystemDown, compliance, sections, selected, toggleSelected, payableIds, selectedTotal, restTotal, isPayingMany, payThese,
+    rateNotice, feeLines, paymentSystemDown, compliance, sections, selected, toggleSelected, payableIds, selectedTotal, restTotal, isPayingMany, payThese,
   ]);
 
   const leftSidebar  = useMemo(() => <CampaignsBrowseSidebarLeft />, []);
