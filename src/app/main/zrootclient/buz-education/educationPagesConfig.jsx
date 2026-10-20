@@ -10,6 +10,8 @@ const MyApplicationsPage = lazy(() => import('./screens/MyApplicationsPage'));
 const WardApplicationsPage = lazy(() => import('./screens/WardApplicationsPage'));
 const AptitudeTestPage = lazy(() => import('./screens/AptitudeTestPage'));
 const MySchoolPage = lazy(() => import('./MySchoolPage'));
+const TertiaryProgrammesPage = lazy(() => import('./screens/TertiaryProgrammesPage'));
+const TertiaryApplicationsPage = lazy(() => import('./screens/TertiaryApplicationsPage'));
 
 const LAYOUT = {
   layout: {
@@ -30,6 +32,7 @@ export const educationBrowseConfig = {
   routes: [
     { path: 'education/schools', element: <SchoolsPage /> },
     { path: 'education/school/:schoolId', element: <SchoolDetailPage /> },
+    { path: 'education/school/:schoolId/programmes', element: <TertiaryProgrammesPage /> },
   ],
 };
 
@@ -48,6 +51,7 @@ const educationPagesConfig = {
     { path: 'education/child/:studentId', element: <ChildPage /> },
     { path: 'education/announcements', element: <AnnouncementsPage /> },
     { path: 'education/applications', element: <MyApplicationsPage /> },
+    { path: 'education/tertiary-applications', element: <TertiaryApplicationsPage /> },
     { path: 'education/admissions', element: <WardApplicationsPage /> },
     { path: 'education/admissions/:applicationId/test', element: <AptitudeTestPage /> },
   ]),

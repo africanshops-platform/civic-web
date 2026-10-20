@@ -135,3 +135,35 @@ export const useResetChildLogin = (studentId) => useLoginAction(studentId, () =>
 export const usePauseChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().put(`/education/parent/child/${studentId}/login/suspend`), 'The login is paused. Your child is signed out.');
 export const useResumeChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().put(`/education/parent/child/${studentId}/login/resume`), 'The login is back on.');
 export const useDeleteChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().delete(`/education/parent/child/${studentId}/login`), 'The login was deleted.');
+
+
+// Tertiary admissions (civic-65): what a university offers, my applications with their documents checklist, and uploading documents.
+export function useTertiaryProgrammes(schoolId) {
+  return useQuery(['edu-tertiary-programmes', schoolId], () => Api().get(`/education/tertiary/schools/${schoolId}/programmes`), { enabled: Boolean(schoolId), staleTime: 60 * 1000, retry: false });
+}
+
+export function useMyTertiaryApplications() {
+  return useQuery(['edu-tertiary-mine'], () => AuthApi().get('/education/tertiary/applications/mine'), { staleTime: 15 * 1000 });
+}
+
+export function useApplyTertiary() {
+  const qc = useQueryClient();
+  return useMutation((body) => AuthApi().post('/education/tertiary/applications', body), {
+    onSuccess: () => {
+      toast.success('Application sent. Now upload your documents.');
+      qc.invalidateQueries(['edu-tertiary-mine']);
+    },
+    onError: (e) => toast.error(say(e, 'Your application could not be sent')),
+  });
+}
+
+export function useUploadTertiaryDocument() {
+  const qc = useQueryClient();
+  return useMutation(({ applicationId, kind, base64 }) => AuthApi().post(`/education/tertiary/applications/${applicationId}/documents`, { kind, base64 }), {
+    onSuccess: () => {
+      toast.success('Document uploaded');
+      qc.invalidateQueries(['edu-tertiary-mine']);
+    },
+    onError: (e) => toast.error(say(e, 'That document could not be uploaded')),
+  });
+}

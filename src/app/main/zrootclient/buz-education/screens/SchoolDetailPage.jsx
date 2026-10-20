@@ -52,6 +52,13 @@ export default function SchoolDetailPage() {
           )}
         </div>
 
+        {school.level === 'TERTIARY' && (
+          <div style={{ ...card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, color: '#111827', fontSize: '1.9rem' }}>Faculties and programmes</span>
+            <Button component={Link} to={`/education/school/${school.id}/programmes`} sx={{ background: ACCENT, color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.7rem', px: 3 }}>See programmes and apply</Button>
+          </div>
+        )}
+
         <div style={card}>
           <h3 style={{ margin: '0 0 14px', fontWeight: 800, color: '#111827', fontSize: '2rem' }}>Classes</h3>
           {(school.classes ?? []).length === 0 ? (
