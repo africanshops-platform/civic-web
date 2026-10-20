@@ -90,7 +90,7 @@ function Classes() {
       {items.map((c) => (
         <div key={c.id} data-testid={`class-${c.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '10px 0', borderTop: '1px solid #f1f5f9' }}>
           <span>{c.title}{c.course ? ` · ${c.course.code}` : ''}<br /><small>{classWhen(c.startsAt)} · {c.durationMin} minutes</small></span>
-          <Button size="small" variant={c.canJoin ? 'contained' : 'outlined'} disabled={!c.canJoin || join.isLoading} onClick={() => go(c.id)}>{c.canJoin ? 'Join' : 'Not open yet'}</Button>
+          <Button size="small" variant={c.canJoin ? 'contained' : 'outlined'} disabled={!c.canJoin || join.isLoading} onClick={() => go(c.id)}>{c.canJoin ? 'Join' : c.ended ? 'Ended' : 'Not open yet'}</Button>
         </div>
       ))}
     </div>
