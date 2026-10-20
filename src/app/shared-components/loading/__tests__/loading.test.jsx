@@ -23,9 +23,16 @@ describe('loading kit', () => {
 		expect(screen.queryByText('Loading x')).toBeNull();
 	});
 
-	it('PageSkeleton shows the plain words under its heading', () => {
-		render(<PageSkeleton title="Loading your bookings" />);
-		expect(screen.getByText('Loading your bookings')).toBeInTheDocument();
+	it('PageSkeleton shows the branded spiral with what is loading by default', () => {
+		render(<PageSkeleton title="Loading your dashboard" />);
+		expect(screen.getByText('Loading your dashboard')).toBeInTheDocument();
+		expect(screen.queryByTestId('page-box')).toBeNull();
+	});
+
+	it('PageSkeleton shows the small boxed badge instead for profile and settings pages', () => {
+		render(<PageSkeleton title="Loading your profile" subtitle="Just a moment" centerpiece="box" body="form" />);
+		expect(screen.getByTestId('page-box')).toHaveTextContent('Loading your profile');
+		expect(screen.getByText('Just a moment')).toBeInTheDocument();
 	});
 
 	it('PendingButton shows the pending word and cannot be pressed twice', () => {
