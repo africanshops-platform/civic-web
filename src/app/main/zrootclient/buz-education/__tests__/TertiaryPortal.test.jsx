@@ -3,12 +3,14 @@ import { MemoryRouter } from 'react-router-dom';
 import { creditStanding } from '../tertiary';
 import TertiaryPortalPage from '../screens/TertiaryPortalPage';
 
-const mockH = { cat: jest.fn(), tr: jest.fn(), reg: jest.fn(), drop: jest.fn() };
+const mockH = { cat: jest.fn(), tr: jest.fn(), reg: jest.fn(), drop: jest.fn(), classes: jest.fn(), join: jest.fn() };
 jest.mock('../hooks/useEducationRepo', () => ({
   useTertiaryCatalogue: () => mockH.cat(),
   useTertiaryTranscript: () => mockH.tr(),
   useRegisterCourse: () => ({ mutate: mockH.reg, isLoading: false }),
   useDropCourse: () => ({ mutate: mockH.drop, isLoading: false }),
+  useMyClasses: () => mockH.classes(),
+  useJoinClass: () => ({ mutate: mockH.join, isLoading: false }),
 }));
 jest.mock('../screens/EducationPageShell', () => ({ __esModule: true, default: ({ children }) => <div>{children}</div> }));
 
@@ -78,5 +80,28 @@ describe('TertiaryPortalPage', () => {
     page();
     fireEvent.click(screen.getByRole('button', { name: 'Results' }));
     expect(screen.getByTestId('no-results')).toBeInTheDocument();
+  });
+});
+
+describe('Live classes', () => {
+  const soon = new Date(Date.now() + 5 * 60_000).toISOString();
+  it('lets me join a class that is open, and keeps a later one off', () => {
+    mockH.classes.mockReturnValue({ data: { data: { items: [
+      { id: 's1', title: 'Week 1', course: { code: 'HIS101' }, startsAt: soon, durationMin: 60, canJoin: true },
+      { id: 's2', title: 'Week 2', course: { code: 'HIS101' }, startsAt: soon, durationMin: 60, canJoin: false },
+    ] } }, isLoading: false });
+    page();
+    fireEvent.click(screen.getByRole('button', { name: 'Live classes' }));
+    expect(screen.getByRole('button', { name: 'Not open yet' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Low data: audio only'));
+    fireEvent.click(screen.getByRole('button', { name: 'Join' }));
+    expect(mockH.join).toHaveBeenCalledWith({ id: 's1', lowBandwidth: true }, expect.any(Object));
+  });
+
+  it('says so when there are no classes', () => {
+    mockH.classes.mockReturnValue({ data: { data: { items: [] } }, isLoading: false });
+    page();
+    fireEvent.click(screen.getByRole('button', { name: 'Live classes' }));
+    expect(screen.getByTestId('no-classes')).toBeInTheDocument();
   });
 });

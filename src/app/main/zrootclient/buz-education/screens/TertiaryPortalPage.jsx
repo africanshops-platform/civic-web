@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Button, CircularProgress, MenuItem, TextField } from '@mui/material';
 import EducationPageShell from './EducationPageShell';
-import { useDropCourse, useRegisterCourse, useTertiaryCatalogue, useTertiaryTranscript } from '../hooks/useEducationRepo';
-import { creditStanding, GRADE_COLOR } from '../tertiary';
+import { useDropCourse, useJoinClass, useMyClasses, useRegisterCourse, useTertiaryCatalogue, useTertiaryTranscript } from '../hooks/useEducationRepo';
+import { classWhen, creditStanding, GRADE_COLOR } from '../tertiary';
 
 function Courses() {
   const [termId, setTermId] = useState('');
@@ -68,6 +68,35 @@ function Transcript() {
   );
 }
 
+function Classes() {
+  const { data, isLoading } = useMyClasses();
+  const join = useJoinClass();
+  const [low, setLow] = useState(false);
+  const items = data?.data?.items ?? [];
+
+  const go = (id) =>
+    join.mutate({ id, lowBandwidth: low }, { onSuccess: (res) => {
+        // A browser may block a new tab opened after a request; then the class opens in this tab.
+        if (!window.open(res.data.url, '_blank', 'noopener,noreferrer')) window.location.assign(res.data.url);
+      },
+    });
+
+  if (isLoading) return <CircularProgress />;
+  if (!items.length) return <p data-testid="no-classes">No live classes for your registered courses yet.</p>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <label><input type="checkbox" checked={low} onChange={(e) => setLow(e.target.checked)} /> Low data: audio only</label>
+      {items.map((c) => (
+        <div key={c.id} data-testid={`class-${c.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '10px 0', borderTop: '1px solid #f1f5f9' }}>
+          <span>{c.title}{c.course ? ` · ${c.course.code}` : ''}<br /><small>{classWhen(c.startsAt)} · {c.durationMin} minutes</small></span>
+          <Button size="small" variant={c.canJoin ? 'contained' : 'outlined'} disabled={!c.canJoin || join.isLoading} onClick={() => go(c.id)}>{c.canJoin ? 'Join' : 'Not open yet'}</Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** A university student's portal: register for the semester's courses and read published results (civic-65, E5-b). */
 export default function TertiaryPortalPage() {
   const [tab, setTab] = useState('courses');
@@ -78,9 +107,12 @@ export default function TertiaryPortalPage() {
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <Button variant={tab === 'courses' ? 'contained' : 'outlined'} onClick={() => setTab('courses')}>Courses</Button>
           <Button variant={tab === 'results' ? 'contained' : 'outlined'} onClick={() => setTab('results')}>Results</Button>
+          <Button variant={tab === 'classes' ? 'contained' : 'outlined'} onClick={() => setTab('classes')}>Live classes</Button>
           <Button component={Link} to="/education/tertiary-applications">My applications</Button>
         </div>
-        {tab === 'courses' ? <Courses /> : <Transcript />}
+        {tab === 'courses' && <Courses />}
+        {tab === 'results' && <Transcript />}
+        {tab === 'classes' && <Classes />}
       </div>
     </EducationPageShell>
   );

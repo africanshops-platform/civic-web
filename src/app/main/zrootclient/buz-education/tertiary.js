@@ -34,3 +34,11 @@ export function creditStanding(credits, limits) {
 }
 
 export const GRADE_COLOR = { A: '#15803d', B: '#16a34a', C: '#ca8a04', D: '#ea580c', E: '#dc2626', F: '#7f1d1d' };
+
+/** "Today 14:00", "Tue 3 Nov, 09:30": when a class starts, in plain words. */
+export function classWhen(iso, now = new Date()) {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+  const sameDay = d.toDateString() === now.toDateString();
+  return sameDay ? `Today ${time}` : `${d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' })}, ${time}`;
+}

@@ -189,3 +189,14 @@ function useCourseAction(path, done) {
 }
 export const useRegisterCourse = () => useCourseAction('register', 'Registered');
 export const useDropCourse = () => useCourseAction('drop', 'Course dropped');
+
+// Online classes (civic-66, E6-a)
+export function useMyClasses() {
+  return useQuery(['edu-tertiary-classes'], () => AuthApi().get('/education/tertiary/student/classes'), { staleTime: 30 * 1000, retry: false, refetchInterval: 60 * 1000 });
+}
+
+export function useJoinClass() {
+  return useMutation(({ id, lowBandwidth }) => AuthApi().post(`/education/tertiary/student/classes/${id}/join`, { lowBandwidth }), {
+    onError: (e) => toast.error(say(e, 'You cannot join this class right now')),
+  });
+}
