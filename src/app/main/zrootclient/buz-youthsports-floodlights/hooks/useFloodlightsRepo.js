@@ -18,6 +18,7 @@ export {
 const api = {
   getLeagues:       (params) => AuthApi().get('/youth/leagues', { params }),
   getLeagueDetail:  (id)     => AuthApi().get(`/youth/leagues/${id}`),
+  getMySchoolPoints: ()      => AuthApi().get('/youth/school-points/me'),
   getPlayers:       (clubMerchantId) => AuthApi().get('/youth/players', { params: { clubMerchantId } }),
   getMatchStats:    (matchId) => AuthApi().get(`/youth/matches/${matchId}/stats`),
   getMerchantPreview: (id) => AuthApi().get(`/auth-merchant/get-merchant/${id}/preview`),
@@ -219,4 +220,15 @@ function buildParams(obj) {
   return Object.fromEntries(
     Object.entries(obj).filter(([, v]) => v != null && v !== '')
   );
+}
+
+
+/** League points a student has earned in school leagues (civic-67); only fetched for a signed-in citizen. */
+export function useMySchoolPoints(enabled = true) {
+  return useQuery(['fl-my-school-points'], () => api.getMySchoolPoints(), {
+    enabled,
+    staleTime: 60 * 1000,
+    retry: false,
+    select: (res) => res?.data,
+  });
 }
