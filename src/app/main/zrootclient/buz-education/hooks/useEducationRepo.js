@@ -167,3 +167,25 @@ export function useUploadTertiaryDocument() {
     onError: (e) => toast.error(say(e, 'That document could not be uploaded')),
   });
 }
+
+// Tertiary student portal (civic-65, E5-b): course registration and the transcript.
+export function useTertiaryCatalogue(termId) {
+  return useQuery(['edu-tertiary-catalogue', termId], () => AuthApi().get('/education/tertiary/student/courses', { params: { termId } }), { staleTime: 15 * 1000, retry: false });
+}
+
+export function useTertiaryTranscript() {
+  return useQuery(['edu-tertiary-transcript'], () => AuthApi().get('/education/tertiary/student/transcript'), { staleTime: 30 * 1000, retry: false });
+}
+
+function useCourseAction(path, done) {
+  const qc = useQueryClient();
+  return useMutation((body) => AuthApi().post(`/education/tertiary/student/courses/${path}`, body), {
+    onSuccess: () => {
+      toast.success(done);
+      qc.invalidateQueries(['edu-tertiary-catalogue']);
+    },
+    onError: (e) => toast.error(say(e, 'That did not work')),
+  });
+}
+export const useRegisterCourse = () => useCourseAction('register', 'Registered');
+export const useDropCourse = () => useCourseAction('drop', 'Course dropped');

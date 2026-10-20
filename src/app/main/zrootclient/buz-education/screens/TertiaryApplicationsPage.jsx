@@ -52,7 +52,7 @@ export default function TertiaryApplicationsPage() {
               <b>{a.school?.name} · {a.programme.name} ({a.programme.award})</b>
               <Chip size="small" label={STATUS_WORDS[a.status] ?? a.status} />
             </div>
-            {a.status === 'APPROVED' && <Alert severity="success" sx={{ my: 1 }}>You have been admitted. The school will give you your matriculation number.</Alert>}
+            {a.status === 'APPROVED' && <Alert severity="success" sx={{ my: 1 }} action={<Button component={Link} to="/education/my-courses" size="small">My courses</Button>}>You have been admitted. The school will give you your matriculation number.</Alert>}
             {a.decisionNote && <p style={{ color: '#374151' }}>From the school: {a.decisionNote}</p>}
             {a.missingDocs.length > 0 && ['PENDING', 'WAITLISTED'].includes(a.status) && (
               <p style={{ color: '#b45309' }} data-testid={`missing-${a.id}`}>The school needs {a.missingDocs.length} more document{a.missingDocs.length === 1 ? '' : 's'} before it can admit you.</p>

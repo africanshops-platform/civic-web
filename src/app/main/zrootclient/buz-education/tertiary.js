@@ -25,3 +25,12 @@ export const STATUS_WORDS = {
   REJECTED: 'Not admitted',
   WITHDRAWN: 'Withdrawn',
 };
+
+/** Where a semester's registration stands against the credit limits. */
+export function creditStanding(credits, limits) {
+  if (credits > limits.max) return { tone: 'bad', text: `Over the limit of ${limits.max} credits` };
+  if (credits < limits.min) return { tone: 'warn', text: `${credits} of at least ${limits.min} credits` };
+  return { tone: 'ok', text: `${credits} credits (limit ${limits.max})` };
+}
+
+export const GRADE_COLOR = { A: '#15803d', B: '#16a34a', C: '#ca8a04', D: '#ea580c', E: '#dc2626', F: '#7f1d1d' };
