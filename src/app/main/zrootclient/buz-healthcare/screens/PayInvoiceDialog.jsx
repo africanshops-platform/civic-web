@@ -15,9 +15,11 @@ export default function PayInvoiceDialog({ invoice, wallet, paymentsReady, forDe
   const kobo = nairaToKobo(amount);
   const state = walletPayState({ paymentsReady, open: wallet?.open, balanceKobo: wallet?.balanceKobo, wantKobo: kobo });
   const tooMuch = kobo != null && kobo > payableKobo;
+  const payLabel = kobo ? `Pay ${naira(kobo)}` : 'Pay';
   const go = () => pay.mutate(
     { invoiceId: invoice.id, amountKobo: String(kobo), requestId: key.current, transactionPin: pin },
-    { onSuccess: onClose, onError: () => { key.current = newKey(); } },
+    // No answer at all (a timeout) means the payment may still have gone through: keep the key so a retry finishes it. A real refusal gets a new key.
+    { onSuccess: onClose, onError: (e) => { if (e?.response) key.current = newKey(); } },
   );
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
@@ -33,7 +35,7 @@ export default function PayInvoiceDialog({ invoice, wallet, paymentsReady, forDe
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button variant="contained" disabled={!state.ok || tooMuch || pin.length < 4 || pay.isLoading} onClick={go}>
-          {pay.isLoading ? <CircularProgress size={18} color="inherit" /> : kobo ? `Pay ${naira(kobo)}` : 'Pay'}
+          {pay.isLoading ? <CircularProgress size={18} color="inherit" /> : payLabel}
         </Button>
       </DialogActions>
     </Dialog>
