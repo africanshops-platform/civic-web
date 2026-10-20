@@ -199,7 +199,7 @@ export function useChildrenIActFor() {
 // My care (civic-70/71): consultations, results, medicines, bills, stays, immunisation, pregnancy, long-term plans, health ID.
 // Every call can act for a child (`forDependant`); the server checks guardianship each time.
 const careQuery = (key, path) => (forDependant) =>
-  useQuery(['healthcare-care', key, forDependant ?? 'me'], () => AuthApi().get(`/healthcare/${path}`, { params: fdp(forDependant) }), { staleTime: 20 * 1000, retry: false });
+  useQuery(['healthcare-care', key, forDependant ?? 'me'], () => AuthApi().get(`/healthcare/${path}`, { params: fdp(forDependant) }), { staleTime: 20 * 1000, retry: false, select: (res) => res.data });
 export const useMyEncounters = careQuery('encounters', 'my-encounters');
 export const useMyResults = careQuery('results', 'my-results');
 export const useMyPrescriptions = careQuery('rx', 'my-prescriptions');
@@ -211,7 +211,7 @@ export const useMyPlans = careQuery('plans', 'my-plans');
 
 export function useMyHealthId(forDependant, enabled) {
   return useQuery(['healthcare-care', 'hid', forDependant ?? 'me'], () => AuthApi().get('/healthcare/my-health-id', { params: fdp(forDependant) }), {
-    enabled, retry: false, staleTime: 0, cacheTime: 0, refetchInterval: 9 * 60 * 1000,
+    enabled, retry: false, staleTime: 0, cacheTime: 0, refetchInterval: 9 * 60 * 1000, select: (res) => res.data,
   });
 }
 
