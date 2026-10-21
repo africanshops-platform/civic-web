@@ -69,6 +69,11 @@ export function useCancelAppointment() {
 // My health record: who may see it, one-time codes to share it, and who has. Every call can act for a child (`forDependant`); the server
 // checks guardianship each time.
 const fdp = (forDependant) => (forDependant ? { forDependant } : undefined);
+// The person's short Health ID (8 letters and digits), made the first time it is asked for. A clinic types it instead of a long system id.
+export function useHealthId(forDependant) {
+  return useQuery(['healthcare-health-id', forDependant ?? 'me'], () => AuthApi().get('/healthcare/my-record/health-id', { params: fdp(forDependant) }), { staleTime: 5 * 60 * 1000 });
+}
+
 export function useRecordGrants(forDependant) {
   return useQuery(['healthcare-record-grants', forDependant ?? 'me'], () => AuthApi().get('/healthcare/my-record/grants', { params: fdp(forDependant) }), { staleTime: 15 * 1000 });
 }

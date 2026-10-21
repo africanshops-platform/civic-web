@@ -7,6 +7,7 @@ import {
   useChildrenIActFor,
   useCreateConsentCode,
   useFacilities,
+  useHealthId,
   useGrantFacility,
   useRecordAccessLog,
   useRecordGrants,
@@ -27,6 +28,8 @@ export default function MyRecordPage() {
   const forDependant = sp.get('for') || '';
   const { data: children = [] } = useChildrenIActFor();
   const code = useCreateConsentCode(forDependant || undefined);
+  const { data: idData } = useHealthId(forDependant || undefined);
+  const healthId = idData?.data?.healthId;
   const { data: grantData, isLoading: grantsLoading } = useRecordGrants(forDependant || undefined);
   const { data: logData, isLoading: logLoading } = useRecordAccessLog({ page: logPage, limit: LOG_LIMIT, forDependant: forDependant || undefined });
   const { data: facData } = useFacilities({ limit: 50 });
@@ -54,6 +57,17 @@ export default function MyRecordPage() {
             <MenuItem value="">Myself</MenuItem>
             {children.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName} ({c.age})</MenuItem>)}
           </TextField>
+        )}
+
+        {healthId && (
+          <div style={card} data-testid="health-id-card">
+            <h3 style={h}>{forDependant ? "Your child's Health ID" : 'Your Health ID'}</h3>
+            <p style={p}>Say this short code at any clinic or hospital so they can find you. It is not a password: it lets them look you up, but they still need your permission to see your record.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '3.4rem', letterSpacing: '0.2em', color: '#0f766e', padding: '10px 22px', borderRadius: 16, background: '#f0fdfa', border: '1px solid #99f6e4' }}>{healthId}</div>
+              <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(healthId)} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: '1.5rem' }}>Copy</Button>
+            </div>
+          </div>
         )}
 
         <div style={card}>
