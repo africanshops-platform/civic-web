@@ -1,10 +1,10 @@
 import { useParams, Link } from 'react-router-dom';
-import { Button, Chip, CircularProgress, Divider } from '@mui/material';
+import { Button, Chip, CircularProgress, Divider, MenuItem, TextField } from '@mui/material';
 import { ArrowBack, Phone, Email, LocalHospital } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import HealthcarePageShell from './shared-components/HealthcarePageShell';
 import { useState } from 'react';
-import { useEnrolmentOptions, useFacilityDetail, useMyEnrolment } from '../hooks/useHealthcareRepo';
+import { useChildrenIActFor, useEnrolmentOptions, useFacilityDetail, useMyEnrolment } from '../hooks/useHealthcareRepo';
 import EnrolDialog from '../components/EnrolDialog';
 import { AVAILABILITY, typeInfo } from '../constants';
 
@@ -14,8 +14,10 @@ export default function FacilityDetailPage() {
   const { facilityId } = useParams();
   const { data, isLoading, isError } = useFacilityDetail(facilityId);
   const facility = data?.data;
-  const { data: mine } = useMyEnrolment();
-  const { data: options } = useEnrolmentOptions(mine?.enabled);
+  const [forDependant, setForDependant] = useState('');
+  const { data: children = [] } = useChildrenIActFor();
+  const { data: mine } = useMyEnrolment(forDependant || undefined);
+  const { data: options } = useEnrolmentOptions(mine?.enabled, forDependant || undefined);
   const isPrimaryForMe = (options?.items ?? []).some((i) => i.facility.id === facility?.id);
   const isMine = mine?.enrolment?.facility?.id === facility?.id;
   const [enrolling, setEnrolling] = useState(false);
@@ -66,13 +68,19 @@ export default function FacilityDetailPage() {
                   Show on the map
                 </a>
               )}
+              {mine?.enabled && children.length > 0 && (
+                <TextField select size="small" label="Enrol for" value={forDependant} onChange={(e) => setForDependant(e.target.value)} sx={{ mt: 1.5, display: 'block', minWidth: 240 }}>
+                  <MenuItem value="">Myself</MenuItem>
+                  {children.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName} ({c.age})</MenuItem>)}
+                </TextField>
+              )}
               {mine?.enabled && isMine && <Chip label="Your primary facility" sx={{ mt: 1.5, fontWeight: 800, background: '#fef3c7', color: '#92400e' }} />}
               {mine?.enabled && !isMine && isPrimaryForMe && (
                 <Button variant="contained" onClick={() => setEnrolling(true)} sx={{ mt: 1.5, display: 'block', background: '#16a34a', fontWeight: 800, textTransform: 'none', fontSize: '1.7rem', borderRadius: '12px' }}>
                   Enrol here
                 </Button>
               )}
-              {enrolling && <EnrolDialog facility={facility} replacing={Boolean(mine?.enrolment)} onClose={() => setEnrolling(false)} />}
+              {enrolling && <EnrolDialog facility={facility} replacing={Boolean(mine?.enrolment)} forDependant={forDependant || undefined} onClose={() => setEnrolling(false)} />}
             </div>
           </div>
         </div>

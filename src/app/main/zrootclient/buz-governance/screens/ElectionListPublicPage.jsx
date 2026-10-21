@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button, Chip, TextField, InputAdornment } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { Search, HowToVote, BarChart, ArrowForward, CalendarToday, CheckCircle, People } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { useElections } from '../hooks/useGovernanceRepo';
+import useElectionFilters from '../hooks/useElectionFilters';
 import { ELECTION_LEVELS, COMMUNITY_VOTE_NOTICE } from '../constants';
 import { CivicLoadingSkeleton, CivicEmptyState } from '../../civic-shared';
+import GovernanceShell from './shared-components/GovernanceShell';
 
 const F = {
   pageTitle:  'clamp(2.8rem, 4.5vw, 4rem)',
@@ -78,18 +79,16 @@ function ElectionCard({ election, index }) {
   );
 }
 
-export default function ElectionListPublicPage() {
-  const [search, setSearch] = useState('');
-  const [activeLevel, setActiveLevel] = useState('');
-  const { data, isLoading, isError } = useElections({ level: activeLevel });
+function ElectionListPublicPageBody() {
+  // The same filters as the left sidebar: they live in the address bar.
+  const { filters, setFilters, dwelling } = useElectionFilters();
+  const activeLevel = filters.level;
+  const { data, isLoading, isError } = useElections({ level: filters.level, status: filters.status, search: filters.search, area: filters.area, dwelling });
   const stats = data?.data?.stats;
-
-  const elections = useMemo(() => {
-    const all = data?.data?.elections || [];
-    if (!search) return all;
-    const q = search.toLowerCase();
-    return all.filter((e) => e.title.toLowerCase().includes(q));
-  }, [data, search]);
+  const elections = data?.data?.elections || [];
+  const setActiveLevel = (level) => setFilters({ level });
+  const search = filters.search;
+  const setSearch = (q) => setFilters({ search: q });
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(20px, 4vw, 48px)' }}>
@@ -141,5 +140,13 @@ export default function ElectionListPublicPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ElectionListPublicPage() {
+  return (
+    <GovernanceShell title="Community Votes" subtitle="Browse and filter">
+      <ElectionListPublicPageBody />
+    </GovernanceShell>
   );
 }

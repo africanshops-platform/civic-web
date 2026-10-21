@@ -7,7 +7,10 @@ import { selectUser } from '../../../../auth/user/store/userSlice';
 import { GRADE_COLOR, fmtDate } from '../constants';
 import { isStudentSession, mustChangePassword, studentClaims } from './studentSession';
 import StudentClaimPage from './StudentClaimPage';
-import { useChangeStudentPassword, useMyGate, useMyNotices, useMyRecord, useMyTimetable } from './useStudentApi';
+import ClassNotes from '../components/ClassNotes';
+import ExamList from '../components/ExamList';
+import ExamTaker from './ExamTaker';
+import { loadMyNote, useChangeStudentPassword, useMyGate, useMyExams, useMyNotes, useMyNotices, useMyRecord, useMyTimetable } from './useStudentApi';
 
 const shell = { minHeight: '100vh', background: '#f5f3ff' };
 const wrap = { maxWidth: 880, margin: '0 auto', padding: '0 16px 48px' };
@@ -115,6 +118,9 @@ export function StudentHome({ adult = false }) {
   const timetable = useMyTimetable();
   const gate = useMyGate();
   const notices = useMyNotices();
+  const notes = useMyNotes();
+  const exams = useMyExams();
+  const [taking, setTaking] = useState(null);
 
   if (!adult && !student) return <Navigate to="/student/sign-in" replace />;
   if (!adult && mustChangePassword()) return <ChoosePassword />;
@@ -155,6 +161,11 @@ export function StudentHome({ adult = false }) {
         )}
 
         {timetable.data && <Today timetable={timetable.data.data} />}
+
+        <ExamList exams={exams.data?.data?.items} off={exams.isError} onStart={(x) => setTaking(x.id)} card={card} />
+        {taking && <ExamTaker examId={taking} onClose={() => { setTaking(null); exams.refetch(); }} />}
+
+        <ClassNotes notes={notes.data?.data?.items} off={notes.isError} loadNote={loadMyNote} card={card} />
 
         {notices.data?.data?.data?.length > 0 && (
           <div style={card}>

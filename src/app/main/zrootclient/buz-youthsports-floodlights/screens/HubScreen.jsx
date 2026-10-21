@@ -3,12 +3,16 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import StarIcon from '@mui/icons-material/Star';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { FormDots, Pill, TeamName, TeamIdentity, computeForm } from './shared/flHelpers';
-import { useTournaments, useTournamentDetail, usePrograms, useTalents } from '../hooks/useFloodlightsRepo';
+import { useTournaments, useTournamentDetail, usePrograms, useTalents, useMySchoolPoints } from '../hooks/useFloodlightsRepo';
+import SchoolPointsCard from './shared/SchoolPointsCard';
 import { PROGRAM_CATEGORIES } from '../mock';
 
 export default function HubScreen() {
+  const { isAuthenticated } = useCivicWebAuth();
+  const { data: schoolPoints } = useMySchoolPoints(isAuthenticated);
   const { data: tournamentsData } = useTournaments();
   const { data: talentsData } = useTalents({ limit: 1 });
   const { data: programsData } = usePrograms({ limit: 50 });
@@ -65,6 +69,7 @@ export default function HubScreen() {
 
   return (
     <FloodlightsPage title="Youth Sports" subtitle="Hub · Tournaments · Talent Hunt · Transfer Market">
+      <SchoolPointsCard data={schoolPoints} />
       <div className="fl2-hero">
         <span className="fl2-eyebrow">Youth &amp; Sports · Empowering Nigerian Youth</span>
         <h1 style={{ marginTop: 8 }}>Your talent.<br />Every pitch, court &amp; console.</h1>

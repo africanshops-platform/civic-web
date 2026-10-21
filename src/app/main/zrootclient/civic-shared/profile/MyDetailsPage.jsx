@@ -24,6 +24,7 @@ import {
 	useMyChangeRequests,
 	useSaveAboutYou
 } from 'app/configs/data/server-calls/auth/userapp/a_kyc/useKycRepo';
+import SignInRequired from './SignInRequired';
 
 const FIELD_LABEL = { dateOfBirth: 'Date of birth', gender: 'Gender', maritalStatus: 'Marital status' };
 const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
@@ -178,7 +179,7 @@ function Row({ label, value, locked, pending, onRequest, editor }) {
 }
 
 /** My details: what I declared, what is locked, add-only children, and change requests for locked fields. */
-export default function MyDetailsPage() {
+function MyDetailsPageContent() {
 	const { data, isLoading, isError } = useAboutYou();
 	const { data: requests = [] } = useMyChangeRequests();
 	const save = useSaveAboutYou();
@@ -365,5 +366,13 @@ export default function MyDetailsPage() {
 				/>
 			)}
 		</Box>
+	);
+}
+
+export default function MyDetailsPage() {
+	return (
+		<SignInRequired message="Sign in to see your details.">
+			<MyDetailsPageContent />
+		</SignInRequired>
 	);
 }

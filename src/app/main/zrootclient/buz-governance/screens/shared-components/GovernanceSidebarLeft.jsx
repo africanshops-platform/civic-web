@@ -1,8 +1,11 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   FormControl, InputLabel, Select, MenuItem,
-  TextField, InputAdornment, Divider, Button,
+  TextField, InputAdornment, Divider, Button, FormControlLabel, Switch,
 } from '@mui/material';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
+import useElectionFilters, { ELECTIONS_PATH } from '../../hooks/useElectionFilters';
 import { Search, FilterList, Clear } from '@mui/icons-material';
 import { ELECTION_LEVELS } from '../../constants';
 
@@ -16,21 +19,27 @@ const F = {
 };
 
 function GovernanceSidebarLeft({ onFilterChange }) {
-  const [filters, setFilters] = useState({ type: '', status: '', search: '' });
+  const { isAuthenticated } = useCivicWebAuth();
+  const { filters, setFilters, clear, dwelling, hasFilters } = useElectionFilters();
 
-  function update(key, value) {
-    const next = { ...filters, [key]: value };
-    setFilters(next);
-    onFilterChange?.(next);
-  }
+  // Pages that keep their own copy of the filters (the dashboard) are told about every change, including the one in the address bar.
+  useEffect(() => {
+    onFilterChange?.({ type: filters.level, level: filters.level, status: filters.status, search: filters.search, area: filters.area, dwelling });
+  }, [filters.level, filters.status, filters.search, filters.area, dwelling, onFilterChange]);
 
-  function clearFilters() {
-    const empty = { type: '', status: '', search: '' };
-    setFilters(empty);
-    onFilterChange?.(empty);
-  }
+  const update = (key, value) => setFilters({ [key === 'type' ? 'level' : key]: value });
 
-  const hasFilters = Object.values(filters).some(Boolean);
+  // Typing is applied as you go on the list itself; from any other page it waits for Enter, because applying it moves you to the list.
+  const { pathname } = useLocation();
+  const onList = pathname === ELECTIONS_PATH;
+  const [searchText, setSearchText] = useState(filters.search);
+  useEffect(() => { setSearchText(filters.search); }, [filters.search]);
+  useEffect(() => {
+    if (!onList || searchText === filters.search) return undefined;
+    const t = setTimeout(() => setFilters({ search: searchText }), 350);
+    return () => clearTimeout(t);
+  }, [onList, searchText, filters.search, setFilters]);
+  const clearFilters = clear;
 
   return (
     <div style={{ padding: 'clamp(16px, 2vw, 24px)', display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 1.8vw, 20px)' }}>
@@ -57,8 +66,9 @@ function GovernanceSidebarLeft({ onFilterChange }) {
       <TextField
         size="small"
         placeholder="Search elections..."
-        value={filters.search}
-        onChange={(e) => update('search', e.target.value)}
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') update('search', searchText); }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -79,7 +89,7 @@ function GovernanceSidebarLeft({ onFilterChange }) {
       <FormControl size="small" fullWidth>
         <InputLabel sx={{ fontSize: F.label }}>Election Type</InputLabel>
         <Select
-          value={filters.type}
+          value={filters.level}
           label="Election Type"
           onChange={(e) => update('type', e.target.value)}
           sx={{ borderRadius: '12px', fontSize: F.label, '& .MuiSelect-select': { fontSize: F.label } }}
@@ -110,6 +120,19 @@ function GovernanceSidebarLeft({ onFilterChange }) {
         </Select>
       </FormControl>
 
+      {/* ── My area ── */}
+      {isAuthenticated && (
+        <div>
+          <FormControlLabel
+            control={<Switch checked={filters.area} disabled={!dwelling} onChange={(e) => setFilters({ area: e.target.checked })} />}
+            label={<span style={{ fontSize: F.label, fontWeight: 600 }}>Only votes I can vote in</span>}
+          />
+          <div style={{ fontSize: F.small, color: '#6b7280', marginTop: 2 }}>
+            {dwelling ? `Your area: ${dwelling.lga}, ${dwelling.state}` : 'Set where you live on your civic profile to use this.'}
+          </div>
+        </div>
+      )}
+
       <Divider />
 
       {/* ── Quick links ── */}
@@ -119,13 +142,13 @@ function GovernanceSidebarLeft({ onFilterChange }) {
       {[
         { label: 'My Voting History', path: '/governance/my-votes',               icon: '🗳️' },
         { label: 'Sign a Petition',   path: '/governance/participate',             icon: '✍️' },
-        { label: 'Live Results',      path: '/governance/elections/elec_001/live/manage', icon: '📊' },
+        { label: 'Open now',          path: '/governance/elections?status=ongoing', icon: '🔴' },
         { label: 'All Elections',     path: '/governance/elections',               icon: '🏛️' },
         { label: 'Dashboard',         path: '/governance/dashboard',               icon: '📋' },
       ].map((link) => (
-        <a
+        <Link
           key={link.path}
-          href={link.path}
+          to={link.path}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -142,7 +165,7 @@ function GovernanceSidebarLeft({ onFilterChange }) {
         >
           <span style={{ fontSize: F.body }}>{link.icon}</span>
           {link.label}
-        </a>
+        </Link>
       ))}
     </div>
   );

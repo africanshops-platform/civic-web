@@ -23,6 +23,8 @@ const api = {
   // Phase 7 of the club-recruitment pipeline (2026-08-30) — the
   // participationMode: SINGLE direct-enrollment endpoint.
   enrollInTournament:       (data)   => AuthApi().post('/youth/tournaments/enroll', data),
+  payAndEnrollInTournament: ({ tournamentId, ...body }) => AuthApi().post(`/youth/tournaments/${tournamentId}/pay-and-enroll`, body),
+  getTournamentPaymentsReadiness: () => AuthApi().get('/checkout-readiness/youth-tournaments'),
   getMyTournamentEnrollments: (params) => AuthApi().get('/youth/tournaments/mine', { params }),
 };
 
@@ -237,6 +239,34 @@ export function useEnrollInTournament() {
       onError: (err) => toast.error(err?.response?.data?.message ?? 'Could not enroll. Please try again.'),
     }
   );
+}
+
+/** Pays the entry fee of a paid tournament and takes the place (civic-54). The amount is the tournament's own, never sent from here. */
+export function usePayAndEnrollInTournament() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => api.payAndEnrollInTournament(payload),
+    {
+      onSuccess: () => {
+        toast.success('Payment received. You are in!');
+        queryClient.invalidateQueries(['youth-tournament']);
+        queryClient.invalidateQueries(['youth-tournament-my-enrollments']);
+        queryClient.invalidateQueries(['civictax-spending-balance']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Payment did not go through. You were not charged unless it says otherwise.'),
+    }
+  );
+}
+
+/** Whether the services a tournament payment needs are up; the pay button stays disabled when they are not. */
+export function useTournamentPaymentsReadiness(enabled = true) {
+  return useQuery(['youth-tournament-payments-readiness'], () => api.getTournamentPaymentsReadiness(), {
+    enabled: enabled && hasSession(),
+    refetchInterval: 15000,
+    retry: 1,
+    staleTime: 5000,
+    select: (res) => res?.data,
+  });
 }
 
 export function useMyTournamentEnrollments(filters = {}) {

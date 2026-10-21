@@ -19,6 +19,17 @@ export function useMyChildren() {
   return useQuery(['edu-children'], () => AuthApi().get('/education/parent/children'), { staleTime: 30 * 1000 });
 }
 
+// Published class notes of one child's class (civic-63 E4-a). A 404 means the school has not switched notes on, and the section hides.
+export function useChildNotes(studentId) {
+  return useQuery(['edu-child-notes', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/notes`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
+}
+// The exams of one child's class, with the child's own state and score (civic-64 E4-c). A 404 means exams are not switched on.
+export function useChildExams(studentId) {
+  return useQuery(['edu-child-exams', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/exams`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
+}
+
+export const loadChildNote = (studentId, noteId) => AuthApi().get(`/education/parent/child/${studentId}/notes/${noteId}`).then((r) => r.data);
+
 // Timetable and arrivals for one child (civic-62 E3-e). `retry: false`: a 404 means the school has not switched the feature on, and the sections hide.
 export function useChildTimetable(studentId) {
   return useQuery(['edu-child-timetable', studentId], () => AuthApi().get(`/education/parent/child/${studentId}/timetable`), { enabled: Boolean(studentId), staleTime: 60 * 1000, retry: false });
@@ -124,3 +135,68 @@ export const useResetChildLogin = (studentId) => useLoginAction(studentId, () =>
 export const usePauseChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().put(`/education/parent/child/${studentId}/login/suspend`), 'The login is paused. Your child is signed out.');
 export const useResumeChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().put(`/education/parent/child/${studentId}/login/resume`), 'The login is back on.');
 export const useDeleteChildLogin = (studentId) => useLoginAction(studentId, () => AuthApi().delete(`/education/parent/child/${studentId}/login`), 'The login was deleted.');
+
+
+// Tertiary admissions (civic-65): what a university offers, my applications with their documents checklist, and uploading documents.
+export function useTertiaryProgrammes(schoolId) {
+  return useQuery(['edu-tertiary-programmes', schoolId], () => Api().get(`/education/tertiary/schools/${schoolId}/programmes`), { enabled: Boolean(schoolId), staleTime: 60 * 1000, retry: false });
+}
+
+export function useMyTertiaryApplications() {
+  return useQuery(['edu-tertiary-mine'], () => AuthApi().get('/education/tertiary/applications/mine'), { staleTime: 15 * 1000 });
+}
+
+export function useApplyTertiary() {
+  const qc = useQueryClient();
+  return useMutation((body) => AuthApi().post('/education/tertiary/applications', body), {
+    onSuccess: () => {
+      toast.success('Application sent. Now upload your documents.');
+      qc.invalidateQueries(['edu-tertiary-mine']);
+    },
+    onError: (e) => toast.error(say(e, 'Your application could not be sent')),
+  });
+}
+
+export function useUploadTertiaryDocument() {
+  const qc = useQueryClient();
+  return useMutation(({ applicationId, kind, base64 }) => AuthApi().post(`/education/tertiary/applications/${applicationId}/documents`, { kind, base64 }), {
+    onSuccess: () => {
+      toast.success('Document uploaded');
+      qc.invalidateQueries(['edu-tertiary-mine']);
+    },
+    onError: (e) => toast.error(say(e, 'That document could not be uploaded')),
+  });
+}
+
+// Tertiary student portal (civic-65, E5-b): course registration and the transcript.
+export function useTertiaryCatalogue(termId) {
+  return useQuery(['edu-tertiary-catalogue', termId], () => AuthApi().get('/education/tertiary/student/courses', { params: { termId } }), { staleTime: 15 * 1000, retry: false });
+}
+
+export function useTertiaryTranscript() {
+  return useQuery(['edu-tertiary-transcript'], () => AuthApi().get('/education/tertiary/student/transcript'), { staleTime: 30 * 1000, retry: false });
+}
+
+function useCourseAction(path, done) {
+  const qc = useQueryClient();
+  return useMutation((body) => AuthApi().post(`/education/tertiary/student/courses/${path}`, body), {
+    onSuccess: () => {
+      toast.success(done);
+      qc.invalidateQueries(['edu-tertiary-catalogue']);
+    },
+    onError: (e) => toast.error(say(e, 'That did not work')),
+  });
+}
+export const useRegisterCourse = () => useCourseAction('register', 'Registered');
+export const useDropCourse = () => useCourseAction('drop', 'Course dropped');
+
+// Online classes (civic-66, E6-a)
+export function useMyClasses() {
+  return useQuery(['edu-tertiary-classes'], () => AuthApi().get('/education/tertiary/student/classes'), { staleTime: 30 * 1000, retry: false, refetchInterval: 60 * 1000 });
+}
+
+export function useJoinClass() {
+  return useMutation(({ id, lowBandwidth }) => AuthApi().post(`/education/tertiary/student/classes/${id}/join`, { lowBandwidth }), {
+    onError: (e) => toast.error(say(e, 'You cannot join this class right now')),
+  });
+}

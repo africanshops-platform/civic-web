@@ -52,6 +52,14 @@ export default function SchoolDetailPage() {
           )}
         </div>
 
+        {school.level === 'TERTIARY' && (
+          <div style={{ ...card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, color: '#111827', fontSize: '1.9rem' }}>Faculties and programmes</span>
+            <Button component={Link} to={`/education/school/${school.id}/programmes`} sx={{ background: ACCENT, color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: '1.7rem', px: 3 }}>See programmes and apply</Button>
+          </div>
+        )}
+
+        {school.level !== 'TERTIARY' && (
         <div style={card}>
           <h3 style={{ margin: '0 0 14px', fontWeight: 800, color: '#111827', fontSize: '2rem' }}>Classes</h3>
           {(school.classes ?? []).length === 0 ? (
@@ -75,7 +83,9 @@ export default function SchoolDetailPage() {
             </>
           )}
         </div>
+        )}
 
+        {school.level !== 'TERTIARY' && (
         <div style={{ padding: 32, borderRadius: 22, background: ACCENT, textAlign: 'center' }}>
           <h3 style={{ color: 'white', fontWeight: 900, margin: '0 0 12px', fontSize: '2.4rem' }}>Want a place here?</h3>
           <p style={{ color: 'rgba(255,255,255,0.9)', margin: '0 0 22px', fontSize: '1.8rem' }}>Send an application. The school decides, and you will see its answer under My applications.</p>
@@ -85,6 +95,7 @@ export default function SchoolDetailPage() {
             <Button component={Link} to="/sign-in" variant="contained" sx={{ backgroundColor: 'white', color: '#4338ca', fontWeight: 800, borderRadius: '16px', textTransform: 'none', px: 6, py: 2, fontSize: '1.9rem' }}>Sign in to apply</Button>
           )}
         </div>
+        )}
 
         <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="xs">
           <DialogTitle sx={{ fontWeight: 800 }}>Apply to {school.name}</DialogTitle>

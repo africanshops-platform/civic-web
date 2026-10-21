@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button, Chip, CircularProgress, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Button, Chip, CircularProgress, Pagination, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, TextField } from '@mui/material';
 import { motion } from 'framer-motion';
 import { CalendarToday } from '@mui/icons-material';
 import HealthcarePageShell from './shared-components/HealthcarePageShell';
-import { useMyAppointments, useCancelAppointment } from '../hooks/useHealthcareRepo';
+import { useChildrenIActFor, useMyAppointments, useCancelAppointment } from '../hooks/useHealthcareRepo';
 import { APPT_STATUS, formatWhen } from '../constants';
 
 const LIMIT = 10;
@@ -13,7 +13,9 @@ const CAN_CANCEL = ['PENDING', 'CONFIRMED'];
 export default function MyAppointmentsPage() {
   const [sp, setSp] = useSearchParams();
   const page = Math.max(Number(sp.get('page')) || 1, 1);
-  const { data, isLoading, isError } = useMyAppointments({ page, limit: LIMIT });
+  const forDependant = sp.get('for') || '';
+  const { data: children = [] } = useChildrenIActFor();
+  const { data, isLoading, isError } = useMyAppointments({ page, limit: LIMIT, forDependant: forDependant || undefined });
   const cancel = useCancelAppointment();
   const [target, setTarget] = useState(null);
   const [reason, setReason] = useState('');
@@ -37,6 +39,12 @@ export default function MyAppointmentsPage() {
           </Button>
         </div>
 
+        {children.length > 0 && (
+          <TextField select size="small" label="Acting for" value={forDependant} onChange={(e) => setSp(e.target.value ? { for: e.target.value } : {})} sx={{ mb: 2, minWidth: 260 }}>
+            <MenuItem value="">Myself</MenuItem>
+            {children.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName} ({c.age})</MenuItem>)}
+          </TextField>
+        )}
         {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><CircularProgress size={56} sx={{ color: '#16a34a' }} /></div>}
         {isError && <div style={{ padding: 32, textAlign: 'center', borderRadius: 18, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 700, fontSize: '1.8rem' }}>We could not load your appointments. Please try again.</div>}
         {!isLoading && !isError && rows.length === 0 && (
@@ -79,7 +87,7 @@ export default function MyAppointmentsPage() {
 
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-            <Pagination count={totalPages} page={page} onChange={(_, p) => setSp(p > 1 ? { page: String(p) } : {}, { replace: true })} size="large" />
+            <Pagination count={totalPages} page={page} onChange={(_, p) => setSp({ ...(forDependant ? { for: forDependant } : {}), ...(p > 1 ? { page: String(p) } : {}) }, { replace: true })} size="large" />
           </div>
         )}
       </motion.div>
@@ -91,7 +99,7 @@ export default function MyAppointmentsPage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setTarget(null)}>Keep it</Button>
-          <Button color="error" variant="contained" disabled={cancel.isLoading} onClick={() => cancel.mutate({ appointmentId: target.id, reason: reason.trim() || undefined }, { onSuccess: () => setTarget(null) })}>
+          <Button color="error" variant="contained" disabled={cancel.isLoading} onClick={() => cancel.mutate({ appointmentId: target.id, reason: reason.trim() || undefined, forDependant: forDependant || undefined }, { onSuccess: () => setTarget(null) })}>
             Cancel appointment
           </Button>
         </DialogActions>
