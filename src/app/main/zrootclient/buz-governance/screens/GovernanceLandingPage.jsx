@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowForward, CheckCircle } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
-import { mockElections, ELECTION_STATS, ELECTION_TYPES } from '../mock';
+import { useElections, usePetitions } from '../hooks/useGovernanceRepo';
+import { ELECTION_LEVELS, COMMUNITY_VOTE_NOTICE } from '../constants';
 
 const BLUE_GRADIENT = 'linear-gradient(135deg, #1d4ed8 0%, #4f46e5 50%, #7c3aed 100%)';
 
@@ -21,23 +22,25 @@ const inViewUp = (delay = 0) => ({
 });
 
 const HOW_IT_WORKS = [
-  { step: '01', title: 'Register & Verify', desc: 'Verify your identity using your NIN. Your voting record is secured and anonymous.' },
-  { step: '02', title: 'Cast Your Vote', desc: 'Vote in any election you are eligible for — presidential, gubernatorial, or local government.' },
-  { step: '03', title: 'Track Results Live', desc: 'Watch ward-by-ward collation results update in real time as counting progresses.' },
+  { step: '01', title: 'Verify Your Identity', desc: 'Only identity-verified citizens of the area can take part, and each person can vote once.' },
+  { step: '02', title: 'Cast Your Vote', desc: 'Vote online in any community vote that is open to you. Your choice stays secret.' },
+  { step: '03', title: 'Follow the Results', desc: 'See the results reported ward by ward, and the public audit trail of the vote.' },
 ];
 
-const TRUST_BADGES = ['NIN Verified', 'End-to-End Encrypted', 'INEC Partnered', 'Audit Trail Enabled'];
-
-const PLATFORM_STATS = [
-  { emoji: '🗳️', value: ELECTION_STATS.totalElections,                                          label: 'Elections Hosted'    },
-  { emoji: '👥', value: (ELECTION_STATS.totalVotersRegistered / 1_000_000).toFixed(1) + 'M',   label: 'Voters Registered'   },
-  { emoji: '📊', value: `${ELECTION_STATS.averageTurnout}%`,                                    label: 'Average Turnout'     },
-  { emoji: '✅', value: ELECTION_STATS.completedElections,                                       label: 'Completed Elections' },
-];
+const TRUST_BADGES = ['Identity Verified', 'One Person, One Vote', 'Secret Ballot', 'Public Audit Trail'];
 
 export default function GovernanceLandingPage() {
   const { isAuthenticated } = useCivicWebAuth();
-  const liveElections = mockElections.filter((e) => e.status === 'ongoing');
+  // Real figures only, counted from what the governance service holds.
+  const { data: elData } = useElections({});
+  const { data: petData } = usePetitions({});
+  const es = elData?.data?.stats;
+  const PLATFORM_STATS = [
+    { emoji: '🗳️', value: (es?.totalElections ?? 0).toLocaleString(), label: 'Community Votes' },
+    { emoji: '🟢', value: (es?.ongoingElections ?? 0).toLocaleString(), label: 'Open Now' },
+    { emoji: '👥', value: (es?.totalVotersParticipated ?? 0).toLocaleString(), label: 'Voted Online' },
+    { emoji: '✍️', value: (petData?.data?.stats?.totalPetitions ?? 0).toLocaleString(), label: 'Petitions' },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden', backgroundColor: 'white' }}>
@@ -55,30 +58,30 @@ export default function GovernanceLandingPage() {
             <div>
               <motion.div {...fadeUp(0.1)}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '10px 24px', marginBottom: 32, border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(12px)' }}>
-                  <span style={{ fontSize: '2rem' }}>🇳🇬</span>
-                  <span style={{ color: 'white', fontWeight: 700, fontSize: 'clamp(1.7rem, 2.8vw, 2rem)' }}>Digital Democracy — Nigeria First</span>
+                  <span style={{ fontSize: '2rem' }}>🏘️</span>
+                  <span style={{ color: 'white', fontWeight: 700, fontSize: 'clamp(1.7rem, 2.8vw, 2rem)' }}>Community-run votes and petitions</span>
                 </div>
               </motion.div>
               <motion.div {...fadeUp(0.22)}>
                 <h1 style={{ color: 'white', fontWeight: 900, lineHeight: 1.08, margin: '0 0 24px', fontSize: 'clamp(5.2rem, 9vw, 9rem)' }}>
                   Your Vote.
-                  <span style={{ display: 'block', color: '#a5b4fc' }}>Your Nigeria.</span>
+                  <span style={{ display: 'block', color: '#a5b4fc' }}>Your Community.</span>
                 </h1>
               </motion.div>
               <motion.div {...fadeUp(0.34)}>
                 <p style={{ color: 'rgba(255,255,255,0.92)', lineHeight: 1.82, margin: '0 0 40px', maxWidth: 580, fontSize: 'clamp(2.1rem, 3.6vw, 2.6rem)' }}>
-                  Transparent elections, live collation results, and citizen petitions — right from your phone.{' '}
-                  <strong style={{ color: '#a5b4fc' }}>Every vote verified. Every result public.</strong>
+                  Community votes, ward-by-ward results and citizen petitions — right from your phone.{' '}
+                  <strong style={{ color: '#a5b4fc' }}>Every voter verified. Every result public.</strong>
                 </p>
               </motion.div>
               <motion.div {...fadeUp(0.46)} style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 36 }}>
                 <Button component={Link} to="/governance/elections" variant="contained" size="large" endIcon={<ArrowForward sx={{ fontSize: 26 }} />}
                   sx={{ backgroundColor: 'white', color: '#1d4ed8', fontWeight: 800, borderRadius: '16px', textTransform: 'none', px: { xs: 4, sm: 6 }, py: { xs: 2, sm: 2.5 }, fontSize: 'clamp(2rem, 3.6vw, 2.4rem)', boxShadow: '0 20px 48px rgba(0,0,0,0.22)', '&:hover': { backgroundColor: '#eff6ff', transform: 'translateY(-3px)' } }}>
-                  View Elections
+                  Browse Community Votes
                 </Button>
                 <Button component={Link} to={isAuthenticated ? '/governance/participate' : '/sign-in'} variant="outlined" size="large"
                   sx={{ borderColor: 'rgba(255,255,255,0.65)', color: 'white', fontWeight: 700, borderRadius: '16px', textTransform: 'none', px: { xs: 4, sm: 6 }, py: { xs: 2, sm: 2.5 }, fontSize: 'clamp(2rem, 3.6vw, 2.4rem)', backdropFilter: 'blur(12px)', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.12)' } }}>
-                  {isAuthenticated ? 'Vote Now' : 'Sign In to Vote'}
+                  {isAuthenticated ? 'Take Part' : 'Sign In to Vote'}
                 </Button>
               </motion.div>
               <motion.div {...fadeUp(0.56)} style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
@@ -108,11 +111,11 @@ export default function GovernanceLandingPage() {
       {/* ── ELECTION TYPES ── */}
       <section style={{ padding: 'clamp(40px,5vw,64px) clamp(20px,5vw,64px)', backgroundColor: 'white' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ color: '#9ca3af', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 'clamp(1.6rem,2.4vw,1.8rem)', marginBottom: 24 }}>Browse by Election Type</p>
+          <p style={{ color: '#9ca3af', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 'clamp(1.6rem,2.4vw,1.8rem)', marginBottom: 24 }}>Browse by Level</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 14 }}>
-            {ELECTION_TYPES.map((t, i) => (
+            {ELECTION_LEVELS.map((t, i) => (
               <motion.div key={t.id} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
-                <Button component={Link} to={`/governance/elections?type=${t.id}`}
+                <Button component={Link} to={`/governance/elections?level=${t.id}`}
                   sx={{ backgroundColor: t.bgColor, color: t.color, fontWeight: 700, borderRadius: '14px', textTransform: 'none', px: { xs: 3, sm: 4.5 }, py: { xs: 1.5, sm: 2 }, fontSize: 'clamp(1.8rem, 3vw, 2.1rem)', border: `1.5px solid ${t.color}28`, '&:hover': { backgroundColor: t.color, color: 'white', transform: 'translateY(-3px)', boxShadow: `0 10px 24px ${t.color}44` } }}>
                   <span style={{ marginRight: 10, fontSize: 'clamp(2rem, 3.2vw, 2.4rem)' }}>{t.icon}</span>{t.label}
                 </Button>
@@ -166,10 +169,10 @@ export default function GovernanceLandingPage() {
         </div>
         <motion.div {...inViewUp()} style={{ position: 'relative', zIndex: 1 }}>
           <h2 style={{ color: 'white', fontWeight: 900, margin: '0 0 24px', fontSize: 'clamp(4.4rem, 11vw, 9rem)', lineHeight: 1.1 }}>
-            Democracy Starts With You.
+            Your Community Decides.
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(2.2rem, 4.4vw, 2.9rem)', margin: '0 auto 52px', maxWidth: 640, lineHeight: 1.75 }}>
-            Register, vote, and hold your leaders accountable — from your phone, in real time.
+            Verify, vote and follow the results — from your phone. {COMMUNITY_VOTE_NOTICE}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 18 }}>
             <Button component={Link} to="/sign-up" variant="contained" size="large"
@@ -178,7 +181,7 @@ export default function GovernanceLandingPage() {
             </Button>
             <Button component={Link} to="/governance/elections" variant="outlined" size="large" endIcon={<ArrowForward sx={{ fontSize: 28 }} />}
               sx={{ borderColor: 'rgba(255,255,255,0.7)', color: 'white', fontWeight: 700, borderRadius: '16px', textTransform: 'none', px: { xs: 4, sm: 6 }, py: { xs: 2.25, sm: 3 }, fontSize: 'clamp(2rem, 3.4vw, 2.4rem)', backdropFilter: 'blur(12px)', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.12)' } }}>
-              Browse Elections
+              Browse Community Votes
             </Button>
           </div>
         </motion.div>

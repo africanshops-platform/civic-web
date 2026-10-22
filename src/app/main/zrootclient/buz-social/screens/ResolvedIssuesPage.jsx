@@ -46,7 +46,7 @@ function ActiveResolvedIssuesPage() {
 
   const header = useMemo(() => (
     <CommunityHeader leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Resolved Issues" subtitle="Issues successfully closed by authorities" />
+      title="Resolved Issues" subtitle="Issues the community has seen through" />
   ), [handleLeftToggle, handleRightToggle]);
 
   const content = useMemo(() => (
@@ -63,7 +63,7 @@ function ActiveResolvedIssuesPage() {
         </div>
         {isLoading && <CivicLoadingSkeleton />}
         {isError && <CivicEmptyState title="Could not load resolved issues" description="Please try again." />}
-        {!isLoading && !isError && !issues.length && <CivicEmptyState title="No resolved issues yet" description="Resolved issues will appear here once authorities have acted on community reports." />}
+        {!isLoading && !isError && !issues.length && <CivicEmptyState title="No resolved issues yet" description="Issues will appear here once they are resolved or become funded projects." />}
         {!isLoading && !isError && !!issues.length && (
           <div className="w-full flex flex-col gap-4">
             {issues.map((issue, i) => <IssueCard key={issue.id} issue={issue} index={i} />)}

@@ -96,6 +96,13 @@ function CivicHubSwitcher() {
           <ListItemText primary="Healthcare" />
         </MenuItem>
 
+        <MenuItem component={NavLinkAdapter} to="/education">
+          <ListItemIcon className="min-w-40">
+            <FuseSvgIcon>heroicons-outline:academic-cap</FuseSvgIcon>
+          </ListItemIcon>
+          <ListItemText primary="Education" />
+        </MenuItem>
+
         {false && <MenuItem component={NavLinkAdapter} to="/governance">
           <ListItemIcon className="min-w-40">
             <FuseSvgIcon>heroicons-outline:briefcase</FuseSvgIcon>

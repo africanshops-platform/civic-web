@@ -11,7 +11,6 @@ import CommunityFeedSidebarLeft from './shared-components/CommunityFeedSidebarLe
 import CommunityFeedSidebarRight from './shared-components/CommunityFeedSidebarRight';
 import CommunityProjectCard from '../components/CommunityProjectCard';
 import { CivicLoadingSkeleton, CivicEmptyState, CivicStatCard } from '../../civic-shared';
-import { PROJECT_STATS } from '../mock';
 
 const F = {
   body:    'clamp(1.3rem,  2vw,   1.64rem)',
@@ -38,11 +37,12 @@ function ActiveCommunityProjectsPage() {
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
   const { data, isLoading, isError } = useCommunityProjects({ status: activeStatus });
+  const stats = data?.data?.stats ?? { inProgressProjects: 0, completedProjects: 0, totalRaised: 0 };
   const projects = useMemo(() => {
     const all = data?.data?.projects || [];
     if (!search) return all;
     const q = search.toLowerCase();
-    return all.filter((p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    return all.filter((p) => p.title.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
   }, [data, search]);
 
   const handleLeftToggle = useCallback(() => setLeftSidebarOpen((v) => !v), []);
@@ -52,7 +52,7 @@ function ActiveCommunityProjectsPage() {
 
   const header = useMemo(() => (
     <CommunityHeader leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Community Projects" subtitle="Government and community-funded projects tracked in real time" />
+      title="Community Projects" subtitle="Community-funded projects, tracked from the vote to the finish line" />
   ), [handleLeftToggle, handleRightToggle]);
 
   const content = useMemo(() => (
@@ -60,19 +60,19 @@ function ActiveCommunityProjectsPage() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <div style={{ marginBottom: 'clamp(18px, 2.5vw, 28px)' }}>
           <Typography sx={{ fontWeight: 900, color: '#111827', fontSize: F.sectionH, mb: 1 }}>Community Projects</Typography>
-          <Typography sx={{ color: '#4b5563', fontSize: F.body, lineHeight: 1.7 }}>Ongoing and completed projects across your area — tracked in real time.</Typography>
+          <Typography sx={{ color: '#4b5563', fontSize: F.body, lineHeight: 1.7 }}>Projects your community voted for and funded, with every milestone shown as it is reached.</Typography>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14, marginBottom: 'clamp(16px, 2vw, 24px)' }}>
-          <CivicStatCard icon={Construction} value={PROJECT_STATS.inProgressProjects} label="In Progress" />
-          <CivicStatCard icon={CheckCircle} value={PROJECT_STATS.completedProjects} label="Completed" />
-          <CivicStatCard icon={TrendingUp} value={`₦${(PROJECT_STATS.totalBudget / 1_000_000_000).toFixed(1)}B`} label="Total Budget" />
+          <CivicStatCard icon={Construction} value={stats.inProgressProjects} label="In Progress" />
+          <CivicStatCard icon={CheckCircle} value={stats.completedProjects} label="Completed" />
+          <CivicStatCard icon={TrendingUp} value={`₦${Number(stats.totalRaised || 0).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`} label="Raised So Far" />
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 'clamp(14px, 2vw, 22px)' }}>
           <TextField size="small" placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)}
             InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 'clamp(16px, 2vw, 20px)', color: '#9ca3af' }} /></InputAdornment> }}
             sx={{ minWidth: 220, '& .MuiOutlinedInput-root': { borderRadius: '12px', fontSize: F.body } }} />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {[{ value: '', label: 'All Projects' }, { value: 'in_progress', label: 'In Progress' }, { value: 'completed', label: 'Completed' }].map((s) => (
+            {[{ value: '', label: 'All Projects' }, { value: 'planned', label: 'Planned' }, { value: 'in_progress', label: 'In Progress' }, { value: 'completed', label: 'Completed' }].map((s) => (
               <Chip key={s.value} label={s.label} onClick={() => setActiveStatus(s.value)} clickable
                 sx={{ fontWeight: 700, fontSize: F.meta, background: activeStatus === s.value ? '#059669' : '#f3f4f6', color: activeStatus === s.value ? 'white' : '#374151' }} />
             ))}
@@ -88,7 +88,7 @@ function ActiveCommunityProjectsPage() {
         )}
       </motion.div>
     </div>
-  ), [projects, isLoading, isError, search, activeStatus]);
+  ), [projects, stats, isLoading, isError, search, activeStatus]);
 
   const leftSidebar = useMemo(() => <CommunityFeedSidebarLeft />, []);
   const rightSidebar = useMemo(() => <CommunityFeedSidebarRight />, []);

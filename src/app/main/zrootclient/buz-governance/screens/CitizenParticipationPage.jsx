@@ -9,8 +9,8 @@ import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import GovernanceHeader from './shared-components/GovernanceHeader';
 import GovernanceSidebarLeft from './shared-components/GovernanceSidebarLeft';
 import GovernanceSidebarRight from './shared-components/GovernanceSidebarRight';
-import { usePetitions, useSignPetition } from '../hooks/useGovernanceRepo';
-import { PETITION_CATEGORIES, PETITION_STATS } from '../mock';
+import { usePetitions, useSignPetition, usePolls, useVoteOnPoll } from '../hooks/useGovernanceRepo';
+import { StartPetitionDialog, StartPollDialog } from '../components/ParticipationDialogs';
 import { CivicLoadingSkeleton, CivicEmptyState } from '../../civic-shared';
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
@@ -34,8 +34,8 @@ const F = {
 };
 
 function PetitionCard({ petition, onSign, isSigning }) {
-  const progressPct = Math.round((petition.currentSignatures / petition.targetSignatures) * 100);
-  const statusColors = { active: '#1d4ed8', completed: '#16a34a' };
+  const progressPct = petition.targetSignatures ? Math.round((petition.currentSignatures / petition.targetSignatures) * 100) : 0;
+  const statusColors = { open: '#1d4ed8', threshold_met: '#16a34a', delivered: '#16a34a', closed: '#6b7280' };
   const accent = statusColors[petition.status] || '#1d4ed8';
 
   return (
@@ -46,12 +46,12 @@ function PetitionCard({ petition, onSign, isSigning }) {
         <h3 style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: F.cardTitle, lineHeight: 1.35 }}>
           {petition.title}
         </h3>
-        <Chip label={petition.status.toUpperCase()} size="small"
+        <Chip label={petition.status.replace('_', ' ').toUpperCase()} size="small"
           sx={{ height: F.chipH, fontSize: F.small, background: accent + '15', color: accent, fontWeight: 800, flexShrink: 0 }} />
       </div>
 
       <div style={{ fontSize: F.body, color: '#6b7280', marginBottom: 16, lineHeight: 1.7 }}>
-        {petition.description.slice(0, 160)}...
+        {petition.description.length > 160 ? `${petition.description.slice(0, 160)}...` : petition.description}
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -69,7 +69,7 @@ function PetitionCard({ petition, onSign, isSigning }) {
       </div>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        {petition.status === 'active' && (
+        {petition.status === 'open' && (
           <Button size="medium" variant="contained" onClick={() => onSign?.(petition.id)} disabled={isSigning}
             startIcon={<CheckCircle />}
             sx={{ background: '#1d4ed8', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.body }}>
@@ -86,17 +86,42 @@ function PetitionCard({ petition, onSign, isSigning }) {
   );
 }
 
+function PollCard({ poll, onVote, isVoting }) {
+  const total = poll.results?.totalVotes ?? 0;
+  return (
+    <div style={{ borderRadius: 22, padding: 'clamp(16px, 2.2vw, 24px)', background: 'white', border: '1px solid #e5e7eb' }}>
+      <h3 style={{ margin: '0 0 12px', fontWeight: 800, color: '#111827', fontSize: F.cardTitle, lineHeight: 1.35 }}>{poll.question}</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {(poll.results?.options ?? poll.options ?? []).map((o) => {
+          const pct = total ? Math.round(((o.votes ?? 0) / total) * 100) : 0;
+          return (
+            <button key={o.id} type="button" disabled={isVoting} onClick={() => onVote(poll.id, o.id)}
+              style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid #d1d5db', borderRadius: 12, padding: '10px 14px', background: `linear-gradient(90deg, #dbeafe ${pct}%, white ${pct}%)`, fontSize: F.body, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span>{o.text}</span>
+              {poll.results && <span style={{ fontWeight: 800 }}>{pct}%</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: F.small, color: '#9ca3af', marginTop: 8 }}>{total.toLocaleString()} {total === 1 ? 'answer' : 'answers'} so far</div>
+    </div>
+  );
+}
+
 function ActiveCitizenParticipationPage() {
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [leftSidebarOpen, setLeftSidebarOpen]   = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
   const [search, setSearch]               = useState('');
-  const [activeCategory, setActiveCategory] = useState('');
+  const [activeStatus, setActiveStatus] = useState('');
 
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
-  const { data, isLoading, isError } = usePetitions({ category: activeCategory });
+  const { data, isLoading, isError } = usePetitions({ status: activeStatus });
   const { mutate: signPetition, isLoading: isSigning } = useSignPetition();
+  const { data: polls = [] } = usePolls();
+  const { mutate: voteOnPoll, isLoading: isVotingPoll } = useVoteOnPoll();
+  const [dialog, setDialog] = useState(null); // 'petition' | 'poll'
 
   const petitions = useMemo(() => {
     const all = data?.data?.petitions || [];
@@ -113,7 +138,7 @@ function ActiveCitizenParticipationPage() {
   const header = useMemo(() => (
     <GovernanceHeader
       leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Citizen Participation" subtitle="Digital Governance · Petitions · Accountability"
+      title="Citizen Participation" subtitle="Community petitions"
     />
   ), [handleLeftToggle, handleRightToggle]);
 
@@ -130,16 +155,20 @@ function ActiveCitizenParticipationPage() {
             Citizen Participation
           </h1>
           <p style={{ margin: 0, color: '#6b7280', fontSize: F.subTitle }}>
-            Sign petitions. Demand accountability. Shape your community.
+            Sign petitions and speak up on what matters to your community.
           </p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
+            <Button variant="contained" onClick={() => setDialog('petition')} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: F.body }}>Start a petition</Button>
+            <Button variant="outlined" onClick={() => setDialog('poll')} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 700, fontSize: F.body }}>Start a poll</Button>
+          </div>
         </div>
 
         {/* Stats strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 'clamp(10px, 1.4vw, 16px)', marginBottom: 'clamp(20px, 2.8vw, 28px)' }}>
           {[
-            { Icon: Campaign,    value: PETITION_STATS.activePetitions,   label: 'Active Petitions',  accent: '#1d4ed8' },
-            { Icon: CheckCircle, value: PETITION_STATS.petitionsActedOn,  label: 'Acted On',          accent: '#16a34a' },
-            { Icon: Edit,        value: (PETITION_STATS.totalSignatures / 1_000_000).toFixed(1) + 'M', label: 'Total Signatures', accent: '#7c3aed' },
+            { Icon: Campaign,    value: (data?.data?.stats?.openPetitions ?? 0).toLocaleString(),       label: 'Open Petitions',   accent: '#1d4ed8' },
+            { Icon: CheckCircle, value: (data?.data?.stats?.deliveredPetitions ?? 0).toLocaleString(),  label: 'Threshold Met',    accent: '#16a34a' },
+            { Icon: Edit,        value: (data?.data?.stats?.totalSignatures ?? 0).toLocaleString(),     label: 'Total Signatures', accent: '#7c3aed' },
           ].map(({ Icon, value, label, accent }) => (
             <div key={label} style={{ padding: 'clamp(14px, 1.8vw, 20px)', borderRadius: 16, background: 'white', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 12 }}>
               <Icon sx={{ fontSize: 'clamp(28px, 3.5vw, 36px)', color: accent }} />
@@ -158,12 +187,9 @@ function ActiveCitizenParticipationPage() {
             InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 'clamp(20px, 2.4vw, 26px)', color: '#9ca3af' }} /></InputAdornment>, style: { fontSize: F.input } }}
             sx={{ minWidth: 240, '& .MuiOutlinedInput-root': { borderRadius: '12px', fontSize: F.input } }} />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            <Chip label="All" onClick={() => setActiveCategory('')} clickable
-              sx={{ height: F.chipH, fontSize: F.small, fontWeight: 700, background: !activeCategory ? '#1d4ed8' : '#f3f4f6', color: !activeCategory ? 'white' : '#374151' }} />
-            {PETITION_CATEGORIES.map((cat) => (
-              <Chip key={cat.id} label={cat.label} onClick={() => setActiveCategory(cat.id)} clickable
-                icon={<span style={{ fontSize: F.small }}>{cat.icon}</span>}
-                sx={{ height: F.chipH, fontSize: F.small, fontWeight: 700, background: activeCategory === cat.id ? cat.color : cat.bgColor, color: activeCategory === cat.id ? 'white' : cat.color }} />
+            {[{ id: '', label: 'All' }, { id: 'open', label: 'Open' }, { id: 'threshold_met', label: 'Threshold met' }, { id: 'delivered', label: 'Delivered' }].map((st) => (
+              <Chip key={st.id || 'all'} label={st.label} onClick={() => setActiveStatus(st.id)} clickable
+                sx={{ height: F.chipH, fontSize: F.small, fontWeight: 700, background: activeStatus === st.id ? '#1d4ed8' : '#f3f4f6', color: activeStatus === st.id ? 'white' : '#374151' }} />
             ))}
           </div>
         </div>
@@ -182,9 +208,19 @@ function ActiveCitizenParticipationPage() {
             ))}
           </div>
         )}
+        {polls.length > 0 && (
+          <div style={{ marginTop: 'clamp(24px, 3vw, 36px)' }}>
+            <h2 style={{ margin: '0 0 14px', fontWeight: 900, color: '#111827', fontSize: F.subTitle }}>Community polls</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.6vw, 18px)' }}>
+              {polls.map((p) => <PollCard key={p.id} poll={p} isVoting={isVotingPoll} onVote={(pollId, optionId) => voteOnPoll({ pollId, optionId })} />)}
+            </div>
+          </div>
+        )}
+        {dialog === 'petition' && <StartPetitionDialog onClose={() => setDialog(null)} />}
+        {dialog === 'poll' && <StartPollDialog onClose={() => setDialog(null)} />}
       </motion.div>
     </div>
-  ), [petitions, isLoading, isError, search, activeCategory, isSigning, signPetition]);
+  ), [petitions, data, isLoading, isError, search, activeStatus, isSigning, signPetition, polls, isVotingPoll, voteOnPoll, dialog]);
 
   return (
     <Root header={header} content={content}

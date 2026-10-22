@@ -16,7 +16,6 @@ const api = {
   payObligations:      (data)   => AuthApi().post('/civic/subscriptions/obligations/pay-many', data),
   getMyCivicWallet:    ()       => AuthApi().get('/civic/subscriptions/wallet/me'),
   getDeactivationPreview: ()    => AuthApi().get('/civic/subscriptions/deactivation-preview'),
-  refundPrepaid:       ()       => AuthApi().post('/civic/subscriptions/obligations/refund-prepaid'),
   deactivateCivic:     ()       => AuthApi().post('/civic/subscriptions/deactivate'),
   getSpendingBalance:  ()       => AuthApi().get('/fintech-accounts/user/balance?currency=NGN'),
   fundCivicWallet:     (acct, body) => AuthApi().post(`/fintech-accounts/user/account/${acct}/civic-wallet/fund`, body),
@@ -25,6 +24,12 @@ const api = {
   getMySplitSummary:   ()       => AuthApi().get('/civic/subscriptions/my-split-summary'),
   updateCivicSplit:    (data)   => AuthApi().put('/auth-user/civic/profile', data),
   getCheckoutReadiness:()       => AuthApi().get('/checkout-readiness/civic-subscriptions'),
+  getRateNotice:       ()       => AuthApi().get('/civic/subscriptions/rate-notice'),
+  getMyFeeLines:       (month)  => AuthApi().get('/civic/subscriptions/my-fee-lines', { params: { month } }),
+  getGoalAdoptions:    (params) => AuthApi().get('/civic/subscriptions/goal-adoptions', { params }),
+  getGoalProjects:     (id)     => AuthApi().get(`/civic/subscriptions/goal-adoptions/${id}/projects`),
+  giveToGoal:          (data)   => AuthApi().post('/civic/subscriptions/goal-contributions', data),
+  getMyGoalGifts:      (params) => AuthApi().get('/civic/subscriptions/goal-contributions/mine', { params }),
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -189,6 +194,24 @@ export function useCivicSubscriptionsReadiness(enabled = true) {
     refetchOnWindowFocus: true,
     retry: 1,
     staleTime: 5000,
+    select: (res) => res?.data,
+  });
+}
+
+/** The monthly rate now and any scheduled change (civic-18); { currentAmountKobo, scheduled: { amountKobo, effectiveFrom } | null }. */
+export function useRateNotice() {
+  return useQuery(['civictax-rate-notice'], () => api.getRateNotice(), {
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    select: (res) => res?.data,
+  });
+}
+
+/** The household fee for a month (civic-57 CP-6): final fee, lines and the day-by-day build-up; { active: false } when not in use. */
+export function useMyFeeLines(month) {
+  return useQuery(['civictax-my-fee-lines', month], () => api.getMyFeeLines(month), {
+    staleTime: 60 * 1000,
+    retry: 1,
     select: (res) => res?.data,
   });
 }
@@ -371,7 +394,7 @@ function useCivicWalletMove(call, successMsg) {
 export const useFundCivicWallet = () => useCivicWalletMove(api.fundCivicWallet, 'Civic wallet funded.');
 export const useWithdrawCivicWallet = () => useCivicWalletMove(api.withdrawCivicWallet, 'Moved back to your spending wallet.');
 
-// ─── Deactivating the civic profile (guided: refund prepaid -> move money back -> deactivate) ───
+// ─── Deactivating the civic profile (guided: move the civic wallet balance back -> deactivate). Paid subscriptions are never refunded. ───
 
 export function useDeactivationPreview(enabled = true) {
   return useQuery(['civictax-deactivation-preview'], () => api.getDeactivationPreview(), { enabled, select: (res) => res.data, staleTime: 0 });
@@ -390,7 +413,6 @@ function useDeactivationStep(call, successMsg) {
   });
 }
 
-export const useRefundPrepaid = () => useDeactivationStep(api.refundPrepaid, 'Prepaid months returned to your civic wallet.');
 export const useDeactivateCivic = () => useDeactivationStep(api.deactivateCivic, 'Your civic profile has been deactivated.');
 
 export function useObligationHistory(page = 1, limit = 20) {
@@ -452,4 +474,45 @@ export function useProjectFunding(campaignId) {
     staleTime: 60 * 1000,
     retry: false,
   });
+}
+
+
+// ─── Development goals (civic-29): browse what an LGA is funding, and give to it ───
+
+/** Active goals with their funding picture (raised / passed on / held), optionally for one place. */
+export function useGoalAdoptions({ state, lga } = {}) {
+  return useQuery(['civictax-goals', state, lga], () => api.getGoalAdoptions(buildParams({ state, lga })), {
+    staleTime: 30 * 1000,
+    select: (res) => res?.data ?? [],
+  });
+}
+
+/** The real projects a goal funds, with milestones; fetched only when a card is opened. */
+export function useGoalProjects(adoptionId, enabled = true) {
+  return useQuery(['civictax-goal-projects', adoptionId], () => api.getGoalProjects(adoptionId), {
+    enabled: Boolean(adoptionId) && enabled,
+    staleTime: 30 * 1000,
+    select: (res) => res?.data ?? [],
+  });
+}
+
+export function useMyGoalGifts(page = 1) {
+  return useQuery(['civictax-my-goal-gifts', page], () => api.getMyGoalGifts({ ...paginate(page, 20) }), { select: (res) => res?.data });
+}
+
+/** A voluntary gift to a goal (adoptionId) or straight to an LGA (state + lga). Never refundable. */
+export function useGiveToGoal() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ adoptionId, state, lga, amount, note }) =>
+      api.giveToGoal({ adoptionId, state, lga, amountKobo: toKobo(amount), note: note || undefined, idempotencyKey: crypto.randomUUID() }),
+    {
+      onSuccess: () => {
+        toast.success('Thank you. Your gift has been received.');
+        queryClient.invalidateQueries(['civictax-goals']);
+        queryClient.invalidateQueries(['civictax-my-goal-gifts']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Your gift could not be made. Nothing was charged.'),
+    }
+  );
 }

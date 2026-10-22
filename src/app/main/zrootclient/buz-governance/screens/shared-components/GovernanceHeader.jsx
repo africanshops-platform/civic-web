@@ -30,7 +30,7 @@ function GovernanceHeader({ leftSidebarToggle, rightSidebarToggle, title, subtit
             fontSize: 'clamp(1.64rem, 2.8vw, 2.2rem)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            {title || 'Digital Governance'}
+            {title || 'Community Votes'}
           </div>
           {subtitle && (
             <div style={{

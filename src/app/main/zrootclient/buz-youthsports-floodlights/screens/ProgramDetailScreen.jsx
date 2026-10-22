@@ -6,6 +6,8 @@ import FloodlightsPage from './shared/FloodlightsPage';
 import { Pill } from './shared/flHelpers';
 import { useProgramDetail, useEnrollInProgram, useMyPrograms } from '../hooks/useFloodlightsRepo';
 import { PROGRAM_CATEGORIES } from '../mock';
+import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
+
 
 const STATUS_VARIANT = { open: 'pos', upcoming: 'gold', ongoing: 'live', closed: 'muted' };
 
@@ -15,6 +17,7 @@ export default function ProgramDetailScreen() {
   const program = data?.data?.program;
   const [justEnrolled, setJustEnrolled] = useState(false);
   const enrollMutation = useEnrollInProgram();
+  const { guard, gateDialog } = useInteractGuard();
   // Mirrors TournamentDetailScreen's EnrollPanel pattern: a returning,
   // already-enrolled citizen must see "Enrolled", not a clickable button
   // that just 409s on a second click.
@@ -101,7 +104,7 @@ export default function ProgramDetailScreen() {
                       type="button"
                       disabled={disabled}
                       className="fl2-btn fl2-btn-gold fl2-btn-block"
-                      onClick={() => enrollMutation.mutate({ programId }, { onSuccess: () => setJustEnrolled(true) })}
+                      onClick={guard(() => enrollMutation.mutate({ programId }, { onSuccess: () => setJustEnrolled(true) }))}
                     >
                       {label}
                     </button>
@@ -112,6 +115,7 @@ export default function ProgramDetailScreen() {
           </>
         );
       })()}
+      {gateDialog}
     </FloodlightsPage>
   );
 }
