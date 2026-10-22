@@ -7,8 +7,9 @@ import { useElectionDetail, useElectionCollation, useSubmitCollationEntry } from
 import LiveCollationBoard from '../components/LiveCollationBoard';
 import CollationEntryForm from '../components/CollationEntryForm';
 import { CivicLoadingSkeleton } from '../../civic-shared';
+import GovernanceShell from './shared-components/GovernanceShell';
 
-export default function CollationCenterPage() {
+function CollationCenterPageBody() {
   const { electionId } = useParams();
   const { data: elecData, isLoading: elecLoading } = useElectionDetail(electionId);
   const { data: collData, isLoading: collLoading } = useElectionCollation(electionId);
@@ -105,5 +106,14 @@ export default function CollationCenterPage() {
         </div>
       )}
     </motion.div>
+  );
+}
+
+
+export default function CollationCenterPage() {
+  return (
+    <GovernanceShell title="Collation Centre" subtitle="Ward results">
+      <CollationCenterPageBody />
+    </GovernanceShell>
   );
 }

@@ -1,9 +1,9 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Divider, LinearProgress } from '@mui/material';
 import { EmojiEvents, TrendingUp, People, Bolt } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { CivicStatCard, ActivityFeedItem } from '../../../civic-shared';
-import { CAMPAIGN_STATS, CAMPAIGN_CATEGORIES, mockCampaigns } from '../../mock';
+import { useCampaigns } from '../../hooks/useCivicTaxRepo';
 
 const F = {
   meta:    'clamp(1.2rem, 1.8vw, 1.5rem)',
@@ -12,20 +12,27 @@ const F = {
   sectionH:'clamp(2rem,   4vw,   3.4rem)',
 };
 
-const recentActivity = mockCampaigns
-  .filter((c) => c.status === 'active')
-  .slice(0, 4)
-  .map((c) => ({
-    id: c.id,
-    title: `${c.contributorsCount} contributors supporting`,
-    subtitle: c.title,
-    category: c.category,
-    amount: c.raisedAmount,
-    timestamp: c.createdAt,
-  }));
-
-function CampaignsBrowseSidebarRight({ stats }) {
-  const s = stats || CAMPAIGN_STATS;
+function CampaignsBrowseSidebarRight() {
+  // Real totals from the same (cached) campaign list the browse page uses — no hardcoded figures.
+  const { data } = useCampaigns({ limit: 50 });
+  const campaigns = useMemo(() => data?.data?.campaigns ?? [], [data]);
+  const s = useMemo(() => ({
+    totalContributors:  campaigns.reduce((n, c) => n + (c.contributorsCount || 0), 0),
+    totalRaised:        campaigns.reduce((n, c) => n + (c.raisedAmount || 0), 0),
+    activeCampaigns:    campaigns.filter((c) => c.status === 'active').length,
+    completedCampaigns: campaigns.filter((c) => c.status === 'completed').length,
+  }), [campaigns]);
+  const recentActivity = useMemo(() => [...campaigns]
+    .sort((x, y) => new Date(y.updatedAt || y.createdAt) - new Date(x.updatedAt || x.createdAt))
+    .slice(0, 4)
+    .map((c) => ({
+      id: c.id,
+      title: `${c.contributorsCount || 0} contributor${c.contributorsCount === 1 ? '' : 's'} supporting`,
+      subtitle: c.title,
+      category: c.category,
+      amount: c.raisedAmount,
+      timestamp: c.updatedAt || c.createdAt,
+    })), [campaigns]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 'clamp(14px, 2vw, 20px)', overflowY: 'auto', gap: 'clamp(14px, 2vw, 20px)', background: 'linear-gradient(180deg, #fffbf5 0%, #fff7ed 100%)' }}>
@@ -46,7 +53,7 @@ function CampaignsBrowseSidebarRight({ stats }) {
             <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: F.meta }}>Contributors</div>
           </div>
           <div style={{ textAlign: 'center', padding: 'clamp(8px,1.2vw,12px)', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)' }}>
-            <div style={{ fontWeight: 900, color: 'white', fontSize: F.sectionH }}>₦{(s.totalRaised / 1000000).toFixed(1)}M</div>
+            <div style={{ fontWeight: 900, color: 'white', fontSize: F.sectionH }}>{s.totalRaised >= 1000000 ? `₦${(s.totalRaised / 1000000).toFixed(1)}M` : `₦${s.totalRaised.toLocaleString()}`}</div>
             <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: F.meta }}>Total Raised</div>
           </div>
         </div>
@@ -61,22 +68,19 @@ function CampaignsBrowseSidebarRight({ stats }) {
       {/* ── Platform Progress ── */}
       <div style={{ borderRadius: 16, padding: 'clamp(14px, 2vw, 18px)', background: 'white', border: '1px solid #ffedd5', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         <div style={{ fontWeight: 700, fontSize: F.subH, color: '#1f2937', marginBottom: 'clamp(12px, 1.6vw, 18px)' }}>
-          Platform Progress
+          Campaign Progress
         </div>
-        {CAMPAIGN_CATEGORIES.map((cat) => {
-          const catCampaigns = mockCampaigns.filter((c) => c.category === cat.id);
-          if (!catCampaigns.length) return null;
-          const totalRaised = catCampaigns.reduce((sum, c) => sum + c.raisedAmount, 0);
-          const totalTarget = catCampaigns.reduce((sum, c) => sum + c.targetAmount, 0);
-          const pct = Math.round((totalRaised / totalTarget) * 100);
+        {campaigns.length === 0 && <div style={{ fontSize: F.meta, color: '#9ca3af' }}>No campaigns yet.</div>}
+        {campaigns.slice(0, 5).map((c) => {
+          const pct = c.targetAmount ? Math.min(100, Math.round((c.raisedAmount / c.targetAmount) * 100)) : 0;
           return (
-            <div key={cat.id} style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: F.meta, fontWeight: 600, color: '#374151' }}>{cat.icon} {cat.label}</span>
-                <span style={{ fontSize: F.meta, fontWeight: 700, color: cat.color }}>{pct}%</span>
+            <div key={c.id} style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: F.meta, fontWeight: 600, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</span>
+                <span style={{ fontSize: F.meta, fontWeight: 700, color: '#ea580c' }}>{pct}%</span>
               </div>
               <LinearProgress variant="determinate" value={pct}
-                sx={{ height: 6, borderRadius: 3, backgroundColor: '#ffedd5', '& .MuiLinearProgress-bar': { borderRadius: 3, backgroundColor: cat.color } }} />
+                sx={{ height: 6, borderRadius: 3, backgroundColor: '#ffedd5', '& .MuiLinearProgress-bar': { borderRadius: 3, backgroundColor: '#ea580c' } }} />
             </div>
           );
         })}

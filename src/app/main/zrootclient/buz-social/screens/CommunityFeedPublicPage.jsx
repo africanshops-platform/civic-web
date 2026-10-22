@@ -7,7 +7,7 @@ import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { useIssues } from '../hooks/useSocialRepo';
 import IssueCard from '../components/IssueCard';
 import { CivicLoadingSkeleton, CivicEmptyState, CivicStatCard } from '../../civic-shared';
-import { ISSUE_CATEGORIES, ISSUE_STATS } from '../mock';
+import { ISSUE_CATEGORIES } from '../mock';
 import { CheckCircle, TrendingUp } from '@mui/icons-material';
 
 const F = {
@@ -23,6 +23,7 @@ export default function CommunityFeedPublicPage() {
   const [activeCategory, setActiveCategory] = useState('');
   const { data, isLoading, isError } = useIssues({ category: activeCategory });
 
+  const stats = data?.data?.stats ?? { openIssues: 0, inProgressIssues: 0, resolvedIssues: 0, resolutionRate: 0 };
   const issues = useMemo(() => {
     const all = data?.data?.issues || [];
     if (!search) return all;
@@ -42,10 +43,10 @@ export default function CommunityFeedPublicPage() {
       </motion.div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 'clamp(16px, 2vw, 24px)' }}>
-        <CivicStatCard icon={Forum} value={ISSUE_STATS.openIssues} label="Open Issues" />
-        <CivicStatCard icon={TrendingUp} value={ISSUE_STATS.inProgressIssues} label="In Progress" />
-        <CivicStatCard icon={CheckCircle} value={ISSUE_STATS.resolvedIssues} label="Resolved" />
-        <CivicStatCard icon={ArrowForward} value={`${ISSUE_STATS.resolutionRate}%`} label="Resolution Rate" />
+        <CivicStatCard icon={Forum} value={stats.openIssues} label="Open Issues" />
+        <CivicStatCard icon={TrendingUp} value={stats.inProgressIssues} label="In Progress" />
+        <CivicStatCard icon={CheckCircle} value={stats.resolvedIssues} label="Resolved" />
+        <CivicStatCard icon={ArrowForward} value={`${stats.resolutionRate}%`} label="Resolution Rate" />
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 'clamp(14px, 2vw, 22px)' }}>

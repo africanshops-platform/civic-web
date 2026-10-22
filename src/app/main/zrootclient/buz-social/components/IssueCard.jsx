@@ -53,7 +53,7 @@ function IssueCard({ issue, index = 0, onUpvote }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0, alignItems: 'flex-end' }}>
           <StatusBadge status={issue.status} />
-          <StatusBadge priority={issue.priority} />
+          {issue.priority && <StatusBadge priority={issue.priority} />}
         </div>
       </div>
 
@@ -89,10 +89,12 @@ function IssueCard({ issue, index = 0, onUpvote }) {
             <ChatBubbleOutline sx={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }} />
             <span>{issue.commentsCount}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b7280', fontSize: F.meta }}>
-            <Visibility sx={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }} />
-            <span>{issue.views.toLocaleString()}</span>
-          </div>
+          {issue.views > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b7280', fontSize: F.meta }}>
+              <Visibility sx={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }} />
+              <span>{issue.views.toLocaleString()}</span>
+            </div>
+          )}
         </div>
 
         <Button

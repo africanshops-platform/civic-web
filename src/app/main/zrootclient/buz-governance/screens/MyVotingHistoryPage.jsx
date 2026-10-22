@@ -49,7 +49,7 @@ function ActiveMyVotingHistoryPage() {
   const header = useMemo(() => (
     <GovernanceHeader
       leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="My Voting History" subtitle="Digital Governance · Your Participation Record"
+      title="My Voting History" subtitle="Community votes · Your participation"
     />
   ), [handleLeftToggle, handleRightToggle]);
 
@@ -66,88 +66,23 @@ function ActiveMyVotingHistoryPage() {
             My Voting History
           </h1>
           <p style={{ margin: 0, color: '#6b7280', fontSize: F.subTitle }}>
-            A secure record of every election you have participated in.
+            Your votes are secret.
           </p>
         </div>
 
         {isLoading && <CivicLoadingSkeleton />}
         {isError   && <CivicEmptyState title="Could not load voting history" description="Please try again." />}
 
-        {!isLoading && !isError && history && (
-          <>
-            {/* Stat strip */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 'clamp(10px, 1.4vw, 16px)', marginBottom: 'clamp(20px, 2.8vw, 32px)' }}>
-              {[
-                { Icon: CheckCircle, value: history.totalVoted,        label: 'Elections Voted',  accent: '#16a34a' },
-                { Icon: HowToVote,   value: history.electionsEligible, label: 'Eligible For',     accent: '#1d4ed8' },
-                { Icon: BarChart,    value: `${Math.round((history.totalVoted / history.electionsEligible) * 100)}%`, label: 'Participation Rate', accent: '#7c3aed' },
-              ].map(({ Icon, value, label, accent }) => (
-                <div key={label} style={{ padding: 'clamp(14px, 1.8vw, 20px)', borderRadius: 16, background: 'white', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Icon sx={{ fontSize: 'clamp(28px, 3.5vw, 36px)', color: accent }} />
-                  <div>
-                    <div style={{ fontWeight: 900, fontSize: F.cardTitle, color: accent, lineHeight: 1 }}>{value}</div>
-                    <div style={{ fontSize: F.body, color: '#6b7280', fontWeight: 600, marginTop: 4 }}>{label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {history.votes.length === 0 ? (
-              <CivicEmptyState
-                icon={<HowToVote sx={{ fontSize: 64, color: '#d1d5db' }} />}
-                title="No votes recorded yet"
-                description="You have not cast a vote in any election yet."
-              >
-                <Button component={Link} to="/governance/dashboard" variant="contained"
-                  sx={{ mt: 2, background: '#1d4ed8', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.body }}>
-                  Browse Elections
-                </Button>
-              </CivicEmptyState>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.6vw, 18px)' }}>
-                {history.votes.map((v, i) => (
-                  <motion.div
-                    key={v.electionId}
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    style={{
-                      borderRadius: 20, padding: 'clamp(16px, 2.2vw, 24px)',
-                      background: 'white', border: '1px solid #e5e7eb',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.4vw, 16px)' }}>
-                      <div style={{ width: 'clamp(44px, 5.5vw, 56px)', height: 'clamp(44px, 5.5vw, 56px)', borderRadius: 14, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <CheckCircle sx={{ color: '#16a34a', fontSize: 'clamp(24px, 3vw, 30px)' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 800, color: '#111827', fontSize: F.cardTitle, marginBottom: 4 }}>
-                          {v.electionTitle}
-                        </div>
-                        <div style={{ fontSize: F.body, color: '#9ca3af' }}>
-                          Voted: {new Date(v.votedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </div>
-                        <div style={{ fontSize: F.body, color: '#6b7280', fontFamily: 'monospace' }}>
-                          Receipt: {v.receiptCode}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Chip label="VOTED" sx={{ height: F.chipH, fontSize: F.body, background: '#f0fdf4', color: '#16a34a', fontWeight: 800 }} />
-                      <Button
-                        component={Link} to={`/governance/elections/${v.electionId}/live/manage`}
-                        size="medium" endIcon={<ArrowForward />}
-                        sx={{ color: '#1d4ed8', fontWeight: 700, textTransform: 'none', fontSize: F.body }}
-                      >
-                        Results
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+        <CivicEmptyState
+          icon={<HowToVote sx={{ fontSize: 64, color: '#d1d5db' }} />}
+          title="Your voting history is private"
+          description="To keep every ballot secret, the platform keeps only a one-way proof that you voted, never a list of the votes you cast. You will see a confirmation each time you vote."
+        >
+          <Button component={Link} to="/governance/elections" variant="contained"
+            sx={{ mt: 2, background: '#1d4ed8', color: 'white', fontWeight: 700, borderRadius: '12px', textTransform: 'none', fontSize: F.body }}>
+            Browse Community Votes
+          </Button>
+        </CivicEmptyState>
       </motion.div>
     </div>
   ), [history, isLoading, isError]);

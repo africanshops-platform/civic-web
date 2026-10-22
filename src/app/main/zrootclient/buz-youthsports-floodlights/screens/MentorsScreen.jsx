@@ -4,6 +4,7 @@ import { CheckCircle } from '@mui/icons-material';
 import FloodlightsPage from './shared/FloodlightsPage';
 import { useRequestMentorship } from '../hooks/useFloodlightsRepo';
 import { SPORT_ICONS } from '../mock';
+import useInteractGuard from '../../civic-shared/interact/useInteractGuard';
 
 const SPORTS = Object.keys(SPORT_ICONS);
 
@@ -15,6 +16,7 @@ export default function MentorsScreen() {
   const [errors, setErrors] = useState({});
 
   const requestMutation = useRequestMentorship();
+  const { guard, gateDialog } = useInteractGuard();
 
   const handleSubmit = () => {
     const next = {};
@@ -103,10 +105,11 @@ export default function MentorsScreen() {
           </label>
         </div>
 
-        <button type="button" className="fl2-btn fl2-btn-gold fl2-btn-block" onClick={handleSubmit} disabled={requestMutation.isLoading}>
+        <button type="button" className="fl2-btn fl2-btn-gold fl2-btn-block" onClick={guard(handleSubmit)} disabled={requestMutation.isLoading}>
           {requestMutation.isLoading ? <CircularProgress size={20} sx={{ color: 'var(--gold-ink)' }} /> : 'Submit Request'}
         </button>
       </div>
+      {gateDialog}
     </FloodlightsPage>
   );
 }

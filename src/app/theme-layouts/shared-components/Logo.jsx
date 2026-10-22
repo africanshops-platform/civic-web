@@ -24,7 +24,7 @@ function Logo() {
       {/* h-40 w-40 */}
       <img
         className="mt-14 logo-icon opacity-70"
-        src="assets/images/afslogo/afslogo.png"
+        src="assets/images/afslogo/civic-logo.png"
         width={45}
         height={45}
         alt="logo"

@@ -54,7 +54,7 @@ const LIVE_VERTICALS = [
     emoji: "🏅",
     title: "Youth Programmes",
     to: "/youth-v2",
-    desc: "Government-backed programmes, national tournaments, and mentorship — from first sign-up to the pitch or the boardroom.",
+    desc: "Community youth programmes, tournaments, and mentorship — from first sign-up to the pitch or the boardroom.",
   },
 ];
 
@@ -71,13 +71,13 @@ const MORE_VERTICALS = [
     emoji: "🩺",
     title: "Healthcare",
     to: "/healthcare",
-    desc: "Find a nearby facility, book an appointment, and get real-time public-health alerts for your area.",
+    desc: "Find approved facilities, book a time that is really free, and control who sees your health record.",
   },
   {
-    emoji: "🗳️",
-    title: "Governance",
-    to: "/governance",
-    desc: "Register, verify with your NIN, and vote — with ward-by-ward results tracked live as counting happens.",
+    emoji: "🎓",
+    title: "Education",
+    to: "/education",
+    desc: "Find an approved school, apply, and follow your child's grades, attendance and school notices.",
   },
 ];
 
@@ -179,9 +179,9 @@ function CivicLandingPage() {
           <motion.div {...fadeUp(0)} className="flex items-center gap-12 mb-40">
             <div
               className="w-56 h-56 rounded-xl flex items-center justify-center shadow-lg"
-              style={{ background: "rgba(255,255,255,0.18)", backdropFilter: "blur(6px)" }}
+              style={{ background: "#000000", backdropFilter: "blur(6px)" }}
             >
-              <img className="w-32" src="assets/images/afslogo/afslogo.png" alt="AfricanShops" />
+              <img className="w-32" src="assets/images/afslogo/civic-logo-white.png" alt="AfricanShops" />
             </div>
             <span
               style={{
@@ -289,8 +289,7 @@ function CivicLandingPage() {
             Live today
           </h2>
           <p style={{ margin: 0, fontSize: TYPE.body, color: "#6b7280", maxWidth: 640 }}>
-            The three civic pillars AfricanShops has fully built and tested — real data, real
-            payments, real people using them.
+            The three civic pillars AfricanShops has built and tested.
           </p>
         </motion.div>
 

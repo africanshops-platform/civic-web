@@ -1,4 +1,5 @@
 import BrowserRouter from "@fuse/core/BrowserRouter";
+import StudentSessionGuard from "../main/zrootclient/buz-education/student/StudentSessionGuard";
 import FuseAuthorization from "@fuse/core/FuseAuthorization/FuseAuthorization";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "app/store/hooks";
@@ -163,6 +164,7 @@ function Authentication(props) {
         <FuseSplashScreen />
       ) : (
         <BrowserRouter>
+          <StudentSessionGuard />
           <FuseAuthorization userRole={userRole}>{children}</FuseAuthorization>
         </BrowserRouter>
       ),

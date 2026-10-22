@@ -147,6 +147,11 @@ export default function CivicTaxLandingPage() {
                   sx={{ borderColor: 'rgba(255,255,255,0.65)', color: 'white', fontWeight: 700, borderRadius: '16px', textTransform: 'none', px: { xs: 3.5, sm: 5 }, py: { xs: 1.75, sm: 2.25 }, backdropFilter: 'blur(12px)', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.12)' } }}>
                   {isAuthenticated ? 'My Contributions' : 'Sign In'}
                 </Button>
+                <Button component={Link} to="/civictax/goals" variant="outlined" size="large"
+                  style={{ fontSize: F.btn }}
+                  sx={{ borderColor: 'rgba(255,255,255,0.65)', color: 'white', fontWeight: 700, borderRadius: '16px', textTransform: 'none', px: { xs: 3.5, sm: 5 }, py: { xs: 1.75, sm: 2.25 }, backdropFilter: 'blur(12px)', '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.12)' } }}>
+                  Development Goals
+                </Button>
               </motion.div>
 
               <motion.div {...fadeUp(0.56)} style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>

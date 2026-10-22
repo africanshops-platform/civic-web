@@ -5,7 +5,6 @@ const CommunityFeedWithSidebarsPage = lazy(() => import('./screens/CommunityFeed
 const CreateIssuePage = lazy(() => import('./screens/CreateIssuePage'));
 const IssueDetailPage = lazy(() => import('./screens/IssueDetailPage'));
 const ResolvedIssuesPage = lazy(() => import('./screens/ResolvedIssuesPage'));
-const LocalLeadersPage = lazy(() => import('./screens/LocalLeadersPage'));
 const CommunityProjectsPage = lazy(() => import('./screens/CommunityProjectsPage'));
 const ProjectDetailPage = lazy(() => import('./screens/ProjectDetailPage'));
 const MyEngagementPage = lazy(() => import('./screens/MyEngagementPage'));
@@ -29,7 +28,6 @@ const socialPagesConfig = {
     { path: 'community/create-issue', element: <CreateIssuePage /> },
     { path: 'community/issues/:issueId', element: <IssueDetailPage /> },
     { path: 'community/resolved', element: <ResolvedIssuesPage /> },
-    { path: 'community/leaders', element: <LocalLeadersPage /> },
     { path: 'community/projects', element: <CommunityProjectsPage /> },
     { path: 'community/projects/:projectId', element: <ProjectDetailPage /> },
     { path: 'community/my-engagement', element: <MyEngagementPage /> },

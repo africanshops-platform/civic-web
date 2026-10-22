@@ -58,8 +58,9 @@ function ActiveProjectDetailPage() {
         Project not found. <Link to="/community/projects">Go back</Link>
       </div>
     );
-    const budgetUsedPct = Math.round((project.spent / project.budget) * 100);
-    const completedMilestones = project.milestones.filter((m) => m.completed).length;
+    const naira = (v) => `₦${Number(v || 0).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`;
+    const completedMilestones = project.milestonesDone;
+    const fundedPct = project.budget ? Math.min(100, Math.round((project.raised / project.budget) * 100)) : 0;
     return (
       <div className="flex-auto p-6 sm:p-8" style={{ background: 'linear-gradient(180deg,#f9fafb 0%,#f0fdf4 100%)', minHeight: '100%' }}>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -78,7 +79,7 @@ function ActiveProjectDetailPage() {
               <StatusBadge status={project.status} size="medium" />
             </div>
             <Typography sx={{ fontSize: F.body, color: '#166534', mb: 2.5, fontWeight: 600 }}>
-              {project.jurisdiction.lga}, {project.jurisdiction.state} · Contractor: {project.contractor}
+              {project.jurisdiction.lga}, {project.jurisdiction.state}
             </Typography>
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -89,7 +90,7 @@ function ActiveProjectDetailPage() {
                 sx={{ height: 14, borderRadius: 7, backgroundColor: '#bbf7d044', '& .MuiLinearProgress-bar': { backgroundColor: '#059669', borderRadius: 7 } }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 12 }}>
-              {[{ label: 'Total Budget', value: `₦${(project.budget / 1_000_000).toFixed(1)}M` }, { label: 'Amount Spent', value: `₦${(project.spent / 1_000_000).toFixed(1)}M` }, { label: 'Budget Used', value: `${budgetUsedPct}%` }, { label: 'Watching', value: project.watchersCount.toLocaleString() }].map((s) => (
+              {[{ label: 'Funding Target', value: naira(project.budget) }, { label: 'Raised', value: naira(project.raised) }, { label: 'Funded', value: `${fundedPct}%` }, ...(project.released != null ? [{ label: 'Released So Far', value: naira(project.released) }] : [])].map((s) => (
                 <div key={s.label} style={{ textAlign: 'center', background: 'white', borderRadius: 14, padding: 'clamp(12px, 1.6vw, 18px) 10px', border: '1.5px solid #bbf7d0' }}>
                   <Typography sx={{ fontWeight: 900, color: '#14532d', fontSize: F.subH }}>{s.value}</Typography>
                   <Typography sx={{ fontSize: F.meta, color: '#6b7280', mt: 0.3 }}>{s.label}</Typography>
@@ -106,12 +107,12 @@ function ActiveProjectDetailPage() {
               {project.relatedIssueId && (
                 <div style={{ padding: 'clamp(10px, 1.4vw, 14px) 16px', background: '#eff6ff', borderRadius: 12, border: '1.5px solid #c7d2fe' }}>
                   <Typography sx={{ fontSize: F.meta, color: '#1d4ed8', fontWeight: 800, mb: 0.5 }}>Addressing Community Issue:</Typography>
-                  <Link to={`/community/issues/${project.relatedIssueId}`} style={{ color: '#1d4ed8', fontWeight: 700, fontSize: F.body, textDecoration: 'none' }}>{project.issueTitle}</Link>
+                  <Link to={`/community/issues/${project.relatedIssueId}`} style={{ color: '#1d4ed8', fontWeight: 700, fontSize: F.body, textDecoration: 'none' }}>{project.issueTitle || 'View the community issue'}</Link>
                 </div>
               )}
             </div>
             <div style={{ borderRadius: 'clamp(14px, 2vw, 20px)', padding: 'clamp(18px, 2.8vw, 28px)', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
-              <Typography sx={{ fontWeight: 800, color: '#111827', mb: 2, fontSize: F.subH }}>Milestones ({completedMilestones}/{project.milestones.length})</Typography>
+              <Typography sx={{ fontWeight: 800, color: '#111827', mb: 2, fontSize: F.subH }}>Milestones ({completedMilestones}/{project.milestonesTotal})</Typography>
               {project.milestones.map((m, i) => (
                 <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
                   style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -121,7 +122,7 @@ function ActiveProjectDetailPage() {
                   </div>
                   <div style={{ paddingBottom: 20 }}>
                     <Typography sx={{ fontWeight: 700, color: m.completed ? '#111827' : '#9ca3af', fontSize: F.body }}>{m.title}</Typography>
-                    {m.date && <Typography sx={{ fontSize: F.meta, color: '#9ca3af', mt: 0.3 }}>{m.completed ? 'Completed: ' : 'Expected: '}{new Date(m.date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}</Typography>}
+                    {m.date && <Typography sx={{ fontSize: F.meta, color: '#9ca3af', mt: 0.3 }}>{m.completed ? 'Completed: ' : 'Due: '}{new Date(m.date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}</Typography>}
                   </div>
                 </motion.div>
               ))}

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
-import { YOUTH_STATS } from '../mock';
 
 // Browse/detail (programs, tournaments, spotlights), mentorship-request, and
 // (as of 2026-09-09) enroll/my-programs/register-team are all wired to the
@@ -24,6 +23,8 @@ const api = {
   // Phase 7 of the club-recruitment pipeline (2026-08-30) — the
   // participationMode: SINGLE direct-enrollment endpoint.
   enrollInTournament:       (data)   => AuthApi().post('/youth/tournaments/enroll', data),
+  payAndEnrollInTournament: ({ tournamentId, ...body }) => AuthApi().post(`/youth/tournaments/${tournamentId}/pay-and-enroll`, body),
+  getTournamentPaymentsReadiness: () => AuthApi().get('/checkout-readiness/youth-tournaments'),
   getMyTournamentEnrollments: (params) => AuthApi().get('/youth/tournaments/mine', { params }),
 };
 
@@ -91,17 +92,6 @@ function normalizeSpotlight(s) {
     jurisdiction: { lga: s.lga, state: s.state },
     verified: s.isVerified,
   };
-}
-
-export function useYouthStats() {
-  return useQuery(
-    ['youth-stats'],
-    async () => {
-      await delay(300);
-      return { data: { stats: YOUTH_STATS } };
-    },
-    { staleTime: 10 * 60 * 1000 }
-  );
 }
 
 export function usePrograms(filters = {}) {
@@ -198,6 +188,9 @@ export function useRequestMentorship() {
   );
 }
 
+// Public pages call these "my ..." queries too (to show "Enrolled"/"Watching"); a guest has no session, so they must not fire.
+const hasSession = () => Boolean(localStorage.getItem('jwt_access_token'));
+
 export function useMyPrograms(filters = {}) {
   const { page = 1, limit = 20 } = filters;
   return useQuery(
@@ -209,6 +202,7 @@ export function useMyPrograms(filters = {}) {
         return { data: { enrollments: (d.data ?? []).map(normalizeEnrollment), total: d.total ?? 0 } };
       },
       staleTime: 2 * 60 * 1000,
+      enabled: hasSession(),
     }
   );
 }
@@ -247,12 +241,40 @@ export function useEnrollInTournament() {
   );
 }
 
+/** Pays the entry fee of a paid tournament and takes the place (civic-54). The amount is the tournament's own, never sent from here. */
+export function usePayAndEnrollInTournament() {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => api.payAndEnrollInTournament(payload),
+    {
+      onSuccess: () => {
+        toast.success('Payment received. You are in!');
+        queryClient.invalidateQueries(['youth-tournament']);
+        queryClient.invalidateQueries(['youth-tournament-my-enrollments']);
+        queryClient.invalidateQueries(['civictax-spending-balance']);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message ?? 'Payment did not go through. You were not charged unless it says otherwise.'),
+    }
+  );
+}
+
+/** Whether the services a tournament payment needs are up; the pay button stays disabled when they are not. */
+export function useTournamentPaymentsReadiness(enabled = true) {
+  return useQuery(['youth-tournament-payments-readiness'], () => api.getTournamentPaymentsReadiness(), {
+    enabled: enabled && hasSession(),
+    refetchInterval: 15000,
+    retry: 1,
+    staleTime: 5000,
+    select: (res) => res?.data,
+  });
+}
+
 export function useMyTournamentEnrollments(filters = {}) {
   const { page = 1, limit = 20 } = filters;
   return useQuery(
     ['youth-tournament-my-enrollments', filters],
     () => api.getMyTournamentEnrollments({ page, limit }),
-    { select: (res) => ({ data: res.data }), staleTime: 60 * 1000 }
+    { select: (res) => ({ data: res.data }), staleTime: 60 * 1000, enabled: hasSession() }
   );
 }
 

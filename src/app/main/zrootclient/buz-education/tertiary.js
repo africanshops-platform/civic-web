@@ -1,0 +1,44 @@
+/** Helpers for the tertiary admission screens (civic-65). */
+export const MAX_FILE_BYTES = 6 * 1024 * 1024;
+
+export const flattenProgrammes = (tree) =>
+  (tree?.faculties ?? []).flatMap((f) =>
+    f.departments.flatMap((d) => d.programmes.map((p) => ({ ...p, faculty: f.name, department: d.name })))
+  );
+
+/** Why a chosen file cannot be uploaded, or null when it can. */
+export function fileProblem(file) {
+  if (!file) return 'Choose a file';
+  if (file.size > MAX_FILE_BYTES) return 'That file is too large. Use one under 6 MB.';
+  if (!/^(image\/|application\/pdf)/.test(file.type || '')) return 'Use a photo or a PDF';
+  return null;
+}
+
+export function applyReady({ name, programmeId, start }) {
+  return Boolean(name.trim() && programmeId && start && !Number.isNaN(new Date(start).getTime()));
+}
+
+export const STATUS_WORDS = {
+  PENDING: 'With the registrar',
+  WAITLISTED: 'On the waiting list',
+  APPROVED: 'Admitted',
+  REJECTED: 'Not admitted',
+  WITHDRAWN: 'Withdrawn',
+};
+
+/** Where a semester's registration stands against the credit limits. */
+export function creditStanding(credits, limits) {
+  if (credits > limits.max) return { tone: 'bad', text: `Over the limit of ${limits.max} credits` };
+  if (credits < limits.min) return { tone: 'warn', text: `${credits} of at least ${limits.min} credits` };
+  return { tone: 'ok', text: `${credits} credits (limit ${limits.max})` };
+}
+
+export const GRADE_COLOR = { A: '#15803d', B: '#16a34a', C: '#ca8a04', D: '#ea580c', E: '#dc2626', F: '#7f1d1d' };
+
+/** "Today 14:00", "Tue 3 Nov, 09:30": when a class starts, in plain words. */
+export function classWhen(iso, now = new Date()) {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+  const sameDay = d.toDateString() === now.toDateString();
+  return sameDay ? `Today ${time}` : `${d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' })}, ${time}`;
+}

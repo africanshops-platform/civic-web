@@ -2,11 +2,14 @@ import { styled } from '@mui/material/styles';
 import { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Button, Chip, Avatar, Typography } from '@mui/material';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowBack, ThumbUp, Visibility, LocationOn, Business } from '@mui/icons-material';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowBack, ThumbUp, LocationOn, Business } from '@mui/icons-material';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
-import { useIssueDetail, useUpvoteIssue, usePostComment } from '../hooks/useSocialRepo';
+import ReportBlockMenu from '../components/ReportBlockMenu';
+import { useForumRulesGate } from '../components/ForumRulesGate';
+import { useIssueDetail, useMyVote, useUpvoteIssue, useDownvoteIssue, usePostComment } from '../hooks/useSocialRepo';
+import IssueVotePanel from '../components/IssueVotePanel';
 import CommunityHeader from './shared-components/CommunityHeader';
 import CommunityFeedSidebarLeft from './shared-components/CommunityFeedSidebarLeft';
 import CommunityFeedSidebarRight from './shared-components/CommunityFeedSidebarRight';
@@ -34,6 +37,7 @@ const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
 
 function ActiveIssueDetailPage() {
   const { issueId } = useParams();
+  const navigate = useNavigate();
   const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(!isMobile);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(!isMobile);
@@ -41,8 +45,11 @@ function ActiveIssueDetailPage() {
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
   const { data, isLoading, isError } = useIssueDetail(issueId);
-  const { mutate: upvote } = useUpvoteIssue();
+  const { mutate: upvote, isLoading: isUpvoting } = useUpvoteIssue();
+  const { mutate: downvote, isLoading: isDownvoting } = useDownvoteIssue();
+  const { data: myVote } = useMyVote(issueId);
   const { mutate: postComment, isLoading: isPosting } = usePostComment();
+  const { guard, dialog: rulesDialog } = useForumRulesGate();
   const issue = useMemo(() => data?.data?.issue, [data]);
   const comments = useMemo(() => data?.data?.comments || [], [data]);
   const catInfo = useMemo(() => issue ? (ISSUE_CATEGORIES.find((c) => c.id === issue.category) || {}) : {}, [issue]);
@@ -79,9 +86,10 @@ function ActiveIssueDetailPage() {
                 <span style={{ fontSize: 'clamp(1.6rem, 2.8vw, 2.2rem)' }}>{catInfo.icon || '📌'}</span>
                 <Chip label={catInfo.label || issue.category} size="small" sx={{ background: (catInfo.color || '#059669') + '20', color: catInfo.color || '#059669', fontWeight: 800, fontSize: F.meta }} />
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <StatusBadge status={issue.status} size="medium" />
-                <StatusBadge priority={issue.priority} size="medium" />
+                <ReportBlockMenu contentType="ISSUE" contentId={issue.id} onBlocked={() => navigate('/community/my-feed')} />
+                {issue.priority && <StatusBadge priority={issue.priority} size="medium" />}
               </div>
             </div>
             <Typography sx={{ fontWeight: 900, color: '#111827', fontSize: F.sectionH, lineHeight: 1.25, mb: 1.5 }}>{issue.title}</Typography>
@@ -89,15 +97,10 @@ function ActiveIssueDetailPage() {
               <LocationOn sx={{ fontSize: 'clamp(16px, 2vw, 20px)' }} />
               {issue.location?.address || `${issue.jurisdiction.lga}, ${issue.jurisdiction.state}`}
             </div>
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-              {[{ icon: <ThumbUp sx={{ fontSize: 'clamp(13px, 1.6vw, 17px)' }} />, value: issue.upvotes.toLocaleString(), label: 'upvotes' }, { icon: <Visibility sx={{ fontSize: 'clamp(13px, 1.6vw, 17px)' }} />, value: issue.views.toLocaleString(), label: 'views' }].map((s) => (
-                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#6b7280', fontSize: F.meta, fontWeight: 600 }}>
-                  {s.icon}{s.value} {s.label}
-                </div>
-              ))}
-              <button onClick={() => upvote(issue.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: catInfo.color || '#059669', color: 'white', border: 'none', borderRadius: 12, padding: 'clamp(7px, 1vw, 10px) clamp(14px, 2vw, 20px)', fontSize: F.btn, fontWeight: 800, cursor: 'pointer' }}>
-                <ThumbUp sx={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }} /> Upvote
-              </button>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', color: '#6b7280', fontSize: F.meta, fontWeight: 600 }}>
+              <span><ThumbUp sx={{ fontSize: 'clamp(13px, 1.6vw, 17px)', verticalAlign: 'middle', mr: 0.5 }} />{issue.upvotes.toLocaleString()} support</span>
+              <span>{issue.downvotes.toLocaleString()} not now</span>
+              <span>{issue.commentsCount} comments</span>
             </div>
           </div>
 
@@ -109,10 +112,12 @@ function ActiveIssueDetailPage() {
                 <Typography sx={{ color: '#374151', lineHeight: 1.9, fontSize: F.body }}>{issue.description}</Typography>
               </div>
               <div style={{ borderRadius: 'clamp(14px, 2vw, 20px)', padding: 'clamp(18px, 2.8vw, 28px)', background: 'white', border: '1px solid #e5e7eb' }}>
-                <IssueCommentThread comments={comments} onPostComment={(body) => postComment({ issueId: issue.id, body })} isPosting={isPosting} />
+                <IssueCommentThread comments={comments} onPostComment={(body) => guard(() => postComment({ issueId: issue.id, body }))} isPosting={isPosting}
+                  renderActions={(c) => <ReportBlockMenu contentType="COMMENT" contentId={c.id} />} />
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.8vw, 18px)' }}>
+              <IssueVotePanel issue={issue} myVote={myVote} isVoting={isUpvoting || isDownvoting} accent={catInfo.color || '#059669'} onVote={(t) => (t === 'UP' ? upvote(issue.id) : downvote(issue.id))} />
               <div style={{ borderRadius: 18, padding: 'clamp(14px, 2.2vw, 22px)', background: 'white', border: '1px solid #e5e7eb' }}>
                 <Typography sx={{ fontWeight: 800, color: '#111827', mb: 1.5, fontSize: F.subH }}>Reported By</Typography>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -146,16 +151,19 @@ function ActiveIssueDetailPage() {
         </motion.div>
       </div>
     );
-  }, [issue, comments, catInfo, isLoading, isError, isPosting, upvote, postComment]);
+  }, [issue, comments, catInfo, isLoading, isError, isPosting, upvote, downvote, myVote, isUpvoting, isDownvoting, postComment, guard, navigate]);
 
   const leftSidebar = useMemo(() => <CommunityFeedSidebarLeft />, []);
   const rightSidebar = useMemo(() => <CommunityFeedSidebarRight />, []);
 
   return (
-    <Root header={header} content={content}
-      leftSidebarOpen={leftSidebarOpen} leftSidebarOnClose={handleLeftClose} leftSidebarContent={leftSidebar}
-      rightSidebarOpen={rightSidebarOpen} rightSidebarOnClose={handleRightClose} rightSidebarContent={rightSidebar}
-      scroll="content" />
+    <>
+      <Root header={header} content={content}
+        leftSidebarOpen={leftSidebarOpen} leftSidebarOnClose={handleLeftClose} leftSidebarContent={leftSidebar}
+        rightSidebarOpen={rightSidebarOpen} rightSidebarOnClose={handleRightClose} rightSidebarContent={rightSidebar}
+        scroll="content" />
+      {rulesDialog}
+    </>
   );
 }
 

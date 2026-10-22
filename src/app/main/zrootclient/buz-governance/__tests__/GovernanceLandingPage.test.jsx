@@ -3,6 +3,9 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { MemoryRouter } from 'react-router-dom';
 import GovernanceLandingPage from '../screens/GovernanceLandingPage';
 
+jest.mock('src/app/hooks/useCivicWebAuth', () => () => ({ isAuthenticated: false }));
+jest.mock('app/configs/data/client/RepositoryAuthClient', () => ({ AuthApi: () => ({ get: () => Promise.resolve({ data: { items: [] } }) }) }));
+
 const wrapper = ({ children }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
     <MemoryRouter>{children}</MemoryRouter>
@@ -12,26 +15,27 @@ const wrapper = ({ children }) => (
 describe('GovernanceLandingPage', () => {
   it('renders the hero headline', () => {
     render(<GovernanceLandingPage />, { wrapper });
-    // "Your Vote" also appears in the unrelated "Cast Your Vote" how-it-works
-    // step further down the page — scope to the h1 to target the actual hero.
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Your Vote/i);
   });
 
-  it('renders the View Elections CTA button', () => {
+  it('renders the browse community votes CTA', () => {
     render(<GovernanceLandingPage />, { wrapper });
-    expect(screen.getByRole('link', { name: /View Elections/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Browse Community Votes/i }).length).toBeGreaterThan(0);
   });
 
-  it('renders trust badges', () => {
+  it('never claims government or electoral-commission backing', () => {
     render(<GovernanceLandingPage />, { wrapper });
-    expect(screen.getByText('NIN Verified')).toBeInTheDocument();
-    expect(screen.getByText('Audit Trail Enabled')).toBeInTheDocument();
+    expect(screen.queryByText(/INEC/i)).toBeNull();
+    expect(screen.queryByText(/Digital Democracy/i)).toBeNull();
+    expect(screen.getAllByText(/independent/i).length).toBeGreaterThan(0);
   });
 
-  it('renders how it works section', () => {
+  it('renders trust badges and how it works', () => {
     render(<GovernanceLandingPage />, { wrapper });
-    expect(screen.getByText('Register & Verify')).toBeInTheDocument();
+    expect(screen.getByText('Secret Ballot')).toBeInTheDocument();
+    expect(screen.getByText('Public Audit Trail')).toBeInTheDocument();
+    expect(screen.getByText('Verify Your Identity')).toBeInTheDocument();
     expect(screen.getByText('Cast Your Vote')).toBeInTheDocument();
-    expect(screen.getByText('Track Results Live')).toBeInTheDocument();
+    expect(screen.getByText('Follow the Results')).toBeInTheDocument();
   });
 });

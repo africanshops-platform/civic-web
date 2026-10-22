@@ -12,6 +12,11 @@ const STATUS_MAP = {
   resolved:    { label: 'Resolved',    bg: '#f0fdf4', color: '#16a34a' },
   closed:      { label: 'Closed',      bg: '#f9fafb', color: '#6b7280' },
   completed:   { label: 'Completed',   bg: '#f0fdf4', color: '#16a34a' },
+  // vote -> coordinator approval pipeline (civic-19/20)
+  pending_review: { label: 'Awaiting coordinator', bg: '#fffbeb', color: '#b45309' },
+  converting:     { label: 'Being set up',         bg: '#eff6ff', color: '#1d4ed8' },
+  converted:      { label: 'Now a funded project', bg: '#f0fdf4', color: '#16a34a' },
+  declined:       { label: 'Declined',             bg: '#fff1f2', color: '#be123c' },
 };
 
 const PRIORITY_MAP = {

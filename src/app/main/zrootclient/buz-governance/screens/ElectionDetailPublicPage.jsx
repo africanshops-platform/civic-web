@@ -1,29 +1,40 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button, Chip } from '@mui/material';
 import { ArrowBack, HowToVote, LocationOn, FiberManualRecord } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
-import { useElectionDetail, useElectionCollation } from '../hooks/useGovernanceRepo';
+import { useElectionDetail, useElectionCollation, useElectionLocations, useMyArea } from '../hooks/useGovernanceRepo';
+import { electionInArea } from '../hooks/electionArea';
+import VotingLocationsMap from '../components/VotingLocationsMap';
 import LiveCollationBoard from '../components/LiveCollationBoard';
 import CandidateCard from '../components/CandidateCard';
-import JurisdictionResultsMap from '../components/JurisdictionResultsMap';
+import WardResultsList from '../components/WardResultsList';
+import { NominateDialog } from '../components/ParticipationDialogs';
+import { COMMUNITY_VOTE_NOTICE } from '../constants';
 import { CivicLoadingSkeleton } from '../../civic-shared';
+import GovernanceShell from './shared-components/GovernanceShell';
 
-export default function ElectionDetailPublicPage() {
+function ElectionDetailPublicPageBody() {
   const { isAuthenticated } = useCivicWebAuth();
   const { electionId } = useParams();
   const { data: elecData, isLoading: elecLoading } = useElectionDetail(electionId);
   const { data: collData, isLoading: collLoading } = useElectionCollation(electionId);
+  const { data: locations = [] } = useElectionLocations(electionId);
+  const { data: myArea = null } = useMyArea();
+  const [nominating, setNominating] = useState(false);
 
   const election = useMemo(() => elecData?.data?.election, [elecData]);
   const candidates = useMemo(() => elecData?.data?.candidates || [], [elecData]);
+  const wards = useMemo(() => elecData?.data?.wards || [], [elecData]);
   const collation = useMemo(() => collData?.data, [collData]);
 
   if (elecLoading) return <div style={{ padding: 32 }}><CivicLoadingSkeleton /></div>;
   if (!election) return <div style={{ padding: 32, textAlign: 'center', color: '#6b7280' }}>Election not found. <Link to="/governance/elections">Go back</Link></div>;
 
   const isLive = election.status === 'ongoing';
+  const canVote = isLive && election.isOnlineVotingEnabled;
+  const dateStr = new Date(election.electionDate).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(20px, 4vw, 48px)' }}>
@@ -40,7 +51,7 @@ export default function ElectionDetailPublicPage() {
           </h1>
           <div style={{ display: 'flex', gap: 8 }}>
             {isLive && <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FiberManualRecord sx={{ color: '#ef4444', fontSize: 14 }} /><span style={{ fontWeight: 800, color: '#ef4444', fontSize: '0.88rem' }}>LIVE</span></div>}
-            <Chip label={election.status.toUpperCase()} size="small"
+            <Chip label={isLive ? 'VOTING OPEN' : election.status === 'completed' ? 'CLOSED' : election.status.toUpperCase()} size="small"
               sx={{ background: isLive ? '#fef2f2' : '#f0fdf4', color: isLive ? '#dc2626' : '#16a34a', fontWeight: 800 }} />
           </div>
         </div>
@@ -50,10 +61,10 @@ export default function ElectionDetailPublicPage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 16 }}>
           {[
-            { label: 'Registered Voters', value: (election.totalRegisteredVoters / 1_000_000).toFixed(1) + 'M' },
-            { label: 'Votes Cast', value: election.totalVotesCast.toLocaleString() },
-            { label: 'Turnout', value: `${election.turnoutPercentage}%` },
-            { label: 'Wards Collated', value: `${election.wardsCollated}/${election.wardsTotal}` },
+            { label: 'Voted Online', value: election.votersParticipated.toLocaleString() },
+            { label: 'Candidates', value: election.candidatesCount },
+            { label: 'Wards Reported', value: wards.length },
+            { label: 'Election Date', value: dateStr },
           ].map((s) => (
             <div key={s.label} style={{ textAlign: 'center', background: 'white', borderRadius: 12, padding: '10px 8px', border: '1px solid #c7d2fe' }}>
               <div style={{ fontWeight: 900, color: '#1e1b4b', fontSize: '1rem' }}>{s.value}</div>
@@ -61,7 +72,13 @@ export default function ElectionDetailPublicPage() {
             </div>
           ))}
         </div>
-        {election.status !== 'completed' && (
+        {election.rawStatus === 'NOMINATIONS_OPEN' && (
+          <Button onClick={() => (isAuthenticated ? setNominating(true) : window.location.assign('/sign-in'))} variant="outlined"
+            sx={{ fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 4, py: 1.5, mr: 1.5 }}>
+            {isAuthenticated ? 'Put Yourself Forward' : 'Sign In to Put Yourself Forward'}
+          </Button>
+        )}
+        {canVote && (
           <Button component={Link} to={isAuthenticated ? `/governance/elections/${election.id}/vote` : '/sign-in'} variant="contained" startIcon={<HowToVote />}
             sx={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)', color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', px: 4, py: 1.5, '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' } }}>
             {isAuthenticated ? 'Cast Your Vote' : 'Sign In to Cast Your Vote'}
@@ -73,17 +90,22 @@ export default function ElectionDetailPublicPage() {
         {/* Live results board */}
         <div style={{ borderRadius: 20, padding: 'clamp(18px, 3vw, 28px)', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 4px 18px rgba(0,0,0,0.06)' }}>
           <h3 style={{ margin: '0 0 16px', fontWeight: 800, color: '#111827', fontSize: '1rem' }}>
-            {isLive ? 'Live Results' : 'Final Results'}
+            {election.status === 'completed' ? 'Results' : 'Results So Far'}
           </h3>
           <LiveCollationBoard collation={collation} isLoading={collLoading} />
         </div>
 
         {/* Map */}
         <div style={{ borderRadius: 20, padding: 'clamp(18px, 3vw, 28px)', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 4px 18px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ margin: '0 0 16px', fontWeight: 800, color: '#111827', fontSize: '1rem' }}>LGA Breakdown Map</h3>
-          <JurisdictionResultsMap lgaBreakdown={collation?.lgaBreakdown || []} isLoading={collLoading} />
+          <h3 style={{ margin: '0 0 16px', fontWeight: 800, color: '#111827', fontSize: '1rem' }}>Where to Vote</h3>
+          <VotingLocationsMap locations={locations} onlineOnly={election.isOnlineVotingEnabled} inMyArea={isAuthenticated && myArea ? electionInArea(election, myArea) : null} />
+          <h3 style={{ margin: '24px 0 16px', fontWeight: 800, color: '#111827', fontSize: '1rem' }}>Ward Results</h3>
+          <WardResultsList wards={wards} candidates={candidates} />
         </div>
       </div>
+
+      {nominating && <NominateDialog election={election} onClose={() => setNominating(false)} />}
+      <p style={{ color: '#9ca3af', fontSize: '0.8rem', margin: '0 0 20px' }}>{COMMUNITY_VOTE_NOTICE}</p>
 
       {/* Candidate profiles */}
       {candidates.length > 0 && (
@@ -95,5 +117,14 @@ export default function ElectionDetailPublicPage() {
         </div>
       )}
     </motion.div>
+  );
+}
+
+
+export default function ElectionDetailPublicPage() {
+  return (
+    <GovernanceShell title="Community Votes" subtitle="Vote details">
+      <ElectionDetailPublicPageBody />
+    </GovernanceShell>
   );
 }

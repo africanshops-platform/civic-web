@@ -11,7 +11,7 @@ import GovernanceSidebarLeft from './shared-components/GovernanceSidebarLeft';
 import GovernanceSidebarRight from './shared-components/GovernanceSidebarRight';
 import { useElectionDetail, useElectionCollation } from '../hooks/useGovernanceRepo';
 import LiveCollationBoard from '../components/LiveCollationBoard';
-import JurisdictionResultsMap from '../components/JurisdictionResultsMap';
+import WardResultsList from '../components/WardResultsList';
 import { CivicLoadingSkeleton } from '../../civic-shared';
 
 const Root = styled(FusePageSimpleWithMargin)(({ theme }) => ({
@@ -51,10 +51,8 @@ function ActiveElectionOversightPage() {
   const election  = useMemo(() => elecData?.data?.election, [elecData]);
   const collation = useMemo(() => collData?.data,           [collData]);
 
-  const collationPct = useMemo(() =>
-    collation ? Math.round((collation.summary.wardsCollated / collation.summary.totalWards) * 100) : 0,
-    [collation]
-  );
+  const wards = useMemo(() => elecData?.data?.wards || [], [elecData]);
+  const candidates = useMemo(() => elecData?.data?.candidates || [], [elecData]);
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v) => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
@@ -66,7 +64,7 @@ function ActiveElectionOversightPage() {
       leftSidebarToggle={handleLeftToggle}
       rightSidebarToggle={handleRightToggle}
       title="Election Oversight"
-      subtitle="Digital Governance · Observer Mode · Audit"
+      subtitle="Community vote · Observer view"
     />
   ), [handleLeftToggle, handleRightToggle]);
 
@@ -127,17 +125,16 @@ function ActiveElectionOversightPage() {
             }}>
               <div>
                 <div style={{ fontWeight: 800, color: '#1e1b4b', fontSize: F.cardTitle, lineHeight: 1.2 }}>
-                  Collation Progress: {collationPct}%
+                  Collation: {collation.summary.wardsReported} ward{collation.summary.wardsReported === 1 ? '' : 's'} reported
                 </div>
                 <div style={{ fontSize: F.body, color: '#6b7280', marginTop: 6 }}>
-                  {collation.summary.wardsCollated} of {collation.summary.totalWards} wards collated
+                  Online ballots are secret while voting is open and are counted when it closes.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 'clamp(16px,2.5vw,32px)', flexWrap: 'wrap' }}>
                 {[
-                  { label: 'Total Votes Cast', value: collation.summary.totalVotesCast.toLocaleString() },
-                  { label: 'Rejected Votes',   value: collation.summary.rejectedVotes.toLocaleString()  },
-                  { label: 'Valid Votes',       value: collation.summary.validVotes.toLocaleString()     },
+                  { label: 'Votes Counted', value: collation.summary.totalVotesCounted.toLocaleString() },
+                  { label: 'Voted Online',           value: collation.summary.onlineVoters.toLocaleString()       },
                 ].map((s) => (
                   <div key={s.label} style={{ textAlign: 'center' }}>
                     <div style={{ fontWeight: 900, color: '#1e1b4b', fontSize: F.statValue }}>{s.value}</div>
@@ -154,7 +151,7 @@ function ActiveElectionOversightPage() {
             {/* Live tally */}
             <div style={{ borderRadius: 22, padding: 'clamp(18px,2.5vw,28px)', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 4px 18px rgba(0,0,0,0.05)' }}>
               <h3 style={{ margin: '0 0 clamp(14px,1.8vw,20px)', fontWeight: 800, color: '#111827', fontSize: F.cardTitle }}>
-                Live Vote Tally
+                Results So Far
               </h3>
               <LiveCollationBoard collation={collation} isLoading={collLoading} />
             </div>
@@ -162,39 +159,15 @@ function ActiveElectionOversightPage() {
             {/* LGA map */}
             <div style={{ borderRadius: 22, padding: 'clamp(18px,2.5vw,28px)', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 4px 18px rgba(0,0,0,0.05)' }}>
               <h3 style={{ margin: '0 0 clamp(14px,1.8vw,20px)', fontWeight: 800, color: '#111827', fontSize: F.cardTitle }}>
-                LGA Results Map
+                Ward Results
               </h3>
-              <JurisdictionResultsMap lgaBreakdown={collation?.lgaBreakdown || []} isLoading={collLoading} />
-
-              {collation?.lgaBreakdown && (
-                <div style={{ marginTop: 'clamp(12px,1.6vw,20px)', display: 'flex', flexDirection: 'column', gap: 'clamp(6px,1vw,10px)' }}>
-                  {collation.lgaBreakdown.map((lga) => (
-                    <div key={lga.lgaId} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: 'clamp(10px,1.4vw,14px) clamp(12px,1.6vw,18px)',
-                      borderRadius: 12, background: '#f9fafb', border: '1px solid #e5e7eb',
-                    }}>
-                      <span style={{ fontWeight: 700, color: '#374151', fontSize: F.body }}>{lga.lgaName}</span>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <span style={{ fontSize: F.small, color: '#6b7280' }}>
-                          {lga.wardsCollated}/{lga.wardsTotal} wards
-                        </span>
-                        <Chip
-                          label={lga.leadingParty}
-                          size="small"
-                          sx={{ fontWeight: 800, fontSize: F.small, height: F.chipH }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <WardResultsList wards={wards} candidates={candidates} />
             </div>
           </div>
         </motion.div>
       )}
     </div>
-  ), [election, collation, elecLoading, collLoading, collationPct, electionId]);
+  ), [election, collation, wards, candidates, elecLoading, collLoading, electionId]);
 
   return (
     <Root header={header} content={content}
