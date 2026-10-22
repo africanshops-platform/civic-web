@@ -59,7 +59,7 @@ function ActiveElectionLiveResultsPage() {
   const header = useMemo(() => (
     <GovernanceHeader
       leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Live Results" subtitle="Digital Governance · Real-Time Collation" activeElection />
+      title="Live Results" subtitle="Community vote · Ward collation" activeElection />
   ), [handleLeftToggle, handleRightToggle]);
 
   const leftSidebar  = useMemo(() => <GovernanceSidebarLeft />, []);

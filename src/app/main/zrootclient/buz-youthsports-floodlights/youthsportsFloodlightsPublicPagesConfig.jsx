@@ -3,33 +3,37 @@ import { lazy } from 'react';
 const HubScreen = lazy(() => import('./screens/HubScreen'));
 const ProgrammesScreen = lazy(() => import('./screens/ProgrammesScreen'));
 const AuditionsScreen = lazy(() => import('./screens/AuditionsScreen'));
-const StaffPositionsScreen = lazy(() => import('./screens/StaffPositionsScreen'));
-const StaffPositionDetailScreen = lazy(() => import('./screens/StaffPositionDetailScreen'));
-const MyStaffPositionApplicationsScreen = lazy(() => import('./screens/MyStaffPositionApplicationsScreen'));
+const TournamentsScreen = lazy(() => import('./screens/TournamentsScreen'));
+const TournamentDetailScreen = lazy(() => import('./screens/TournamentDetailScreen'));
+const MatchCenterScreen = lazy(() => import('./screens/MatchCenterScreen'));
+const TalentHuntScreen = lazy(() => import('./screens/TalentHuntScreen'));
+const ClubScreen = lazy(() => import('./screens/ClubScreen'));
+const PlayerScreen = lazy(() => import('./screens/PlayerScreen'));
+const MarketScreen = lazy(() => import('./screens/MarketScreen'));
+const ProgramDetailScreen = lazy(() => import('./screens/ProgramDetailScreen'));
+const MentorsScreen = lazy(() => import('./screens/MentorsScreen'));
+const AuditionDetailScreen = lazy(() => import('./screens/AuditionDetailScreen'));
 
-// Mirrors youthsportsPublicPagesConfig.jsx's pattern: Hub and the
-// Programmes browse list are the public, unauthenticated entry points
-// (same access level as v1's /youth and /youth/programs). Program detail
-// stays KYC-protected, see youthsportsFloodlightsPagesConfig — same for
-// audition detail/mine (AuditionDetailScreen/MyAuditionApplicationsScreen
-// live there, route-level KYC-walled; only the audition browse list here
-// is public).
-//
-// Staff positions (Feature A, added 2026-09-12) take a finer-grained
-// approach instead of that route-level wall: public all the way through
-// browse/detail/mine, per feedback_civic_public_browse_gated_interact —
-// only the actual apply action is gated, in-page inside
-// StaffPositionDetailScreen, not the route. 'mine' is public-routed too
-// and shows an in-page sign-in prompt rather than a route-level wall, for
-// the same reason. This is a deliberate, confirmed divergence from the
-// audition pages' coarser route-level gate, not an inconsistency to fix.
+// Public to browse, gated to engage (founder rule, 2026-10-13): everyone, signed in or not, can discover programmes,
+// tournaments, matches, clubs, players, talents and auditions. Enrolling, registering, applying, requesting a mentor and
+// watching a player are gated INSIDE each screen by useInteractGuard (sign in, then identity verification + civic
+// activation), and the server enforces the same on every mutation. Only "my applications" stays a protected route
+// (see youthsportsFloodlightsPagesConfig).
 const youthsportsFloodlightsPublicPagesConfig = [
   { path: '/youth-v2', element: <HubScreen /> },
   { path: '/youth-v2/programs', element: <ProgrammesScreen /> },
+  { path: '/youth-v2/programs/:programId', element: <ProgramDetailScreen /> },
   { path: '/youth-v2/auditions', element: <AuditionsScreen /> },
-  { path: '/youth-v2/staff-positions', element: <StaffPositionsScreen /> },
-  { path: '/youth-v2/staff-positions/mine', element: <MyStaffPositionApplicationsScreen /> },
-  { path: '/youth-v2/staff-positions/:id', element: <StaffPositionDetailScreen /> },
+  { path: '/youth-v2/auditions/:auditionId', element: <AuditionDetailScreen /> },
+  { path: '/youth-v2/tournaments', element: <TournamentsScreen /> },
+  { path: '/youth-v2/tournaments/:tournamentId', element: <TournamentDetailScreen /> },
+  { path: '/youth-v2/tournaments/:tournamentId/matches/:matchId', element: <MatchCenterScreen /> },
+  { path: '/youth-v2/talents', element: <TalentHuntScreen /> },
+  { path: '/youth-v2/clubs/:clubMerchantId', element: <ClubScreen /> },
+  // No standalone GET /youth/players/:id exists on the backend, so the detail route carries clubMerchantId too.
+  { path: '/youth-v2/clubs/:clubMerchantId/players/:playerId', element: <PlayerScreen /> },
+  { path: '/youth-v2/market', element: <MarketScreen /> },
+  { path: '/youth-v2/mentors', element: <MentorsScreen /> },
 ];
 
 export default youthsportsFloodlightsPublicPagesConfig;

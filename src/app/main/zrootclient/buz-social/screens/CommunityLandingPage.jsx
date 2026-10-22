@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowForward, CheckCircle } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
-import { mockIssues, ISSUE_STATS, ISSUE_CATEGORIES } from '../mock';
+import { useIssues, useCommunityProjects } from '../hooks/useSocialRepo';
+import { ISSUE_CATEGORIES } from '../mock';
 
 const F = {
   body:    'clamp(1.3rem,  2vw,   1.64rem)',
@@ -17,23 +18,26 @@ const fadeUp = (delay = 0) => ({ initial: { opacity: 0, y: 48 }, animate: { opac
 const inViewUp = (delay = 0) => ({ initial: { opacity: 0, y: 40 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] } });
 const GREEN_GRADIENT = 'linear-gradient(135deg, #059669 0%, #0f766e 50%, #134e4a 100%)';
 
-const TRUST_BADGES = ['Citizen Verified', 'Direct to Authority', 'Public Accountability', 'Real-time Updates'];
+const TRUST_BADGES = ['Citizen Verified', 'Voted by Neighbours', 'Open to the Community', 'Funded by the Community'];
 const HOW_IT_WORKS = [
   { step: '01', title: 'Spot an Issue', desc: 'See a broken road, failed infrastructure, or service gap? Report it with a photo and location in under 2 minutes.' },
-  { step: '02', title: 'Community Amplifies', desc: 'Neighbours upvote, comment, and share. The most critical issues rise to the top — visible to every official.' },
-  { step: '03', title: 'Authorities Respond', desc: 'Issues are directly routed to the responsible LGA department, utility, or ministry — with public accountability.' },
+  { step: '02', title: 'Community Amplifies', desc: 'Neighbours upvote, comment, and share. The issues with the most support rise to the top, and the vote is counted against the registered citizens of your LGA.' },
+  { step: '03', title: 'Coordinator Decides', desc: 'When the vote carries, your LGA coordinator reviews it and can turn it into a funded community project you can follow milestone by milestone.' },
 ];
 
-const PLATFORM_STATS = [
-  { emoji: '📋', value: ISSUE_STATS.totalIssues.toLocaleString(), label: 'Issues Reported' },
-  { emoji: '✅', value: ISSUE_STATS.resolvedIssues, label: 'Resolved' },
-  { emoji: '🏗️', value: '84', label: 'Projects Tracked' },
-  { emoji: '📊', value: `${ISSUE_STATS.resolutionRate}%`, label: 'Resolution Rate' },
-];
 
 export default function CommunityLandingPage() {
   const { isAuthenticated } = useCivicWebAuth();
-  const featured = mockIssues.filter((i) => i.status !== 'resolved').slice(0, 3);
+  // Real figures only: counted from the issues and funded projects the platform holds right now.
+  const { data: issueData } = useIssues({});
+  const { data: projectData } = useCommunityProjects({});
+  const is = issueData?.data?.stats;
+  const PLATFORM_STATS = [
+    { emoji: '📋', value: (is?.totalIssues ?? 0).toLocaleString(), label: 'Issues Reported' },
+    { emoji: '🗳️', value: (is?.openIssues ?? 0).toLocaleString(), label: 'Open for Voting' },
+    { emoji: '🏗️', value: (projectData?.data?.projects?.length ?? 0).toLocaleString(), label: 'Funded Projects' },
+    { emoji: '✅', value: (is?.resolvedIssues ?? 0).toLocaleString(), label: 'Now Projects or Resolved' },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden', backgroundColor: 'white' }}>
@@ -63,8 +67,8 @@ export default function CommunityLandingPage() {
               </motion.div>
               <motion.div {...fadeUp(0.34)}>
                 <p style={{ color: 'rgba(255,255,255,0.92)', lineHeight: 1.82, margin: '0 0 36px', maxWidth: 580, fontSize: F.body }}>
-                  Report community issues directly to local authorities. Track government projects.
-                  Hold leaders accountable — in public, in real time.{' '}
+                  Report what needs fixing in your community. Vote on what matters most.
+                  Follow the funded projects it becomes, in public, milestone by milestone.{' '}
                   <strong style={{ color: '#6ee7b7' }}>Every report matters. Every voice counts.</strong>
                 </p>
               </motion.div>
@@ -124,7 +128,7 @@ export default function CommunityLandingPage() {
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <motion.div {...inViewUp()} style={{ textAlign: 'center', marginBottom: 'clamp(40px,5vw,64px)' }}>
             <h2 style={{ margin: '0 0 16px', fontWeight: 900, color: '#111827', fontSize: F.sectionH }}>How It Works</h2>
-            <p style={{ margin: '0 auto', color: '#6b7280', maxWidth: 540, fontSize: F.body }}>From the street to your community's leaders in minutes.</p>
+            <p style={{ margin: '0 auto', color: '#6b7280', maxWidth: 540, fontSize: F.body }}>From the street to a funded community project.</p>
           </motion.div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 'clamp(20px,3vw,36px)' }}>
             {HOW_IT_WORKS.map((s, i) => (
@@ -148,10 +152,10 @@ export default function CommunityLandingPage() {
         </div>
         <motion.div {...inViewUp()} style={{ position: 'relative', zIndex: 1 }}>
           <h2 style={{ color: 'white', fontWeight: 900, margin: '0 0 20px', fontSize: 'clamp(2.2rem, 5.5vw, 4.5rem)', lineHeight: 1.1 }}>
-            Every Issue Reported Is a Vote for a Better Nigeria.
+            Every Issue Reported Is a Step Towards a Better Community.
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.body, margin: '0 auto 44px', maxWidth: 600, lineHeight: 1.75 }}>
-            Don't just complain. Report, upvote, and hold your leaders accountable — publicly.
+            Don't just complain. Report it, vote on it, and follow the project it becomes.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
             <Button component={Link} to="/sign-up" variant="contained" size="large"

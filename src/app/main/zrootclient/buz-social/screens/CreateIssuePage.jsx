@@ -7,6 +7,7 @@ import { CheckCircle, Send } from '@mui/icons-material';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
 import { useReportIssue } from '../hooks/useSocialRepo';
+import { useForumRulesGate } from '../components/ForumRulesGate';
 import CommunityHeader from './shared-components/CommunityHeader';
 import CommunityFeedSidebarLeft from './shared-components/CommunityFeedSidebarLeft';
 import CommunityFeedSidebarRight from './shared-components/CommunityFeedSidebarRight';
@@ -39,11 +40,12 @@ function ActiveCreateIssuePage() {
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
   const { mutate: reportIssue, isLoading, isSuccess } = useReportIssue();
+  const { guard, dialog: rulesDialog } = useForumRulesGate();
 
   function update(key, value) { setForm((prev) => ({ ...prev, [key]: value })); }
   function handleSubmit(e) {
     e.preventDefault();
-    reportIssue(form, { onSuccess: () => setTimeout(() => navigate('/community/my-feed'), 2200) });
+    guard(() => reportIssue(form, { onSuccess: () => setTimeout(() => navigate('/community/my-feed'), 2200) }));
   }
 
   const isValid = form.title.trim() && form.category && form.description.trim().length > 20;
@@ -55,7 +57,7 @@ function ActiveCreateIssuePage() {
 
   const header = useMemo(() => (
     <CommunityHeader leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Report an Issue" subtitle="Help your community by flagging problems directly to authorities" />
+      title="Report an Issue" subtitle="Flag a problem so your community can vote on it" />
   ), [handleLeftToggle, handleRightToggle]);
 
   const content = useMemo(() => {
@@ -66,7 +68,7 @@ function ActiveCreateIssuePage() {
             <CheckCircle sx={{ fontSize: 'clamp(64px, 9vw, 100px)', color: '#059669', mb: 2 }} />
             <Typography sx={{ fontWeight: 900, color: '#111827', mb: 1.5, fontSize: F.sectionH }}>Issue Reported!</Typography>
             <Typography sx={{ color: '#4b5563', lineHeight: 1.8, mb: 3, fontSize: F.body, maxWidth: 480, mx: 'auto' }}>
-              Your issue has been submitted. Relevant authorities have been notified and the community can now see it.
+              Your issue has been submitted. Your community can now see it and vote on it.
             </Typography>
             <Button component={Link} to="/community/my-feed" variant="contained"
               sx={{ background: 'linear-gradient(135deg,#059669 0%,#0f766e 100%)', color: 'white', fontWeight: 800, borderRadius: '14px', textTransform: 'none', fontSize: F.btn, px: 'clamp(14px, 2.2vw, 24px)', py: 'clamp(10px, 1.4vw, 16px)' }}>
@@ -81,7 +83,7 @@ function ActiveCreateIssuePage() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <div style={{ marginBottom: 'clamp(18px, 2.5vw, 28px)' }}>
             <Typography sx={{ fontWeight: 900, color: '#111827', fontSize: F.sectionH, mb: 1 }}>Report a Community Issue</Typography>
-            <Typography sx={{ color: '#4b5563', fontSize: F.body, lineHeight: 1.7 }}>Be specific. Your report goes directly to the responsible local authority and is publicly visible.</Typography>
+            <Typography sx={{ color: '#4b5563', fontSize: F.body, lineHeight: 1.7 }}>Be specific. Your report is visible to your community. If enough neighbours vote for it, your LGA coordinator reviews it.</Typography>
           </div>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 2.4vw, 24px)' }}>
             <div style={{ borderRadius: 'clamp(14px, 2vw, 20px)', padding: 'clamp(18px, 2.8vw, 28px)', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
@@ -133,10 +135,13 @@ function ActiveCreateIssuePage() {
   const rightSidebar = useMemo(() => <CommunityFeedSidebarRight />, []);
 
   return (
-    <Root header={header} content={content}
-      leftSidebarOpen={leftSidebarOpen} leftSidebarOnClose={handleLeftClose} leftSidebarContent={leftSidebar}
-      rightSidebarOpen={rightSidebarOpen} rightSidebarOnClose={handleRightClose} rightSidebarContent={rightSidebar}
-      scroll="content" />
+    <>
+      <Root header={header} content={content}
+        leftSidebarOpen={leftSidebarOpen} leftSidebarOnClose={handleLeftClose} leftSidebarContent={leftSidebar}
+        rightSidebarOpen={rightSidebarOpen} rightSidebarOnClose={handleRightClose} rightSidebarContent={rightSidebar}
+        scroll="content" />
+      {rulesDialog}
+    </>
   );
 }
 

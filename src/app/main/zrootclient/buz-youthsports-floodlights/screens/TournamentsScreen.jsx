@@ -4,6 +4,7 @@ import FloodlightsPage from './shared/FloodlightsPage';
 import { Pill } from './shared/flHelpers';
 import { useTournaments } from '../hooks/useFloodlightsRepo';
 import { SPORT_ICONS } from '../mock';
+import { preGame, stageText } from '../stage';
 
 export default function TournamentsScreen() {
   const { data, isLoading } = useTournaments();
@@ -44,7 +45,7 @@ export default function TournamentsScreen() {
                 </div>
                 <div className="fl2-stack" style={{ gap: 4, marginTop: 'auto' }}>
                   <span className="fl2-btn fl2-btn-outline fl2-btn-sm" style={{ alignSelf: 'flex-start' }}>{cta}</span>
-                  {isKnockout && t.status === 'upcoming' && <span className="fl2-tiny" style={{ color: 'var(--gold)' }}>Registration opening soon</span>}
+                  {preGame(t) && <span className="fl2-tiny" style={{ color: 'var(--gold)' }}>{stageText(t)}</span>}
                 </div>
               </Link>
             );

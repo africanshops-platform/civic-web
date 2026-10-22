@@ -3,8 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button, CircularProgress } from '@mui/material';
 import { CheckCircle, HowToVote, Warning } from '@mui/icons-material';
 import CandidateCard from './CandidateCard';
+import VoterFaceCheckDialog from './VoterFaceCheckDialog';
+import { candidateColor } from '../constants';
 
-function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
+const colorOf = (c) => candidateColor(c?.index ?? 0);
+
+function VotingBallot({ election, candidates = [], onSubmit, isSubmitting, faceCheckRequired = false }) {
+  const [faceOpen, setFaceOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [step, setStep] = useState('select'); // select | confirm | done
@@ -18,10 +23,17 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
     setStep('confirm');
   }
 
-  function handleSubmit() {
-    onSubmit?.({ electionId: election?.id, candidateId: selected?.id });
-    setStep('done');
-    setConfirmed(true);
+  // Only show "Vote Recorded" once the service has actually accepted the vote; a refusal puts the voter back on the ballot.
+  // With a face check required, submitting first opens the camera; the vote carries the one-time token it earns.
+  function handleSubmit(faceActionToken) {
+    setFaceOpen(false);
+    onSubmit?.(
+      { electionId: election?.id, candidateId: selected?.id, faceActionToken },
+      {
+        onSuccess: () => { setStep('done'); setConfirmed(true); },
+        onError: () => setStep('select'),
+      },
+    );
   }
 
   function handleBack() {
@@ -45,8 +57,8 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
           Vote Recorded!
         </h2>
         <p style={{ color: '#6b7280', fontSize: 'clamp(0.95rem, 1.6vw, 1.1rem)', lineHeight: 1.75, maxWidth: 420, margin: '0 auto' }}>
-          Your vote for <strong style={{ color: selected?.party?.color }}>{selected?.name}</strong> has been securely recorded.
-          Your participation strengthens democracy.
+          Your vote for <strong style={{ color: colorOf(selected) }}>{selected?.name}</strong> has been recorded. Your ballot is secret.
+          Thank you for taking part in your community.
         </p>
       </motion.div>
     );
@@ -61,7 +73,7 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
         <p style={{ color: '#6b7280', margin: 0, fontSize: '0.9rem' }}>
           {step === 'confirm'
             ? 'Please review your selection carefully. Your vote cannot be changed once submitted.'
-            : 'Select one candidate below. Your vote is secret and encrypted.'}
+            : 'Select one candidate below. Your vote is secret.'}
         </p>
       </div>
 
@@ -75,7 +87,7 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
                   onClick={() => handleSelect(c)}
                   style={{
                     cursor: 'pointer',
-                    outline: selected?.id === c.id ? `3px solid ${c.party.color}` : '3px solid transparent',
+                    outline: selected?.id === c.id ? `3px solid ${colorOf(c)}` : '3px solid transparent',
                     borderRadius: 20,
                     transition: 'outline 0.15s',
                   }}
@@ -92,7 +104,7 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
                   onClick={handleConfirm}
                   startIcon={<HowToVote />}
                   sx={{
-                    background: `linear-gradient(135deg, ${selected.party.color} 0%, ${selected.party.color}cc 100%)`,
+                    background: `linear-gradient(135deg, ${colorOf(selected)} 0%, ${colorOf(selected)}cc 100%)`,
                     color: 'white', fontWeight: 800, borderRadius: '14px',
                     textTransform: 'none', fontSize: 'clamp(1rem, 1.7vw, 1.15rem)', py: 1.75,
                     '&:hover': { filter: 'brightness(0.92)', transform: 'translateY(-2px)' },
@@ -109,8 +121,8 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
           <motion.div key="confirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <div style={{
               padding: '20px 22px', borderRadius: 16,
-              background: `${selected.party.bgColor}`,
-              border: `2px solid ${selected.party.color}`,
+              background: `${colorOf(selected)}12`,
+              border: `2px solid ${colorOf(selected)}`,
               marginBottom: 20,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
@@ -122,11 +134,11 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
               <div style={{ fontSize: '0.92rem', color: '#374151', marginBottom: 8 }}>
                 You are voting for:
               </div>
-              <div style={{ fontWeight: 900, color: selected.party.color, fontSize: 'clamp(1.15rem, 2vw, 1.4rem)', marginBottom: 4 }}>
+              <div style={{ fontWeight: 900, color: colorOf(selected), fontSize: 'clamp(1.15rem, 2vw, 1.4rem)', marginBottom: 4 }}>
                 {selected.name}
               </div>
               <div style={{ fontWeight: 700, color: '#374151', fontSize: '0.88rem' }}>
-                {selected.party.name} ({selected.party.abbreviation})
+                {selected.party || 'Independent'}
               </div>
             </div>
 
@@ -138,22 +150,23 @@ function VotingBallot({ election, candidates = [], onSubmit, isSubmitting }) {
                 Go Back
               </Button>
               <Button
-                variant="contained" size="large" onClick={handleSubmit} fullWidth
+                variant="contained" size="large" onClick={() => (faceCheckRequired ? setFaceOpen(true) : handleSubmit())} fullWidth
                 disabled={isSubmitting}
                 startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : <CheckCircle />}
                 sx={{
-                  background: selected.party.color, color: 'white',
+                  background: colorOf(selected), color: 'white',
                   fontWeight: 800, borderRadius: '14px', textTransform: 'none',
                   fontSize: 'clamp(0.95rem, 1.6vw, 1.1rem)', py: 1.5,
                   '&:hover': { filter: 'brightness(0.9)' },
                 }}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit My Vote'}
+                {isSubmitting ? 'Submitting...' : faceCheckRequired ? 'Verify my face and vote' : 'Submit My Vote'}
               </Button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      <VoterFaceCheckDialog open={faceOpen} electionId={election?.id} onClose={() => setFaceOpen(false)} onAccredited={handleSubmit} />
     </div>
   );
 }

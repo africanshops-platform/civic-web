@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
-import { useDeactivationPreview, useRefundPrepaid, useDeactivateCivic, useWithdrawCivicWallet } from '../hooks/useCivicTaxRepo';
+import { useDeactivationPreview, useDeactivateCivic, useWithdrawCivicWallet } from '../hooks/useCivicTaxRepo';
 import PinPrompt from './PinPrompt';
 
 const naira = (n) => `₦${Number(n || 0).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
@@ -19,10 +19,9 @@ function Step({ n, done, title, detail, action }) {
   );
 }
 
-/** Guided deactivation: nothing is stranded — prepaid months are refunded, the civic wallet is emptied, then the profile is deactivated. */
+/** Guided deactivation: paid subscriptions (including months paid ahead) are never refunded; only the civic wallet balance comes back, then the profile is deactivated. */
 export default function DeactivateCivicDialog({ open, onClose, onDone }) {
   const { data: preview, isLoading } = useDeactivationPreview(open);
-  const refund = useRefundPrepaid();
   const withdraw = useWithdrawCivicWallet();
   const deactivate = useDeactivateCivic();
   const [askPin, setAskPin] = useState(false);
@@ -39,12 +38,11 @@ export default function DeactivateCivicDialog({ open, onClose, onDone }) {
         {isLoading ? <CircularProgress size={24} /> : (
           <>
             <div style={{ fontSize: 14, color: '#4b5563', marginBottom: 8 }}>
-              Before you deactivate, all your money comes back to your spending wallet. Future unpaid months are cancelled. You can become a civic user again later and your subscription calendar restarts from that day.
+              Before you deactivate, the money in your civic wallet comes back to your spending wallet. Subscriptions you have already paid, including months paid ahead, go to your local government area and cannot be refunded. Future unpaid months are cancelled. You can become a civic user again later and your subscription calendar restarts from that day.
             </div>
-            <Step n={1} done={heldCount === 0} title="Prepaid months" detail={heldCount === 0 ? 'Nothing is held.' : `${heldCount} month(s) paid ahead (${naira(heldKobo)}) will be returned to your civic wallet.`}
-              action={heldCount > 0 && <Button size="small" variant="contained" disabled={refund.isLoading} onClick={() => refund.mutate()}>{refund.isLoading ? '…' : 'Return'}</Button>} />
-            <Step n={2} done={balance === 0 && heldCount === 0} title="Civic wallet" detail={balance === 0 ? 'Your civic wallet is empty.' : `${naira(balance)} will move back to your spending wallet.`}
-              action={balance > 0 && heldCount === 0 && <Button size="small" variant="contained" onClick={() => setAskPin(true)}>Move back</Button>} />
+            <Step n={1} done title="Paid subscriptions" detail={heldCount === 0 ? 'Subscriptions you paid are not refundable.' : `${heldCount} month(s) paid ahead (${naira(heldKobo)}) stay with your local government area and cannot be refunded.`} />
+            <Step n={2} done={balance === 0} title="Civic wallet" detail={balance === 0 ? 'Your civic wallet is empty.' : `${naira(balance)} will move back to your spending wallet.`}
+              action={balance > 0 && <Button size="small" variant="contained" onClick={() => setAskPin(true)}>Move back</Button>} />
             <Step n={3} done={false} title="Deactivate" detail={preview?.unpaidPastDueMonths ? `You still have ${preview.unpaidPastDueMonths} unpaid past month(s) on record.` : 'Your civic profile is removed; your history is kept.'}
               action={<Button size="small" color="error" variant="contained" disabled={!preview?.canDeactivate || deactivate.isLoading} onClick={() => deactivate.mutate(undefined, { onSuccess: () => { onClose(); onDone?.(); } })}>{deactivate.isLoading ? '…' : 'Deactivate'}</Button>} />
           </>

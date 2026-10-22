@@ -5,19 +5,12 @@ import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
 // v2 pages reuse every already-real hook from the v1 module untouched —
 // re-exported here so v2 screens have one import surface.
 export {
-  useYouthStats, usePrograms, useProgramDetail, useTalents,
+  usePrograms, useProgramDetail, useTalents,
   useTournaments, useTournamentDetail, useRequestMentorship,
   useEnrollInTournament, useMyTournamentEnrollments,
+  usePayAndEnrollInTournament, useTournamentPaymentsReadiness,
   useMyPrograms, useEnrollInProgram, useRegisterForTournament,
 } from './useYouthSportsRepo';
-
-// Staff positions (Feature A, 2026-09-12) — auditions above are this file's
-// own real, already-live hooks; staff positions live in their own file
-// (same backend shape, kept separate to avoid a large diff on this file).
-export {
-  useStaffPositions, useStaffPositionDetail, useMyStaffPositionApplications, useApplyToStaffPosition,
-  STAFF_ROLES,
-} from './useStaffPositionsRepo';
 
 // ─── Newly-real endpoints (League/Player-roster/match-stats, shipped to
 // `test` 2026-08-15/16 — see league.controller.ts, youthsports-client.
@@ -25,6 +18,7 @@ export {
 const api = {
   getLeagues:       (params) => AuthApi().get('/youth/leagues', { params }),
   getLeagueDetail:  (id)     => AuthApi().get(`/youth/leagues/${id}`),
+  getMySchoolPoints: ()      => AuthApi().get('/youth/school-points/me'),
   getPlayers:       (clubMerchantId) => AuthApi().get('/youth/players', { params: { clubMerchantId } }),
   getMatchStats:    (matchId) => AuthApi().get(`/youth/matches/${matchId}/stats`),
   getMerchantPreview: (id) => AuthApi().get(`/auth-merchant/get-merchant/${id}/preview`),
@@ -115,6 +109,9 @@ export function useMatchStats(matchId) {
 // client-only useState with no backend at all. One query drives both "is
 // this player on my watchlist" (membership check) and a future dedicated
 // "my watchlist" listing, so the two never drift out of sync.
+// Public pages call these "my ..." queries too (to show "Enrolled"/"Watching"); a guest has no session, so they must not fire.
+const hasSession = () => Boolean(localStorage.getItem('jwt_access_token'));
+
 export function useMyWatchlist() {
   return useQuery(
     ['youth-watchlist-mine'],
@@ -122,6 +119,7 @@ export function useMyWatchlist() {
     {
       select: (res) => ({ data: { entries: res.data?.data ?? res.data ?? [] } }),
       staleTime: 30 * 1000,
+      enabled: hasSession(),
     }
   );
 }
@@ -213,6 +211,7 @@ export function useMyAuditionApplications() {
     {
       select: (res) => ({ data: { applications: res.data ?? [] } }),
       staleTime: 60 * 1000,
+      enabled: hasSession(),
     }
   );
 }
@@ -221,4 +220,15 @@ function buildParams(obj) {
   return Object.fromEntries(
     Object.entries(obj).filter(([, v]) => v != null && v !== '')
   );
+}
+
+
+/** League points a student has earned in school leagues (civic-67); only fetched for a signed-in citizen. */
+export function useMySchoolPoints(enabled = true) {
+  return useQuery(['fl-my-school-points'], () => api.getMySchoolPoints(), {
+    enabled,
+    staleTime: 60 * 1000,
+    retry: false,
+    select: (res) => res?.data,
+  });
 }

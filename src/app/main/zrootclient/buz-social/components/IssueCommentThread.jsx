@@ -10,7 +10,7 @@ const F = {
   subH: 'clamp(1.4rem, 2.2vw, 1.8rem)',
 };
 
-function CommentItem({ comment, index }) {
+function CommentItem({ comment, index, renderActions }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -40,6 +40,7 @@ function CommentItem({ comment, index }) {
           <span style={{ fontSize: F.meta, color: '#9ca3af', marginLeft: 'auto' }}>
             {new Date(comment.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
           </span>
+          {renderActions?.(comment)}
         </div>
         <p style={{ margin: '0 0 8px', color: '#374151', fontSize: F.body, lineHeight: 1.75 }}>{comment.body}</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -52,7 +53,7 @@ function CommentItem({ comment, index }) {
   );
 }
 
-function IssueCommentThread({ comments = [], onPostComment, isPosting }) {
+function IssueCommentThread({ comments = [], onPostComment, isPosting, renderActions }) {
   const [body, setBody] = useState('');
 
   function handleSubmit(e) {
@@ -70,7 +71,7 @@ function IssueCommentThread({ comments = [], onPostComment, isPosting }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         <AnimatePresence>
-          {comments.map((c, i) => <CommentItem key={c.id} comment={c} index={i} />)}
+          {comments.map((c, i) => <CommentItem key={c.id} comment={c} index={i} renderActions={renderActions} />)}
         </AnimatePresence>
         {comments.length === 0 && (
           <div style={{ textAlign: 'center', padding: 'clamp(18px, 3vw, 28px)', color: '#9ca3af', fontSize: F.body }}>

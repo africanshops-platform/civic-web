@@ -5,8 +5,9 @@ import { Button, LinearProgress, Chip } from '@mui/material';
 import { ArrowBack, CheckCircle, LocationOn } from '@mui/icons-material';
 import { usePetitionDetail, useSignPetition } from '../hooks/useGovernanceRepo';
 import { CivicLoadingSkeleton } from '../../civic-shared';
+import GovernanceShell from './shared-components/GovernanceShell';
 
-export default function PetitionDetailPage() {
+function PetitionDetailPageBody() {
   const { petitionId } = useParams();
   const { data, isLoading, isError } = usePetitionDetail(petitionId);
   const { mutate: signPetition, isLoading: isSigning, isSuccess } = useSignPetition();
@@ -16,7 +17,7 @@ export default function PetitionDetailPage() {
   if (isLoading) return <div style={{ padding: 32 }}><CivicLoadingSkeleton /></div>;
   if (isError || !petition) return <div style={{ padding: 32, textAlign: 'center', color: '#6b7280' }}>Could not load petition. <Link to="/governance/participate">Go back</Link></div>;
 
-  const progressPct = Math.round((petition.currentSignatures / petition.targetSignatures) * 100);
+  const progressPct = petition.targetSignatures ? Math.round((petition.currentSignatures / petition.targetSignatures) * 100) : 0;
 
   return (
     <motion.div
@@ -35,17 +36,15 @@ export default function PetitionDetailPage() {
         border: '1px solid #c7d2fe', marginBottom: 24,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
-          <Chip label={petition.category.toUpperCase()} size="small"
-            sx={{ background: '#1d4ed815', color: '#1d4ed8', fontWeight: 800 }} />
-          <Chip label={petition.status.toUpperCase()} size="small"
-            sx={{ background: petition.status === 'active' ? '#eff6ff' : '#f0fdf4', color: petition.status === 'active' ? '#1d4ed8' : '#16a34a', fontWeight: 800 }} />
+          <Chip label={petition.status.replace('_', ' ').toUpperCase()} size="small"
+            sx={{ background: petition.status === 'open' ? '#eff6ff' : '#f0fdf4', color: petition.status === 'open' ? '#1d4ed8' : '#16a34a', fontWeight: 800 }} />
         </div>
         <h1 style={{ margin: '0 0 12px', fontWeight: 900, color: '#1e1b4b', fontSize: 'clamp(1.3rem, 3vw, 2rem)', lineHeight: 1.25 }}>
           {petition.title}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6b7280', fontSize: '0.85rem', marginBottom: 16 }}>
           <LocationOn sx={{ fontSize: 16 }} />
-          {petition.jurisdiction.state}{petition.jurisdiction.lga ? ` · ${petition.jurisdiction.lga}` : ' (Lagos State)'}
+          {petition.jurisdiction.state}{petition.jurisdiction.lga ? ` · ${petition.jurisdiction.lga}` : ''}
         </div>
 
         <div style={{ marginBottom: 16 }}>
@@ -63,7 +62,7 @@ export default function PetitionDetailPage() {
           Addressed to: <strong style={{ color: '#374151' }}>{petition.targetAuthority}</strong>
         </div>
 
-        {petition.status === 'active' && !isSuccess && (
+        {petition.status === 'open' && !isSuccess && (
           <Button
             variant="contained" size="large"
             onClick={() => signPetition({ petitionId: petition.id })}
@@ -95,45 +94,18 @@ export default function PetitionDetailPage() {
         </p>
       </div>
 
-      {/* Milestones */}
-      <div style={{ borderRadius: 20, padding: '20px 24px', background: 'white', border: '1px solid #e5e7eb' }}>
-        <h3 style={{ margin: '0 0 16px', fontWeight: 800, color: '#111827' }}>Progress Milestones</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {petition.milestones.map((m, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08 }}
-              style={{
-                display: 'flex', gap: 14, alignItems: 'flex-start',
-                padding: '12px 16px', borderRadius: 12,
-                background: m.reached ? '#f0fdf4' : '#f9fafb',
-                border: `1px solid ${m.reached ? '#bbf7d0' : '#e5e7eb'}`,
-              }}
-            >
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                background: m.reached ? '#16a34a' : '#e5e7eb',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: m.reached ? 'white' : '#9ca3af', fontWeight: 800, fontSize: '0.8rem',
-              }}>
-                {m.reached ? <CheckCircle sx={{ fontSize: 18 }} /> : (i + 1)}
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.9rem', marginBottom: 2 }}>
-                  {m.target.toLocaleString()} signatures
-                </div>
-                <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>{m.note}</div>
-                {m.reachedAt && (
-                  <div style={{ fontSize: '0.76rem', color: '#9ca3af', marginTop: 3 }}>
-                    Reached: {new Date(m.reachedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+      <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>
+        A petition is a community request. When it reaches its signature goal it is marked as having met its threshold and is delivered to the party it is addressed to. This platform is independent and does not act for any government body.
+      </p>
     </motion.div>
+  );
+}
+
+
+export default function PetitionDetailPage() {
+  return (
+    <GovernanceShell title="Citizen Participation" subtitle="Petition">
+      <PetitionDetailPageBody />
+    </GovernanceShell>
   );
 }
