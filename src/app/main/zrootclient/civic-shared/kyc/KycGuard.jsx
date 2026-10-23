@@ -1,39 +1,11 @@
-import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import { useEffect } from 'react';
+import { Box, Button, Typography } from '@mui/material';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
-import ShieldIcon from '@mui/icons-material/Shield';
 import { useGetKycStatus } from 'app/configs/data/server-calls/auth/userapp/a_kyc/useKycRepo';
+import { PageSkeleton } from 'app/shared-components/loading';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import KycWizardPage from './KycWizardPage';
-
-function KycLoadingScreen() {
-  return (
-    <Box sx={{
-      position: 'fixed', inset: 0, zIndex: 1300,
-      bgcolor: 'background.default',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 3,
-    }}>
-      <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <CircularProgress size={72} thickness={2} color="secondary" />
-        <ShieldIcon color="secondary" sx={{
-          position: 'absolute', fontSize: 34,
-          animation: 'shieldPulse 1.8s ease-in-out infinite',
-          '@keyframes shieldPulse': {
-            '0%,100%': { opacity: 1, transform: 'scale(1)' },
-            '50%':     { opacity: 0.6, transform: 'scale(0.9)' },
-          },
-        }} />
-      </Box>
-      <Box sx={{ textAlign: 'center' }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 22, mb: 0.75 }}>
-          Verifying Identity Status
-        </Typography>
-        <Typography color="text.secondary">
-          Connecting to KYC services…
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
+import { KYC_STALE_EVENT, readKycHint, writeKycHint } from './kycHint';
 
 function KycErrorScreen({ error, refetch }) {
   const is5xx = error?.response?.status >= 500;
@@ -77,10 +49,25 @@ function KycErrorScreen({ error, refetch }) {
 }
 
 export default function KycGuard({ children }) {
-  const { data, isLoading, isError, error, refetch } = useGetKycStatus();
+  const { user } = useCivicWebAuth();
+  const userId = user?.id;
+  const hint = readKycHint(userId);
+  const { data, isLoading, isError, error, refetch, isPlaceholderData } = useGetKycStatus({ verifiedHint: hint });
 
-  if (isLoading) return <KycLoadingScreen />;
-  if (isError)   return <KycErrorScreen error={error} refetch={refetch} />;
+  // Remember the real answer for next time (never the placeholder), and recheck when the server reports verification is required.
+  useEffect(() => {
+    if (data?.kycStatus && !isPlaceholderData) writeKycHint(userId, data.kycStatus === 'FULLY_VERIFIED');
+  }, [data?.kycStatus, isPlaceholderData, userId]);
+  useEffect(() => {
+    const recheck = () => refetch();
+    window.addEventListener(KYC_STALE_EVENT, recheck);
+    return () => window.removeEventListener(KYC_STALE_EVENT, recheck);
+  }, [refetch]);
+
+  // Waiting to SEE the page: the page skeleton (not a full-screen takeover). A verified user never gets here (the hint opens the gate at once).
+  if (isLoading) return <PageSkeleton title="Loading" />;
+  // A failed recheck must not lock out someone who was verified last time: the server still enforces KYC on every request.
+  if (isError) return hint ? children : <KycErrorScreen error={error} refetch={refetch} />;
 
   const kycStatus = data?.kycStatus ?? 'NONE';
   if (kycStatus === 'FULLY_VERIFIED') return children;
