@@ -18,10 +18,15 @@ const api = {
 
 // ─── hooks ────────────────────────────────────────────────────────────────────
 
-export function useGetKycStatus() {
+/**
+ * `verifiedHint`: this user was verified last time (see kycHint.js). Then the status shows as verified straight away while the real answer is
+ * fetched in the background, and a verified status never goes stale on its own (it only changes on a revocation, which the 403 handler reports).
+ */
+export function useGetKycStatus({ verifiedHint = false } = {}) {
   return useQuery(KYC_STATUS_KEY, api.getStatus, {
-    staleTime: 5 * 60 * 1000,
+    staleTime: verifiedHint ? Infinity : 5 * 60 * 1000,
     cacheTime: 30 * 60 * 1000,
+    placeholderData: verifiedHint ? { data: { kycStatus: 'FULLY_VERIFIED' } } : undefined,
     // Don't hammer the backend on server errors — one retry is enough
     retry: (failureCount, error) => {
       if (error?.response?.status >= 500) return false;
