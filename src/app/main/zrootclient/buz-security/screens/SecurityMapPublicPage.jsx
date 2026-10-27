@@ -6,7 +6,8 @@ import { Link } from 'react-router-dom';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import IncidentMap from '../components/IncidentMap';
 import IncidentCard from '../components/IncidentCard';
-import { mockIncidents, INCIDENT_CATEGORIES, SECURITY_STATS } from '../mock';
+import { INCIDENT_CATEGORIES } from '../mock';
+import { useIncidents } from '../hooks/useSecurityRepo';
 
 const NIGERIA_CENTER = [9.082, 8.6753];
 
@@ -29,13 +30,13 @@ export default function SecurityMapPublicPage() {
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [activeFilter,     setActiveFilter]     = useState('');
 
-  const publicIncidents = useMemo(
-    () => mockIncidents.filter((i) => i.severity !== 'critical' && i.status !== 'resolved'),
-    []
+  // Real incidents from this environment's server (soc-service public feed: LOW/MEDIUM only, no reporter
+  // identity). Category filtering is server-side; resolved/closed are hidden from the live map.
+  const { data, isLoading, isError } = useIncidents({ category: activeFilter || undefined, limit: 100 });
+  const filtered = useMemo(
+    () => (data?.data?.incidents ?? []).filter((i) => i.status !== 'resolved' && i.status !== 'closed'),
+    [data]
   );
-  const filtered = activeFilter
-    ? publicIncidents.filter((i) => i.category === activeFilter)
-    : publicIncidents;
 
   return (
     <div style={{
@@ -138,8 +139,7 @@ export default function SecurityMapPublicPage() {
         {/* Stats overlay — top-left */}
         <div style={{ position: 'absolute', top: 'clamp(12px,2vw,20px)', left: 'clamp(12px,2vw,20px)', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
-            { label: 'Active',       value: SECURITY_STATS.activeIncidents, color: '#f87171', bg: 'rgba(220,38,38,0.88)' },
-            { label: 'Avg Response', value: SECURITY_STATS.avgResponseTime, color: 'white',   bg: 'rgba(15,23,42,0.9)'  },
+            { label: 'Active', value: isLoading ? '…' : filtered.length, color: '#f87171', bg: 'rgba(220,38,38,0.88)' },
           ].map((item) => (
             <div key={item.label} style={{
               padding: 'clamp(10px,1.8vw,16px) clamp(14px,2.5vw,22px)',
@@ -155,6 +155,12 @@ export default function SecurityMapPublicPage() {
             </div>
           ))}
         </div>
+
+        {!isLoading && (isError || filtered.length === 0) && (
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1000, textAlign: 'center', padding: '16px 24px', borderRadius: 14, background: 'rgba(15,23,42,0.9)', color: 'white', fontSize: F.panelBody, maxWidth: '80%' }}>
+            {isError ? 'Incidents could not be loaded right now. Please try again shortly.' : 'No public incidents are reported right now.'}
+          </div>
+        )}
 
         {/* Report FAB */}
         <div style={{ position: 'absolute', bottom: 'clamp(20px,3vw,32px)', right: 'clamp(20px,3vw,32px)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
