@@ -4,12 +4,19 @@ import { Button, CircularProgress, TextField } from '@mui/material';
 import { Shield, Send, ArrowBack, MyLocation, CheckCircle, LocationOn, Edit } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from 'react-query';
+import { toast } from 'react-toastify';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import FusePageSimpleWithMargin from '@fuse/core/FusePageSimple/FusePageSimpleWithMargin';
 import useThemeMediaQuery from '@fuse/hooks/useThemeMediaQuery';
+import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import { useReportIncident } from '../hooks/useSecurityRepo';
+import SubscriptionGate from '../../civic-shared/subscription/SubscriptionGate';
+import { isEmergencyCategory, isSubscriptionRequired } from '../../civic-shared/subscription/gateDecision';
+import { standingKey } from '../../civic-shared/subscription/useSubscriptionStanding';
+import { clearDraft, loadDraft, saveDraft } from '../../civic-shared/subscription/draft';
 import SecurityHeader from './shared-components/SecurityHeader';
 import SocDashboardSidebarLeft from './shared-components/SocDashboardSidebarLeft';
 import SocDashboardSidebarRight from './shared-components/SocDashboardSidebarRight';
@@ -177,14 +184,19 @@ function ActiveReportIncidentPage() {
   useEffect(() => { setLeftSidebarOpen(!isMobile); setRightSidebarOpen(!isMobile); }, [isMobile]);
 
   const { mutate: submitReport, isLoading, isSuccess } = useReportIncident();
+  const queryClient = useQueryClient();
+  const { user } = useCivicWebAuth();
+  // A half-written report is kept on this device (per person), so the subscription gate closing, or a reload, never loses it.
+  const draftKey = `incident-report:${user?.id ?? 'guest'}`;
+  const saved = useMemo(() => loadDraft(draftKey), [draftKey]);
 
   /* form state */
-  const [category,    setCategory]    = useState('');
-  const [description, setDescription] = useState('');
-  const [pinCoords,   setPinCoords]   = useState(null);
-  const [displayName, setDisplayName] = useState('');
-  const [stateVal,    setStateVal]    = useState('');
-  const [lgaVal,      setLgaVal]      = useState('');
+  const [category,    setCategory]    = useState(saved?.category ?? '');
+  const [description, setDescription] = useState(saved?.description ?? '');
+  const [pinCoords,   setPinCoords]   = useState(saved?.pinCoords ?? null);
+  const [displayName, setDisplayName] = useState(saved?.displayName ?? '');
+  const [stateVal,    setStateVal]    = useState(saved?.stateVal ?? '');
+  const [lgaVal,      setLgaVal]      = useState(saved?.lgaVal ?? '');
   const [geoLoading,  setGeoLoading]  = useState(false);
   const [geoError,    setGeoError]    = useState('');
   const [geoAccuracy, setGeoAccuracy] = useState(null); // metres from GPS; null = map pick
@@ -238,6 +250,12 @@ function ActiveReportIncidentPage() {
     );
   }, [applyGeocode]);
 
+  useEffect(() => {
+    if (isSuccess) return;
+    if (category || description || pinCoords) saveDraft(draftKey, { category, description, pinCoords, displayName, stateVal, lgaVal });
+    else clearDraft(draftKey);
+  }, [isSuccess, draftKey, category, description, pinCoords, displayName, stateVal, lgaVal]);
+
   const handleSubmit = useCallback(() => {
     let valid = true;
     if (!category)  { setCatError('Please select the type of incident');             valid = false; }
@@ -258,9 +276,21 @@ function ActiveReportIncidentPage() {
           lga:     lgaVal.trim(),
         },
       },
-      { onSuccess: () => setTimeout(() => navigate('/security/my-reports'), 2200) }
+      {
+        onSuccess: () => {
+          clearDraft(draftKey);
+          setTimeout(() => navigate('/security/my-reports'), 2200);
+        },
+        onError: (err) => {
+          // The subscription slipped out of date since the page opened: show the pay prompt now. The draft is already saved.
+          if (isSubscriptionRequired(err)) {
+            queryClient.invalidateQueries(standingKey('incidentReport'));
+            toast.info('Your report is saved. Pay this month\'s civic subscription to submit it.');
+          }
+        },
+      }
     );
-  }, [category, description, pinCoords, displayName, stateVal, lgaVal, submitReport, navigate]);
+  }, [category, description, pinCoords, displayName, stateVal, lgaVal, submitReport, navigate, draftKey, queryClient]);
 
   const handleLeftToggle  = useCallback(() => setLeftSidebarOpen((v)  => !v), []);
   const handleRightToggle = useCallback(() => setRightSidebarOpen((v) => !v), []);
@@ -586,6 +616,7 @@ function ActiveReportIncidentPage() {
 
             {/* ── Submit ── */}
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+              <SubscriptionGate feature="incidentReport" bypass={isEmergencyCategory(category)}>
               <Button fullWidth variant="contained" size="large"
                 disabled={isLoading || (geoAccuracy !== null && geoAccuracy > 1000)}
                 onClick={handleSubmit}
@@ -601,6 +632,7 @@ function ActiveReportIncidentPage() {
                 }}>
                 {isLoading ? 'Submitting report…' : '🚨 Report Incident Now'}
               </Button>
+              </SubscriptionGate>
               <div style={{ textAlign: 'center', fontSize: F.meta, color: 'rgba(255,255,255,0.3)', marginTop: 12 }}>
                 Your identity is not shared publicly. Required: type + location + state + LGA.
               </div>
