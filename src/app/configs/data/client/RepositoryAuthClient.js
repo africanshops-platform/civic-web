@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { resetSessionForShopUsers } from 'app/configs/utils/authUtils';
 import { getAdminAccessToken } from '../utils/opsUtils';
 import { API_ENDPOINTS } from './serverEndpoints/endpoints';
+import { dropKycHints, isKycRequiredMessage } from 'app/main/zrootclient/civic-shared/kyc/kycHint';
 import jwtAuthConfig from 'src/app/auth/services/jwt/jwtAuthConfig';
 
 // ─── Token-refresh state (module-level so all AuthApi() instances share it) ──
@@ -124,6 +125,7 @@ export function AuthApi() {
 			}
 
 			if (error?.response?.status === 403) {
+				if (isKycRequiredMessage(error.response?.data?.message)) dropKycHints();
 				toast.error(
 					error.response?.data?.message ?? 'Access denied. You do not have permission to perform this action.'
 				);
