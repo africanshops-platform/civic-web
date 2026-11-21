@@ -63,14 +63,14 @@ export function AuthApi() {
 			//     });
 			// }
 
+			// 403 means "not allowed for this account", never "signed out": do not sign the user out (a logout reloads the page and loops).
 			if (error?.response?.status === 403) {
 				const errors = Object.values(error?.response?.data?.errors || {});
-				merchantLogOutCall();
 
 				return Promise.reject({
 					status: 403,
 					errorsRaw: errors,
-					errors: errors.reduce((error) => error)
+					errors: errors.length ? errors.reduce((error) => error) : [error?.response?.data?.message || 'Access denied']
 				});
 			}
 
