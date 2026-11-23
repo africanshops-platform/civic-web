@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import { handleApiError } from 'app/configs/data/utils/handleApiError';
 import { clientSigin, clientVerify2faLogin } from '../../client/RepositoryClient';
 import { isTwoFactorChallenge } from '../../../../auth/services/jwt/twoFactorLogin';
-import { markSignedIn, signInLandingUrl } from '../../../../auth/services/jwt/signInLanding';
+import { markSignedIn, signInLandingUrl, USER_COOKIE_OPTIONS } from '../../../../auth/services/jwt/signInLanding';
 import config from '../../../../auth/services/jwt/jwtAuthConfig';
 
 
@@ -80,7 +80,7 @@ const isTokenValid = (accessToken) => {
 };
 
 const setUserCredentialsStorage = (userCredentials) => {
-	Cookie.set(config.adminCredentials, JSON.stringify({ userCredentials }));
+	Cookie.set(config.adminCredentials, JSON.stringify({ userCredentials }), USER_COOKIE_OPTIONS);
 	markSignedIn();
 
 	const redirectUrl = getSessionRedirectUrl();
