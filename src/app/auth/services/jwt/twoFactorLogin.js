@@ -15,3 +15,18 @@ export function twoFactorCodeProblem(raw) {
   if (/^[A-Za-z0-9]{8}$/.test(code)) return null;
   return 'Enter the 6-digit code from your authenticator app, or an 8-character backup code.';
 }
+
+export const CODE_LENGTH = 6;
+
+/**
+ * The six code boxes as one string of up to six digits. `typed` lands at box `index`: one digit replaces that box, several (a paste, or an
+ * autofill that reached one box) fill from there on. Anything that is not a digit is dropped. Same behaviour as the customer app's boxes.
+ */
+export function fillDigits(current, index, typed, length = CODE_LENGTH) {
+  const digits = String(typed ?? '').replace(/\D/g, '');
+  const base = String(current ?? '').replace(/\D/g, '');
+  if (!digits) return base.slice(0, length);
+  return (base.slice(0, index) + digits + base.slice(index + (digits.length > 1 ? digits.length : 1))).slice(0, length);
+}
+
+export const isValidLoginCode = (value) => twoFactorCodeProblem(value) === null;

@@ -1,9 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { isTwoFactorChallenge, cleanTwoFactorCode, twoFactorCodeProblem } from '../twoFactorLogin';
+import { isTwoFactorChallenge, cleanTwoFactorCode, twoFactorCodeProblem, fillDigits } from '../twoFactorLogin';
 import TwoFactorLoginStep from '../components/TwoFactorLoginStep';
 import { signInLandingUrl, markSignedIn } from '../signInLanding';
 
 const mockMutate = jest.fn();
+jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 jest.mock('app/configs/data/server-calls/auth/admin-auth', () => ({
   useVerify2faLogin: () => ({ mutate: mockMutate, isLoading: false, error: null }),
 }));
@@ -27,22 +28,31 @@ describe('the sign-in contract with the authenticator on', () => {
   });
 });
 
-describe('the code step', () => {
+describe('the code step (six boxes, like the customer app)', () => {
   beforeEach(() => mockMutate.mockClear());
+  const firstBox = () => screen.getByLabelText('6-digit code, digit 1');
 
-  it('sends the temp token and the cleaned code', () => {
+  it('a pasted or autofilled code fills every box and signs in with the temp token and the digits', () => {
     render(<TwoFactorLoginStep tempToken="temp-1" onBack={jest.fn()} />);
-    fireEvent.change(screen.getByLabelText('Authenticator or backup code'), { target: { value: '123 456' } });
+    fireEvent.change(firstBox(), { target: { value: '123456' } });
+    expect(screen.getByLabelText('6-digit code, digit 6').value).toBe('6');
     fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
-    expect(mockMutate).toHaveBeenCalledWith({ tempToken: 'temp-1', totpCode: '123456' });
+    expect(mockMutate).toHaveBeenCalledWith({ tempToken: 'temp-1', totpCode: '123456' }, expect.any(Object));
   });
 
-  it('sends nothing for a code that cannot be right', () => {
+  it('typing one digit moves on, and the button stays off until all six are in', () => {
     render(<TwoFactorLoginStep tempToken="temp-1" onBack={jest.fn()} />);
-    fireEvent.change(screen.getByLabelText('Authenticator or backup code'), { target: { value: '12' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+    fireEvent.change(firstBox(), { target: { value: '1' } });
+    expect(screen.getByRole('button', { name: 'Verify and sign in' }).disabled).toBe(true);
     expect(mockMutate).not.toHaveBeenCalled();
-    expect(screen.getByText(/6-digit code from your authenticator app, or/)).toBeTruthy();
+  });
+
+  it('a backup code goes in a plain field and is sent as typed (upper case)', () => {
+    render(<TwoFactorLoginStep tempToken="temp-1" onBack={jest.fn()} />);
+    fireEvent.click(screen.getByText('Lost your phone? Use a backup code'));
+    fireEvent.change(screen.getByLabelText('Backup code'), { target: { value: 'ab12cd34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+    expect(mockMutate).toHaveBeenCalledWith({ tempToken: 'temp-1', totpCode: 'AB12CD34' }, expect.any(Object));
   });
 
   it('Back returns to the password step', () => {
@@ -50,6 +60,16 @@ describe('the code step', () => {
     render(<TwoFactorLoginStep tempToken="temp-1" onBack={onBack} />);
     fireEvent.click(screen.getByRole('button', { name: 'Back to sign in' }));
     expect(onBack).toHaveBeenCalled();
+  });
+});
+
+describe('fillDigits', () => {
+  it('keeps digits only and never grows past six', () => {
+    expect(fillDigits('', 0, '123456')).toBe('123456');
+    expect(fillDigits('12', 2, '3')).toBe('123');
+    expect(fillDigits('123456', 0, '9')).toBe('923456');
+    expect(fillDigits('', 0, 'ab')).toBe('');
+    expect(fillDigits('', 0, '1234567')).toBe('123456');
   });
 });
 
