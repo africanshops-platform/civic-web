@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { isTwoFactorChallenge, cleanTwoFactorCode, twoFactorCodeProblem } from '../twoFactorLogin';
 import TwoFactorLoginStep from '../components/TwoFactorLoginStep';
+import { signInLandingUrl, markSignedIn } from '../signInLanding';
 
 const mockMutate = jest.fn();
 jest.mock('app/configs/data/server-calls/auth/admin-auth', () => ({
@@ -49,5 +50,20 @@ describe('the code step', () => {
     render(<TwoFactorLoginStep tempToken="temp-1" onBack={onBack} />);
     fireEvent.click(screen.getByRole('button', { name: 'Back to sign in' }));
     expect(onBack).toHaveBeenCalled();
+  });
+});
+
+describe('landing after sign-in', () => {
+  it('never reloads onto the sign-in page: it goes home, or to the page the person came from', () => {
+    expect(signInLandingUrl(null, '/sign-in')).toBe('/');
+    expect(signInLandingUrl('/youth-v2/tournaments/1', '/sign-in')).toBe('/youth-v2/tournaments/1');
+    expect(signInLandingUrl(null, '/youth-v2')).toBeNull();
+  });
+
+  it('writes the flags the app gate reads before the reload', () => {
+    localStorage.clear();
+    markSignedIn();
+    expect(localStorage.getItem('jwt_is_authStatus')).toBe('authenticated');
+    expect(localStorage.getItem('fuseReactAuthProvider')).toBe('jwt');
   });
 });

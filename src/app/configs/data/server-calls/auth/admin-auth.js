@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { handleApiError } from 'app/configs/data/utils/handleApiError';
 import { clientSigin, clientVerify2faLogin } from '../../client/RepositoryClient';
 import { isTwoFactorChallenge } from '../../../../auth/services/jwt/twoFactorLogin';
+import { markSignedIn, signInLandingUrl } from '../../../../auth/services/jwt/signInLanding';
 import config from '../../../../auth/services/jwt/jwtAuthConfig';
 
 
@@ -80,12 +81,14 @@ const isTokenValid = (accessToken) => {
 
 const setUserCredentialsStorage = (userCredentials) => {
 	Cookie.set(config.adminCredentials, JSON.stringify({ userCredentials }));
+	markSignedIn();
 
 	const redirectUrl = getSessionRedirectUrl();
+	if (redirectUrl) resetSessionRedirectUrl();
 
-	if (redirectUrl) {
-		resetSessionRedirectUrl();
-		window.location.href = redirectUrl;
+	const landing = signInLandingUrl(redirectUrl, window.location.pathname);
+	if (landing) {
+		window.location.href = landing;
 	} else {
 		window.location.reload();
 	}
