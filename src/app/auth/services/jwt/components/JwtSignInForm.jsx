@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import useGetUserAppSetting from "app/configs/data/server-calls/auth/userapp/a_userapp_settings/useAppSettingDomain";
 import useJwtAuth from "../useJwtAuth";
+import TwoFactorLoginStep from "./TwoFactorLoginStep";
 
 const defaultValues = {
   email: "",
@@ -120,6 +121,8 @@ function LoginDisabledNotice({ onRetry }) {
 function JwtSignInForm() {
   const { signIn, isLoading } = useJwtAuth();
   const [showPassword, setShowPassword] = useState(false);
+  // Set when the account has the authenticator on: the password was right, now the code is asked for.
+  const [challenge, setChallenge] = useState(null);
 
   // Fetch app settings — cached for 5 minutes, so this is near-instant on repeat visits
   const {
@@ -138,16 +141,24 @@ function JwtSignInForm() {
   const { isValid, dirtyFields, errors } = formState;
 
   function onSubmit({ email, password }) {
-    signIn({ email, password }).catch((error) => {
-      console.error("FormJSXError", error);
-      toast.error(error?.message);
-    });
+    signIn({ email, password })
+      .then((result) => {
+        if (result?.requiresTwoFactor) setChallenge(result);
+      })
+      .catch((error) => {
+        console.error("FormJSXError", error);
+        toast.error(error?.message);
+      });
   }
 
   // Block login only when the setting explicitly resolves to false.
   // While still loading, or on network error, we fail open (show the form).
   if (!settingsLoading && usersLoginEnabled === false) {
     return <LoginDisabledNotice onRetry={refetchSettings} />;
+  }
+
+  if (challenge) {
+    return <TwoFactorLoginStep tempToken={challenge.tempToken} onBack={() => setChallenge(null)} />;
   }
 
   return (
