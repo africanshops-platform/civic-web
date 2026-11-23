@@ -24,6 +24,8 @@ const api = {
  */
 export function useGetKycStatus({ verifiedHint = false } = {}) {
   return useQuery(KYC_STATUS_KEY, api.getStatus, {
+    // A guest has no session: the 401 would reset it and reload the page (found by the 23 Nov 2026 guest-page sweep on /account/kyc).
+    enabled: Boolean(localStorage.getItem('jwt_access_token')),
     staleTime: verifiedHint ? Infinity : 5 * 60 * 1000,
     cacheTime: 30 * 60 * 1000,
     placeholderData: verifiedHint ? { data: { kycStatus: 'FULLY_VERIFIED' } } : undefined,
