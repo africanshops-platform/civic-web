@@ -12,6 +12,7 @@ import {
 } from "@fuse/core/FuseAuthorization/sessionRedirectUrl";
 // import { useAdminLogin } from "app/configs/data/server-calls/merchant-auth";
 import { useShopAdminLogin } from "app/configs/data/server-calls/auth/admin-auth";
+import { isTwoFactorChallenge } from "./twoFactorLogin";
 import { revokeSessionApi } from "app/configs/data/client/RepositoryAuthClient";
 
 const defaultAuthContext = {
@@ -294,8 +295,9 @@ function JwtAuthProvider(props) {
     handleSignInFailure,
   ) => {
     try {
-      await adminLogIn.mutateAsync(data);
-      return null;
+      const res = await adminLogIn.mutateAsync(data);
+      // Authenticator on: hand the challenge to the sign-in form (it shows the code step). Otherwise the session is already stored.
+      return isTwoFactorChallenge(res?.data) ? { requiresTwoFactor: true, tempToken: res.data.tempToken } : null;
     } catch (error) {
       const axiosError = error;
       handleSignInFailure(axiosError);

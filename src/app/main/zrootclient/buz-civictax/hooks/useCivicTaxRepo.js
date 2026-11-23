@@ -360,11 +360,22 @@ export function usePayObligations() {
 
 // ─── Civic wallet (opened automatically for every civic user) ────────────────
 
+// Public pages (a tournament, a program) also show wallet figures to a signed-in citizen. A guest has no session, so these must not
+// fire: the 401 they would get triggers the session reset and a page reload, over and over.
+export const hasCivicSession = () => {
+  try {
+    return Boolean(localStorage.getItem('jwt_access_token'));
+  } catch {
+    return false;
+  }
+};
+
 /** The caller's civic wallet (opened on first use), its balance in naira, and the account number fund/withdraw take. */
 export function useMyCivicWallet() {
   return useQuery(['civictax-my-civic-wallet'], () => api.getMyCivicWallet(), {
     select: (res) => res.data,
     staleTime: 15 * 1000,
+    enabled: hasCivicSession(),
   });
 }
 
@@ -373,6 +384,7 @@ export function useSpendingBalance() {
   return useQuery(['civictax-spending-balance'], () => api.getSpendingBalance(), {
     select: (res) => toNaira(Number(res.data?.availableBalance ?? 0)),
     staleTime: 15 * 1000,
+    enabled: hasCivicSession(),
   });
 }
 
