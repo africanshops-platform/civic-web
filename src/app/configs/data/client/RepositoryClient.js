@@ -59,6 +59,8 @@ export const clientResetPasswordFromOtp = (formData) => Api().post('/auth-user/r
 
 // /reset-password
 export const clientSigin = (formData) => Api().post('/auth-user/login', formData); // (Done => Mcsvs)
+// Second step of sign-in for an account with the authenticator on: { tempToken, totpCode } -> the same session reply as clientSigin.
+export const clientVerify2faLogin = (body) => Api().post('/auth-user/2fa/verify', body);
 
 export const clientRegister = (formData) => Api().post('/authuser/register', formData);
 /** **********************************************************************************************
