@@ -20,6 +20,7 @@ import {
   useMyObligations, usePayObligation, usePayObligations, useObligationHistory,
   useMySplitSummary, useUpdateCivicSplit, useCivicSubscriptionsReadiness, useRateNotice, useMyFeeLines,
 } from '../hooks/useCivicTaxRepo';
+import { yearCompliance } from '../compliance';
 import { CivicLoadingSkeleton, CivicPaginationBar } from '../../civic-shared';
 
 /* ── Font tokens ── */
@@ -325,18 +326,7 @@ function ActiveCivicTaxObligationsPage() {
   );
 
   // Real figures: months paid this year vs months that have come due (voting needs at least 2 paid).
-  const compliance = useMemo(() => {
-    const year = new Date().getFullYear();
-    const thisYear = obligations.filter((o) => String(o.monthKey).startsWith(`${year}-`));
-    const paidMonths = thisYear.filter((o) => o.uiStatus === 'paid').length;
-    const dueMonths = thisYear.filter((o) => o.uiStatus !== 'upcoming').length;
-    return {
-      paidMonths,
-      dueMonths,
-      complianceScore: dueMonths ? Math.min(100, Math.round((paidMonths / dueMonths) * 100)) : 100,
-      eligible: paidMonths >= 2,
-    };
-  }, [obligations]);
+  const compliance = useMemo(() => yearCompliance(obligations), [obligations]);
 
   // Month-by-month plan: overdue (earlier months), this month, upcoming (rest of the year, payable ahead), paid.
   const sections = useMemo(() => {
@@ -364,7 +354,7 @@ function ActiveCivicTaxObligationsPage() {
 
   const header = useMemo(() => (
     <CivicTaxHeader leftSidebarToggle={handleLeftToggle} rightSidebarToggle={handleRightToggle}
-      title="Civic Subscriptions Obligations" subtitle="Pay your subscription. Unlock governance. Shape your LGA." showContributeBtn={false} />
+      title="My Civic Subscriptions" subtitle="Pay your subscription. Unlock governance. Shape your LGA." showContributeBtn={false} />
   ), [handleLeftToggle, handleRightToggle]);
 
   const content = useMemo(() => (
@@ -480,7 +470,7 @@ function ActiveCivicTaxObligationsPage() {
             { label: 'Compliance Score',   value: `${compliance.complianceScore}%`,    color: '#16a34a' },
             { label: 'Months paid this year', value: `${compliance.paidMonths}/12`,  color: '#7c3aed' },
             { label: 'Overdue',            value: overdueCount,                        color: overdueCount > 0 ? '#dc2626' : '#16a34a' },
-            { label: 'Amount Due',         value: `₦${Math.round(totalOwed / 1000)}K`, color: '#ea580c' },
+            { label: 'Amount Due',         value: `₦${totalOwed.toLocaleString('en-NG', { maximumFractionDigits: 0 })}`, color: '#ea580c' },
           ].map((s) => (
             <div key={s.label} style={{ textAlign: 'center' }}>
               <div style={{ fontWeight: 900, fontSize: F.subH, color: s.color }}>{s.value}</div>

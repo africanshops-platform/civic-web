@@ -3,7 +3,8 @@ import { Divider } from '@mui/material';
 import { Shield, Warning, CheckCircle } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import IncidentCard from '../../components/IncidentCard';
-import { SECURITY_STATS } from '../../mock';
+import { useIncidents } from '../../hooks/useSecurityRepo';
+import { incidentStats, isOpenIncident } from '../../incidentStats';
 
 const F = {
   meta:    'clamp(1.2rem, 1.8vw, 1.5rem)',
@@ -12,12 +13,15 @@ const F = {
   sectionH:'clamp(2rem,   4vw,   3.4rem)',
 };
 
-function SocDashboardSidebarRight({ incidents = [], stats }) {
-  const s = stats || SECURITY_STATS;
+function SocDashboardSidebarRight() {
+  // The same figures on every security page: the latest public reports, not the page the screen happens to show.
+  const { data } = useIncidents({ limit: 100 });
+  const incidents = data?.data?.incidents ?? [];
+  const s = incidentStats(incidents, data?.data?.stats?.total);
 
-  const criticalActive = incidents.filter((i) => i.severity === 'critical' && i.status !== 'resolved');
+  const criticalActive = incidents.filter((i) => i.severity === 'critical' && isOpenIncident(i));
   const activeQueue    = incidents
-    .filter((i) => i.status === 'active' || i.status === 'responding')
+    .filter(isOpenIncident)
     .sort((a, b) => {
       const order = { critical: 0, high: 1, medium: 2, low: 3 };
       return (order[a.severity] ?? 4) - (order[b.severity] ?? 4);
@@ -49,10 +53,10 @@ function SocDashboardSidebarRight({ incidents = [], stats }) {
       {/* ── Quick stats grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: 'clamp(12px, 1.6vw, 16px) clamp(12px, 1.6vw, 16px) 0' }}>
         {[
-          { label: 'Active',         value: s.activeIncidents,     accent: true  },
-          { label: 'Responding',     value: s.respondingIncidents, accent: false },
-          { label: 'Resolved Today', value: s.resolvedToday,       accent: false },
-          { label: 'Avg Response',   value: s.avgResponseTime,     accent: false },
+          { label: 'Active',     value: s.active,     accent: true  },
+          { label: 'Responding', value: s.responding, accent: false },
+          { label: 'Resolved',   value: s.resolved,   accent: false },
+          { label: 'Critical',   value: s.critical,   accent: false },
         ].map((item) => (
           <div key={item.label} style={{
             padding: 'clamp(12px, 1.6vw, 16px)',

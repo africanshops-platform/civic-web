@@ -169,11 +169,3 @@ export const STATUS_CONFIG = {
   closed: { label: 'Closed', color: '#6b7280', bg: '#f3f4f6' },
 };
 
-export const SECURITY_STATS = {
-  activeIncidents: 5,
-  respondingIncidents: 2,
-  resolvedToday: 1,
-  avgResponseTime: '7 mins',
-  totalReported: 8,
-  criticalCount: 2,
-};

@@ -323,7 +323,7 @@ function ActiveReportIncidentPage() {
             </motion.div>
             <div style={{ fontWeight: 900, fontSize: F.sectionH, color: 'white', marginBottom: 16, lineHeight: 1.1 }}>Report Submitted</div>
             <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: F.body, lineHeight: 1.8 }}>
-              Our security team has been notified. Stay safe and move to a secure location.
+              Your report has been saved for the security officials of that area. It does not call emergency services: if anyone is in danger, move to a safe place and call 112 or 199.
             </div>
           </motion.div>
         </div>
@@ -357,7 +357,7 @@ function ActiveReportIncidentPage() {
               </div>
               <div>
                 <div style={{ fontWeight: 900, fontSize: F.sectionH, color: 'white', lineHeight: 1.1 }}>Report Incident</div>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: F.body, marginTop: 4 }}>Fast. Anonymous. Help is notified immediately.</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: F.body, marginTop: 4 }}>The public map never shows your name. In an emergency, call 112 or 199 first.</div>
               </div>
             </motion.div>
 

@@ -12,7 +12,6 @@ import SocDashboardSidebarLeft from './shared-components/SocDashboardSidebarLeft
 import SocDashboardSidebarRight from './shared-components/SocDashboardSidebarRight';
 import IncidentCard from '../components/IncidentCard';
 import { CivicLoadingSkeleton, CivicEmptyState, CivicPaginationBar } from '../../civic-shared';
-import { SECURITY_STATS } from '../mock';
 
 const F = {
   body:    'clamp(1.3rem,  2vw,   1.64rem)',
@@ -87,7 +86,6 @@ function ActiveMyReportsPage() {
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(140px,18vw,210px), 1fr))', gap: 'clamp(12px,2vw,20px)', marginBottom: 'clamp(24px,3.5vw,40px)' }}>
             {[
               { label: 'Total Reported', value: reports.length },
-              { label: 'Avg Response',   value: SECURITY_STATS.avgResponseTime },
               { label: 'Resolved',       value: reports.filter((r) => r.status === 'resolved').length },
             ].map((item, i) => (
               <motion.div key={item.label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.08 }}

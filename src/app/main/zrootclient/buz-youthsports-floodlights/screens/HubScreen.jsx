@@ -74,14 +74,12 @@ export default function HubScreen() {
         <span className="fl2-eyebrow">Youth &amp; Sports · Empowering Nigerian Youth</span>
         <h1 style={{ marginTop: 8 }}>Your talent.<br />Every pitch, court &amp; console.</h1>
         <p className="fl2-lede">
-          Leagues, periodic tournaments and a scouted Talent Hunt sit alongside government-backed programmes in
+          Leagues, periodic tournaments and a scouted Talent Hunt sit alongside community programmes in
           tech, agriculture, arts and more — from Lagos to Abuja, from the pitch to the boardroom.
         </p>
         <div className="fl2-row" style={{ marginTop: 16, gap: 8, flexWrap: 'wrap' }}>
           <Pill variant="muted">🤝 Community Programme</Pill>
-          <Pill variant="muted">⚽ NFF Partnered</Pill>
           <Pill variant="muted">🆓 Free Programmes Available</Pill>
-          <Pill variant="muted">🎖️ NYSC Accredited</Pill>
         </div>
         <div className="fl2-row" style={{ marginTop: 22, gap: 12, flexWrap: 'wrap' }}>
           <Link to="/youth-v2/tournaments" className="fl2-btn fl2-btn-gold">Explore Tournaments</Link>
