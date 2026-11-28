@@ -6,7 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { CivicLoadingSkeleton, ClienttErrorPage } from '../../../civic-shared';
 import IncidentMap from '../../components/IncidentMap';
 import IncidentCard from '../../components/IncidentCard';
-import { SECURITY_STATS } from '../../mock';
+import { useIncidents } from '../../hooks/useSecurityRepo';
+import { incidentStats } from '../../incidentStats';
 
 const F = {
   body:    'clamp(1.3rem,  2vw,   1.64rem)',
@@ -19,11 +20,12 @@ const F = {
 const NIGERIA_CENTER = [9.082, 8.6753];
 
 
-function SocDashboardContent({ incidents, isLoading, isError, stats }) {
+function SocDashboardContent({ incidents, isLoading, isError }) {
   const navigate = useNavigate();
   const [view, setView]                         = useState('map');
   const [selectedIncident, setSelectedIncident] = useState(null);
-  const s = stats || SECURITY_STATS;
+  const { data: latest } = useIncidents({ limit: 100 });
+  const s = incidentStats(latest?.data?.incidents ?? [], latest?.data?.stats?.total);
 
   const handleSelectIncident = useCallback((i) => setSelectedIncident(i), []);
   const handleCloseDrawer    = useCallback(() => setSelectedIncident(null), []);
@@ -49,11 +51,11 @@ function SocDashboardContent({ incidents, isLoading, isError, stats }) {
       }}>
         <div style={{ display: 'flex', gap: 'clamp(16px, 3vw, 28px)', flexWrap: 'wrap' }}>
           {[
-            { label: 'Total',      value: s.totalReported,       color: 'rgba(255,255,255,0.85)' },
-            { label: 'Active',     value: s.activeIncidents,     color: '#f87171' },
-            { label: 'Responding', value: s.respondingIncidents, color: '#fbbf24' },
-            { label: 'Resolved',   value: s.resolvedToday,       color: '#4ade80' },
-            { label: 'Critical',   value: s.criticalCount,       color: '#ef4444' },
+            { label: 'Total',      value: s.total,       color: 'rgba(255,255,255,0.85)' },
+            { label: 'Active',     value: s.active,     color: '#f87171' },
+            { label: 'Responding', value: s.responding, color: '#fbbf24' },
+            { label: 'Resolved',   value: s.resolved,       color: '#4ade80' },
+            { label: 'Critical',   value: s.critical,       color: '#ef4444' },
           ].map((item) => (
             <div key={item.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <span style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2rem)', fontWeight: 900, color: item.color, lineHeight: 1 }}>{item.value}</span>

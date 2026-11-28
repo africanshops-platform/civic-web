@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { Navigate } from 'react-router-dom';
 import { kycProtect } from '../civic-shared/kyc/kycProtectRoutes';
 
 const CampaignsBrowseWithSidebarsPage = lazy(() => import('./screens/CampaignsBrowseWithSidebarsPage'));
@@ -29,7 +30,9 @@ const civicTaxPagesConfig = {
     { path: 'civictax/my-contributions', element: <MyContributionsPage /> },
     { path: 'civictax/projects', element: <LgaProjectTrackerPage /> },
     { path: 'civictax/:transactionId/receipt', element: <ContributionReceiptPage /> },
-    { path: 'civictax/compulsory-tax',         element: <CivicTaxObligationsPage /> },
+    { path: 'civictax/subscriptions', element: <CivicTaxObligationsPage /> },
+    // Old address, kept so saved links and earlier messages still open the page.
+    { path: 'civictax/compulsory-tax', element: <Navigate to="/civictax/subscriptions" replace /> },
   ]),
 };
 

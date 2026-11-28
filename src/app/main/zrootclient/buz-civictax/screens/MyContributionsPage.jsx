@@ -27,19 +27,20 @@ const Root = styled(FusePageSimpleWithMargin)(() => ({
 }));
 
 const STATUS_SX = {
-  successful: { bg: '#dcfce7', color: '#166534', label: 'Paid'    },
+  completed:  { bg: '#dcfce7', color: '#166534', label: 'Paid'    },
   pending:    { bg: '#fef9c3', color: '#854d0e', label: 'Pending' },
   failed:     { bg: '#fee2e2', color: '#991b1b', label: 'Failed'  },
+  refunded:   { bg: '#e0e7ff', color: '#3730a3', label: 'Refunded' },
 };
 
 function ContributionRow({ contribution, index, navigate }) {
   const catInfo  = CAMPAIGN_CATEGORIES.find((c) => c.id === contribution.campaignCategory);
-  const statusSx = STATUS_SX[contribution.status] || STATUS_SX.successful;
+  const statusSx = STATUS_SX[contribution.status] || STATUS_SX.pending;
   const dateStr  = new Date(contribution.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
     <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.07, duration: 0.35 }}
-      onClick={() => navigate(`/civictax/${contribution.transactionId}/receipt`)}
+      onClick={() => navigate(`/civictax/${contribution.id}/receipt`)}
       style={{ display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.6vw, 18px)', padding: 'clamp(12px, 1.8vw, 18px)', borderRadius: 16, cursor: 'pointer', transition: 'background 0.2s' }}
       className="hover:bg-orange-50/60 group"
     >
@@ -52,11 +53,11 @@ function ContributionRow({ contribution, index, navigate }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
           <span style={{ fontSize: F.meta, color: '#9ca3af' }}>{dateStr}</span>
-          <span style={{ fontSize: F.meta, color: '#9ca3af' }}>· {contribution.transactionId}</span>
+          {contribution.lga && <span style={{ fontSize: F.meta, color: '#9ca3af' }}>· {contribution.lga}</span>}
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
-        <div style={{ fontWeight: 800, fontSize: F.title, color: '#ea580c' }}>₦{Number(contribution.amount).toLocaleString()}</div>
+        <div style={{ fontWeight: 800, fontSize: F.title, color: '#ea580c' }}>₦{contribution.amountNaira.toLocaleString()}</div>
         <Chip label={statusSx.label} size="small"
           style={{ fontSize: F.meta }}
           sx={{ backgroundColor: statusSx.bg, color: statusSx.color, fontWeight: 700, height: 'clamp(20px, 2.6vw, 26px)', '& .MuiChip-label': { fontSize: F.meta } }} />
@@ -108,21 +109,11 @@ function ActiveMyContributionsPage() {
         </motion.div>
 
         {/* Stats */}
-        {stats && (
+        {stats?.complete && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,150px), 1fr))', gap: 'clamp(10px, 1.6vw, 16px)', marginBottom: 'clamp(16px, 2.4vw, 24px)' }}>
-            <CivicStatCard icon={AccountBalanceWallet} label="Total Given"   value={`₦${(stats.totalContributed/1000).toFixed(0)}K`} accent />
-            <CivicStatCard icon={TrendingUp}           label="Campaigns"     value={stats.totalCampaigns}  />
-            <CivicStatCard icon={EmojiEvents}          label="LGAs Impacted" value={stats.totalImpacted}   />
-            <div style={{ borderRadius: 16, padding: 'clamp(12px, 1.8vw, 18px)', background: 'white', border: '1px solid #ffedd5', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: F.meta, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Badges</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {stats.badges?.map((b) => (
-                  <Chip key={b} label={b} size="small"
-                    style={{ fontSize: F.meta }}
-                    sx={{ backgroundColor: '#fff7ed', color: '#ea580c', fontWeight: 700, height: 'clamp(20px, 2.6vw, 26px)', border: '1px solid #fdba74', '& .MuiChip-label': { fontSize: F.meta } }} />
-                ))}
-              </div>
-            </div>
+            <CivicStatCard icon={AccountBalanceWallet} label="Total Given"   value={`₦${stats.givenNaira.toLocaleString()}`} accent />
+            <CivicStatCard icon={TrendingUp}           label="Campaigns"     value={stats.campaigns} />
+            <CivicStatCard icon={EmojiEvents}          label="LGAs Impacted" value={stats.lgas} />
           </div>
         )}
 

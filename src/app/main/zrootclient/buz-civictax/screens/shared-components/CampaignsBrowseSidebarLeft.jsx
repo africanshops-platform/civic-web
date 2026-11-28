@@ -24,7 +24,7 @@ const NAV_LINKS = [
   { label: 'Browse Campaigns',  path: '/civictax/campaigns',        icon: '🏛️' },
   { label: 'My Contributions',  path: '/civictax/my-contributions', icon: '💰' },
   { label: 'Project Tracker',   path: '/civictax/projects',         icon: '🏗️' },
-  { label: 'Subscriptions',    path: '/civictax/compulsory-tax',   icon: '📊' },
+  { label: 'Subscriptions',    path: '/civictax/subscriptions',   icon: '📊' },
 ];
 
 function CampaignsBrowseSidebarLeft({ onFilterChange }) {

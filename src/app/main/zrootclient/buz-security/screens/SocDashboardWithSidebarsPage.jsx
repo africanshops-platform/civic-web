@@ -36,7 +36,6 @@ function ActiveSocDashboardPage() {
 
   console.log('Fetched incidents data__1:', data?.data?.incidents);
   const incidents   = useMemo(() => data?.data?.incidents,   [data]);
-  const stats       = useMemo(() => data?.data?.stats,       [data]);
   const pagination  = useMemo(() => data?.data?.pagination,  [data]);
 
   console.log('Fetched incidents data__2:', incidents);
@@ -54,20 +53,20 @@ function ActiveSocDashboardPage() {
 
   const content = useMemo(() => (
     <div style={{ background: '#0f172a' }}>
-      <SocDashboardContent incidents={incidents} isLoading={isLoading} isError={isError} stats={stats} />
+      <SocDashboardContent incidents={incidents} isLoading={isLoading} isError={isError} />
       <div style={{ padding: '0 clamp(20px,4vw,48px) clamp(24px,3.5vw,40px)' }}>
         <CivicPaginationBar pagination={pagination} onPageChange={setPage} theme="dark" />
       </div>
     </div>
-  ), [incidents, isLoading, isError, stats, pagination]);
+  ), [incidents, isLoading, isError, pagination]);
 
   const leftSidebar = useMemo(() => (
     <SocDashboardSidebarLeft onFilterChange={handleFilterChange} />
   ), [handleFilterChange]);
 
   const rightSidebar = useMemo(() => (
-    <SocDashboardSidebarRight incidents={incidents} stats={stats} />
-  ), [incidents, stats]);
+    <SocDashboardSidebarRight />
+  ), []);
 
   return (
     <Root header={header} content={content}

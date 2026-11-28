@@ -223,11 +223,3 @@ export const CAMPAIGN_CATEGORIES = [
   { id: 'environment', label: 'Environment', color: '#059669', bgColor: '#d1fae5', icon: '🌿' },
 ];
 
-export const CAMPAIGN_STATS = {
-  totalCampaigns: 6,
-  activeCampaigns: 4,
-  totalRaised: 22307500,
-  totalContributors: 5469,
-  completedCampaigns: 1,
-  totalTarget: 44500000,
-};

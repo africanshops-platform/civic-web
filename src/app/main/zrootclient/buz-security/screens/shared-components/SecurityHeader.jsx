@@ -1,10 +1,9 @@
 import { memo } from 'react';
-import { IconButton, Button, Chip } from '@mui/material';
-import { Shield, Add, Warning } from '@mui/icons-material';
+import { IconButton, Button } from '@mui/material';
+import { Shield, Add } from '@mui/icons-material';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { SECURITY_STATS } from '../../mock';
 
 const F = {
   meta: 'clamp(1.2rem, 1.8vw, 1.5rem)',
@@ -14,7 +13,6 @@ const F = {
 
 function SecurityHeader({ leftSidebarToggle, rightSidebarToggle, title, subtitle, showReportBtn = false }) {
   const navigate = useNavigate();
-  const hasCritical = SECURITY_STATS.criticalCount > 0;
 
   return (
     <motion.div
@@ -45,17 +43,6 @@ function SecurityHeader({ leftSidebarToggle, rightSidebarToggle, title, subtitle
                 <div style={{ fontWeight: 900, fontSize: F.subH, color: 'white', lineHeight: 1.2 }}>
                   {title || 'Security Monitor'}
                 </div>
-                {hasCritical && (
-                  <motion.div animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 1.6, repeat: Infinity }}>
-                    <Chip
-                      icon={<Warning style={{ fontSize: 'clamp(12px, 1.6vw, 16px)', color: '#f87171' }} />}
-                      label={`${SECURITY_STATS.criticalCount} CRITICAL`}
-                      size="small"
-                      style={{ fontSize: F.meta }}
-                      sx={{ backgroundColor: 'rgba(220,38,38,0.25)', color: '#f87171', fontWeight: 800, height: 'clamp(22px, 2.8vw, 30px)', border: '1px solid rgba(220,38,38,0.5)', '& .MuiChip-label': { fontSize: F.meta } }}
-                    />
-                  </motion.div>
-                )}
               </div>
               {subtitle && (
                 <div style={{ fontSize: F.meta, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{subtitle}</div>

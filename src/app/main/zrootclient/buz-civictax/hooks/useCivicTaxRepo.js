@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { AuthApi } from 'app/configs/data/client/RepositoryAuthClient';
+import { normalizeContribution, contributionStats } from '../contributionView';
 
 // ─── raw API layer ────────────────────────────────────────────────────────────
 const api = {
@@ -118,8 +119,8 @@ export function useMyContributions(page = 1, limit = 20) {
         const d = res.data;
         return {
           data: {
-            contributions: (d.data ?? []).map((c) => ({ ...c, amountNaira: toNaira(c.amountKobo) })),
-            stats:      { total: d.total ?? 0 },
+            contributions: (d.data ?? []).map(normalizeContribution),
+            stats:      contributionStats((d.data ?? []).map(normalizeContribution), d.total),
             pagination: extractPagination(d, p, l),
           },
         };
