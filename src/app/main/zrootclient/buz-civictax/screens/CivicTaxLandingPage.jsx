@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom';
 import { ArrowForward, CheckCircle } from '@mui/icons-material';
 import useCivicWebAuth from 'src/app/hooks/useCivicWebAuth';
 import CampaignCard from '../components/CampaignCard';
-import { mockCampaigns, CAMPAIGN_STATS, CAMPAIGN_CATEGORIES } from '../mock';
+import { CAMPAIGN_CATEGORIES } from '../mock';
+import { useCampaigns } from '../hooks/useCivicTaxRepo';
+import { landingStats } from '../landingStats';
 
 const F = {
   body:    'clamp(1.3rem,  2vw,   1.64rem)',
@@ -26,13 +28,6 @@ const inViewUp = (delay = 0) => ({
   viewport: { once: true },
   transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] },
 });
-
-const PLATFORM_STATS = [
-  { emoji: '💰', value: `₦${(CAMPAIGN_STATS.totalRaised / 1_000_000).toFixed(1)}M`, label: 'Total Raised' },
-  { emoji: '👥', value: CAMPAIGN_STATS.totalContributors.toLocaleString(),           label: 'Contributors' },
-  { emoji: '🔥', value: CAMPAIGN_STATS.activeCampaigns,                              label: 'Active Campaigns' },
-  { emoji: '🏆', value: CAMPAIGN_STATS.completedCampaigns,                           label: 'Goals Reached' },
-];
 
 const HOW_IT_WORKS = [
   { step: '01', title: 'Choose a Campaign',   desc: 'Browse verified campaigns in your LGA, state, or across Nigeria — filtered by category and real-world impact.' },
@@ -96,7 +91,10 @@ function StepCard({ step, title, desc, delay }) {
 /* ── main component ── */
 export default function CivicTaxLandingPage() {
   const { isAuthenticated } = useCivicWebAuth();
-  const featured = mockCampaigns.filter((c) => c.status === 'active').slice(0, 3);
+  const { data } = useCampaigns({ limit: 50 });
+  const campaigns = data?.data?.campaigns ?? [];
+  const stats = landingStats(campaigns, data?.data?.pagination?.total);
+  const featured = campaigns.filter((c) => c.status === 'active').slice(0, 3);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden', backgroundColor: 'white' }}>
@@ -165,10 +163,12 @@ export default function CivicTaxLandingPage() {
             </div>
 
             {/* Right: stat cards */}
-            <motion.div initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.75, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {PLATFORM_STATS.map((s, i) => <HeroStatCard key={s.label} {...s} primary={i === 0} />)}
-            </motion.div>
+            {stats.length > 0 && (
+              <motion.div initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.75, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {stats.map((s, i) => <HeroStatCard key={s.label} {...s} primary={i === 0} />)}
+              </motion.div>
+            )}
           </div>
         </div>
       </section>
@@ -195,48 +195,52 @@ export default function CivicTaxLandingPage() {
       </section>
 
       {/* ══════ IMPACT STATS ══════ */}
-      <section style={{ padding: 'clamp(48px,6vw,72px) clamp(20px,5vw,64px)', background: 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 'clamp(16px,3vw,28px)' }}>
-            {PLATFORM_STATS.map((s, i) => (
-              <motion.div key={s.label} {...inViewUp(i * 0.09)} style={{ textAlign: 'center', padding: 'clamp(22px,4vw,36px) clamp(16px,2.5vw,24px)', borderRadius: 20, backgroundColor: 'white', border: '1px solid #fdba74', boxShadow: '0 4px 20px rgba(234,88,12,0.08)' }}>
-                <div style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginBottom: 10 }}>{s.emoji}</div>
-                <div style={{ fontSize: 'clamp(2rem, 4.2vw, 3.2rem)', fontWeight: 900, color: '#ea580c', lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontSize: F.meta, color: '#6b7280', marginTop: 8, fontWeight: 600 }}>{s.label}</div>
-              </motion.div>
-            ))}
+      {stats.length > 0 && (
+        <section style={{ padding: 'clamp(48px,6vw,72px) clamp(20px,5vw,64px)', background: 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 'clamp(16px,3vw,28px)' }}>
+              {stats.map((s, i) => (
+                <motion.div key={s.label} {...inViewUp(i * 0.09)} style={{ textAlign: 'center', padding: 'clamp(22px,4vw,36px) clamp(16px,2.5vw,24px)', borderRadius: 20, backgroundColor: 'white', border: '1px solid #fdba74', boxShadow: '0 4px 20px rgba(234,88,12,0.08)' }}>
+                  <div style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginBottom: 10 }}>{s.emoji}</div>
+                  <div style={{ fontSize: 'clamp(2rem, 4.2vw, 3.2rem)', fontWeight: 900, color: '#ea580c', lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: F.meta, color: '#6b7280', marginTop: 8, fontWeight: 600 }}>{s.label}</div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ══════ FEATURED CAMPAIGNS ══════ */}
-      <section style={{ padding: 'clamp(56px,7vw,96px) clamp(20px,5vw,64px)', background: WARM_BG }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <motion.div {...inViewUp()} style={{ textAlign: 'center', marginBottom: 'clamp(36px,5vw,56px)' }}>
-            <div style={{ display: 'inline-block', background: '#fff7ed', color: '#ea580c', fontWeight: 700, fontSize: F.meta, padding: 'clamp(5px,0.8vw,8px) clamp(14px,2vw,20px)', borderRadius: 999, border: '1px solid #fdba74', marginBottom: 18 }}>
-              🔥 Featured Campaigns
+      {featured.length > 0 && (
+        <section style={{ padding: 'clamp(56px,7vw,96px) clamp(20px,5vw,64px)', background: WARM_BG }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+            <motion.div {...inViewUp()} style={{ textAlign: 'center', marginBottom: 'clamp(36px,5vw,56px)' }}>
+              <div style={{ display: 'inline-block', background: '#fff7ed', color: '#ea580c', fontWeight: 700, fontSize: F.meta, padding: 'clamp(5px,0.8vw,8px) clamp(14px,2vw,20px)', borderRadius: 999, border: '1px solid #fdba74', marginBottom: 18 }}>
+                🔥 Featured Campaigns
+              </div>
+              <h2 style={{ margin: '0 0 16px', fontWeight: 900, color: '#1f2937', fontSize: F.sectionH }}>
+                Active Campaigns Need You
+              </h2>
+              <p style={{ margin: '0 auto', color: '#6b7280', maxWidth: 600, fontSize: F.body, lineHeight: 1.7 }}>
+                Real campaigns. Real impact. Real people in your community waiting for change.
+              </p>
+            </motion.div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 'clamp(20px,3vw,32px)', marginBottom: 'clamp(32px,4vw,48px)' }}>
+              {featured.map((c, i) => <CampaignCard key={c.id} campaign={c} index={i} />)}
             </div>
-            <h2 style={{ margin: '0 0 16px', fontWeight: 900, color: '#1f2937', fontSize: F.sectionH }}>
-              Active Campaigns Need You
-            </h2>
-            <p style={{ margin: '0 auto', color: '#6b7280', maxWidth: 600, fontSize: F.body, lineHeight: 1.7 }}>
-              Real campaigns. Real impact. Real people in your community waiting for change.
-            </p>
-          </motion.div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 'clamp(20px,3vw,32px)', marginBottom: 'clamp(32px,4vw,48px)' }}>
-            {featured.map((c, i) => <CampaignCard key={c.id} campaign={c} index={i} />)}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <Button component={Link} to="/civictax/campaigns" variant="contained" size="large" endIcon={<ArrowForward />}
+                style={{ fontSize: F.btn }}
+                sx={{ background: ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '16px', textTransform: 'none', px: { xs: 4, sm: 6 }, py: { xs: 1.75, sm: 2.25 }, boxShadow: '0 10px 28px rgba(234,88,12,0.38)', '&:hover': { background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)', transform: 'translateY(-3px)' } }}>
+                See All Campaigns
+              </Button>
+            </div>
           </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <Button component={Link} to="/civictax/campaigns" variant="contained" size="large" endIcon={<ArrowForward />}
-              style={{ fontSize: F.btn }}
-              sx={{ background: ORANGE_GRADIENT, color: 'white', fontWeight: 800, borderRadius: '16px', textTransform: 'none', px: { xs: 4, sm: 6 }, py: { xs: 1.75, sm: 2.25 }, boxShadow: '0 10px 28px rgba(234,88,12,0.38)', '&:hover': { background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)', transform: 'translateY(-3px)' } }}>
-              See All Campaigns
-            </Button>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ══════ HOW IT WORKS ══════ */}
       <section style={{ padding: 'clamp(56px,7vw,96px) clamp(20px,5vw,64px)', backgroundColor: 'white' }}>
@@ -284,7 +288,7 @@ export default function CivicTaxLandingPage() {
                 { emoji: '🛡️', title: 'Security',    text: 'Fund local security initiatives before incidents happen, not after.' },
                 { emoji: '🌾', title: 'Agriculture',  text: 'Back smallholder farmers who feed your community every day.' },
                 { emoji: '🏥', title: 'Healthcare',   text: "Ensure the PHC in your ward has medicines when they're needed." },
-                { emoji: '📚', title: 'Education',    text: 'Build the skills centre that lifts 300 youth out of unemployment.' },
+                { emoji: '📚', title: 'Education',    text: 'Back a skills centre that gets young people into work.' },
               ].map((item, i) => (
                 <motion.div key={item.title} {...inViewUp(0.2 + i * 0.1)} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: 'clamp(14px,2vw,20px)', borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <span style={{ fontSize: 'clamp(1.4rem, 2.4vw, 2rem)', flexShrink: 0 }}>{item.emoji}</span>
@@ -311,7 +315,7 @@ export default function CivicTaxLandingPage() {
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: F.body, margin: '0 auto 44px', maxWidth: 600, lineHeight: 1.75 }}>
             Every contribution, no matter how small, is a vote for the Nigeria you believe in.
-            Join thousands of Nigerians already making their communities better.
+            Join your neighbours in making your community better.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
             <Button component={Link} to="/sign-up" variant="contained" size="large"
